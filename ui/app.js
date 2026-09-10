@@ -644,6 +644,8 @@ const DQS = {
                     <span class="quest-game-title">${gameTitle}</span>
                     <span class="badge-tag task">${taskIcon} ${taskLabel}</span>
                     ${isMultiGame ? `<span class="badge-tag multi">${I.gamepad} MULTI-GAME (${q.supported_applications.length})</span>` : ''}
+                    <span class="badge-tag required-game">${I.gamepad} BENÖTIGT: <strong class="req-game-name">${q.required_game_name || gameTitle}</strong></span>
+                    ${!isVideo && q.required_exe ? `<span class="badge-tag process-exe">PROZESS: <code class="req-exe-name">${q.required_exe}</code></span>` : ''}
                     <span class="badge-tag duration">${I.clock} DAUER: <strong>${q.duration_text || (isVideo ? '(ca. 30 Sek.)' : '(ca. 15 Min.)')}</strong></span>
                     ${orbCount > 0 ? `<span class="badge-tag orbs"><img src="${orbImgSrc}" class="discord-orb-icon" alt="Orbs"> <span>${orbCount} ORBS</span></span>` : ''}
                 </div>
@@ -664,6 +666,12 @@ const DQS = {
                         q.selected_app = found;
                         q.app_id = found.id;
                         q.sim_game_title = found.name;
+                        q.required_game_name = found.name;
+                        q.required_exe = found.exe;
+                        const reqNameEl = card.querySelector('.req-game-name');
+                        if (reqNameEl) reqNameEl.textContent = found.name;
+                        const reqExeEl = card.querySelector('.req-exe-name');
+                        if (reqExeEl && found.exe) reqExeEl.textContent = found.exe;
                     }
                 });
             }
@@ -689,9 +697,10 @@ const DQS = {
             btnSim.className = 'btn btn-emerald';
             btnSim.innerHTML = `${I.play} SIMULIEREN`;
             btnSim.onclick = () => {
-                const targetAppId = q.selected_app?.id || appId;
-                const targetTitle = q.selected_app?.name || q.sim_game_title || gameTitle;
-                this.simulateQuest(targetAppId, targetTitle);
+                const targetAppId = q.selected_app?.id || q.required_app_id || appId;
+                const targetTitle = q.selected_app?.name || q.required_game_name || q.sim_game_title || gameTitle;
+                const targetExe = q.selected_app?.exe || q.required_exe || '';
+                this.simulateQuest(targetAppId, targetTitle, targetExe);
             };
             actBox.appendChild(btnSim);
 
@@ -981,7 +990,7 @@ const DQS = {
         });
     },
 
-    simulateQuest(appId, gameTitle) {
+    simulateQuest(appId, gameTitle, customExe) {
         this.switchTab('simulator');
 
         // Match preset
@@ -1000,17 +1009,16 @@ const DQS = {
             }
         }
 
-        if (matched) {
+        const finalExe = customExe || (matched ? matched.exe : (gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '_') + '.exe'));
+        const finalTitle = matched ? matched.title : gameTitle;
+        const finalAppId = appId || (matched ? matched.app_id : '1205090671527071784');
+
+        if (matched && document.getElementById('sim-preset-select')) {
             document.getElementById('sim-preset-select').value = matched.app_id;
-            document.getElementById('sim-input-title').value = matched.title;
-            document.getElementById('sim-input-exe').value = matched.exe;
-            document.getElementById('sim-input-appid').value = matched.app_id;
-        } else {
-            const cleanExe = gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '_') + '.exe';
-            document.getElementById('sim-input-title').value = gameTitle;
-            document.getElementById('sim-input-exe').value = cleanExe;
-            document.getElementById('sim-input-appid').value = appId || '1205090671527071784';
         }
+        document.getElementById('sim-input-title').value = finalTitle;
+        document.getElementById('sim-input-exe').value = finalExe;
+        document.getElementById('sim-input-appid').value = finalAppId;
 
         // Auto start simulation
         document.getElementById('btn-start-sim').click();

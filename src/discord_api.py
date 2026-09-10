@@ -31,6 +31,22 @@ def resolve_application_metadata(app_id: str, token: str = "") -> Dict[str, str]
     app_id_str = str(app_id)
     try:
         try:
+            from .discord_detectable import get_game_by_app_id
+        except ImportError:
+            from discord_detectable import get_game_by_app_id
+        det_game = get_game_by_app_id(app_id_str, token)
+        if det_game:
+            return {
+                "id": app_id_str,
+                "name": det_game["name"],
+                "exe": det_game["exe"],
+                "title": det_game.get("title", det_game["name"])
+            }
+    except Exception:
+        pass
+
+    try:
+        try:
             from .database import QUEST_GAMES_DATABASE
         except ImportError:
             from database import QUEST_GAMES_DATABASE
@@ -135,6 +151,24 @@ class DiscordQuestsAPI:
             supported_applications = []
             seen_app_ids = set()
 
+            # Universal Discord detectable game resolution
+            req_info = None
+            try:
+                try:
+                    from .discord_detectable import extract_quest_required_game
+                except ImportError:
+                    from discord_detectable import extract_quest_required_game
+                req_info = extract_quest_required_game(q, self.token)
+            except Exception:
+                pass
+
+            if req_info and req_info.get("supported_games"):
+                for sg in req_info["supported_games"]:
+                    aid = str(sg.get("id"))
+                    if aid and aid not in seen_app_ids:
+                        seen_app_ids.add(aid)
+                        supported_applications.append(sg)
+
             # 1. From tasks (e.g. PLAY_ON_DESKTOP.applications)
             for t_name, t_val in tasks.items():
                 if isinstance(t_val, dict) and "applications" in t_val:
@@ -167,7 +201,21 @@ class DiscordQuestsAPI:
 
             # Pick a valid application for simulation (prioritize games verified in Discord detectable DB)
             selected_app = None
-            if supported_applications:
+            if req_info and req_info.get("required_app_id"):
+                req_aid = str(req_info["required_app_id"])
+                for a in supported_applications:
+                    if str(a.get("id")) == req_aid:
+                        selected_app = a
+                        break
+                if not selected_app:
+                    selected_app = {
+                        "id": req_aid,
+                        "name": req_info.get("required_game_name", game_title),
+                        "exe": req_info.get("required_exe", "Game.exe"),
+                        "title": req_info.get("required_game_name", game_title)
+                    }
+
+            if not selected_app and supported_applications:
                 try:
                     try:
                         from .database import QUEST_GAMES_DATABASE
@@ -199,6 +247,10 @@ class DiscordQuestsAPI:
                     sim_game_title = game_title
             else:
                 sim_game_title = game_title
+
+            required_game_name = (selected_app.get("name") if selected_app else None) or (req_info.get("required_game_name") if req_info else None) or sim_game_title
+            required_exe = (selected_app.get("exe") if selected_app else None) or (req_info.get("required_exe") if req_info else None) or "Game.exe"
+            required_app_id = (selected_app.get("id") if selected_app else None) or (req_info.get("required_app_id") if req_info else None) or app_id
 
             # User Status & Progress
             user_status = q.get("user_status")
@@ -246,6 +298,9 @@ class DiscordQuestsAPI:
                 "app_id": app_id,
                 "app_name": app_name,
                 "sim_game_title": sim_game_title,
+                "required_game_name": required_game_name,
+                "required_exe": required_exe,
+                "required_app_id": required_app_id,
                 "is_multi_game": is_multi_game,
                 "supported_applications": supported_applications,
                 "selected_app": selected_app,

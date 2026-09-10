@@ -133,19 +133,21 @@ class QuestFarmer:
             qid = q["id"]
             qname = q["quest_name"]
             
-            # If multi-game, pick one of the valid allowed games
+            # Game detection & selection
             supported_apps = q.get("supported_applications") or []
-            selected_exe = ""
+            selected_exe = q.get("required_exe") or (q.get("selected_app") or {}).get("exe", "")
+            app_id = q.get("required_app_id") or q.get("app_id", "")
+            game_title = q.get("required_game_name") or q.get("sim_game_title") or q.get("game_title", "Unbekanntes Spiel")
+
             if q.get("is_multi_game") and supported_apps:
                 selected_app = q.get("selected_app") or supported_apps[0]
-                app_id = selected_app["id"]
-                game_title = selected_app["name"]
-                selected_exe = selected_app.get("exe", "")
-                self.log(f"[MULTI-GAME] '{qname}' bietet {len(supported_apps)} auswaehlbare Spiele. Waehle automatisch '{game_title}' (App-ID: {app_id})...", "INFO")
+                app_id = selected_app.get("id") or app_id
+                game_title = selected_app.get("name") or game_title
+                selected_exe = selected_app.get("exe") or selected_exe
+                self.log(f"[MULTI-GAME] '{qname}' bietet {len(supported_apps)} auswaehlbare Spiele. Waehle automatisch '{game_title}' (App-ID: {app_id}, Prozess: '{selected_exe}')...", "INFO")
             else:
-                game_title = q.get("sim_game_title") or q.get("game_title", "Unbekanntes Spiel")
-                app_id = q.get("app_id", "")
-                selected_exe = q.get("selected_app", {}).get("exe", "")
+                if selected_exe:
+                    self.log(f"[SPIEL-ERKENNUNG] Erkanntes Spiel fuer '{qname}': '{game_title}' (Prozess: '{selected_exe}').", "INFO")
 
             task_type = q["task_type"]
             target_sec = q.get("target_seconds", 900)

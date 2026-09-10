@@ -198,9 +198,38 @@ QUEST_GAMES_DATABASE = {
 }
 
 def resolve_game_info(app_id: str, fallback_name: str = "") -> dict:
-    """Returns executable name and window title for an app_id, with smart fallback."""
-    if app_id in QUEST_GAMES_DATABASE:
-        return QUEST_GAMES_DATABASE[app_id]
+    """Returns executable name and window title for an app_id, with 24k detectable catalog lookup and smart fallback."""
+    aid_str = str(app_id).strip()
+    if aid_str in QUEST_GAMES_DATABASE:
+        return QUEST_GAMES_DATABASE[aid_str]
+
+    # Query 24,000+ Discord Detectable Games catalog
+    try:
+        try:
+            from .discord_detectable import get_game_by_app_id, search_game_by_name
+        except ImportError:
+            from discord_detectable import get_game_by_app_id, search_game_by_name
+        
+        detected = get_game_by_app_id(aid_str)
+        if detected and detected.get("exe"):
+            return {
+                "name": detected["name"],
+                "exe": detected["exe"],
+                "title": detected["title"],
+                "category": "Discord Detectable Game"
+            }
+
+        if fallback_name:
+            searched = search_game_by_name(fallback_name)
+            if searched and searched.get("exe"):
+                return {
+                    "name": searched["name"],
+                    "exe": searched["exe"],
+                    "title": searched["title"],
+                    "category": "Discord Detectable Game"
+                }
+    except Exception:
+        pass
     
     # Fallback based on name keywords
     clean_name = fallback_name.lower()
