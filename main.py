@@ -75,9 +75,9 @@ def main():
         title="DQS // Discord Quest Spoofer",
         url=app_url,
         js_api=bridge,
-        width=1180,
-        height=780,
-        min_size=(980, 640),
+        width=1260,
+        height=820,
+        min_size=(1100, 700),
         frameless=True,
         easy_drag=False,
         background_color="#08090d"

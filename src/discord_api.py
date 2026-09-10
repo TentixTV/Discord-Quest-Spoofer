@@ -154,21 +154,35 @@ class DiscordQuestsAPI:
         return {"success": False, "error": r.text, "status": r.status_code}
 
     def complete_video_quest(self, quest_id: str, target_seconds: int = 30, callback=None) -> bool:
-        """Fast-completes video-based Discord quests."""
+        """Fast-completes video-based Discord quests with auto-enrollment and stream simulation."""
+        try:
+            self.enroll_quest(quest_id)
+        except Exception:
+            pass
+
         url = f"https://discord.com/api/v9/quests/{quest_id}/video-progress"
         curr = 0
-        speed = 7
+        speed = 8
         while curr < target_seconds:
             curr = min(target_seconds, curr + speed)
-            r = requests.post(url, headers=get_headers(self.token), json={"timestamp": curr}, timeout=8)
-            if callback:
-                callback(curr, target_seconds)
-            if r.status_code == 200 and r.json().get("completed_at"):
-                return True
-            time.sleep(1)
-        # Final call
-        r = requests.post(url, headers=get_headers(self.token), json={"timestamp": target_seconds}, timeout=8)
-        return r.status_code == 200
+            try:
+                r = requests.post(url, headers=get_headers(self.token), json={"timestamp": curr}, timeout=8)
+                if callback:
+                    callback(curr, target_seconds)
+                if r.status_code == 200:
+                    data = r.json()
+                    if data.get("completed_at") or (isinstance(data.get("user_status"), dict) and data["user_status"].get("completed_at")):
+                        return True
+            except Exception:
+                pass
+            time.sleep(0.6)
+
+        # Final timestamp post
+        try:
+            r = requests.post(url, headers=get_headers(self.token), json={"timestamp": target_seconds}, timeout=8)
+            return r.status_code in (200, 204)
+        except Exception:
+            return False
 
     def get_application_executables(self, app_id: str) -> List[str]:
         """Fetches official Windows executable names for an application from Discord."""

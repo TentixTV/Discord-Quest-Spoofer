@@ -12,7 +12,7 @@
     <!-- 3D Interactive GPU Canvas -->
     <canvas id="bg-canvas"></canvas>
 
-    <!-- Custom Frameless Titlebar -->
+    <!-- Custom Frameless Titlebar (Spacious & Clean) -->
     <header id="app-titlebar" class="pywebview-drag-region">
         <div class="titlebar-left">
             <div class="app-brand-logo">
@@ -31,10 +31,11 @@
         <div class="titlebar-center">
             <!-- Sleek Horizontal Navigation Tabs -->
             <nav id="nav-tabs" class="no-drag">
-                <button class="nav-tab active" data-tab="quests">
+                <button class="nav-tab active quests-tab" data-tab="quests" id="nav-tab-quests">
                     <span class="tab-icon-wrap" id="ico-nav-quests"></span>
                     <span class="tab-label">QUESTS</span>
                     <span class="tab-badge" id="quests-badge">6</span>
+                    <div class="tab-electric-sparks"></div>
                 </button>
                 <button class="nav-tab" data-tab="videos">
                     <span class="tab-icon-wrap" id="ico-nav-videos"></span>
@@ -102,8 +103,17 @@
                 </div>
             </div>
 
+            <!-- Important Disclaimer Banner -->
+            <div class="quest-disclaimer-banner card-3d">
+                <div class="disclaimer-shield-wrap" id="ico-disclaimer-shield"></div>
+                <div class="disclaimer-text-wrap">
+                    <span class="disclaimer-title">WICHTIGER HINWEIS ZUR BELOHNUNGS-ABHOLUNG</span>
+                    <span class="disclaimer-desc">DQS schließt Spiel- und Videozeiten zu 100% ab. <strong>Die verdienten Discord Orbs & Belohnungen müssen nach Abschluss immer selbst direkt in der Discord-App im Quests-Tab eingesammelt werden!</strong> DQS ist ein Spoofer und greift nicht unbefugt in dein Inventar ein.</span>
+                </div>
+            </div>
+
             <div class="cards-container" id="quests-list">
-                <div class="loading-spinner">Lade Quests von Discord API...</div>
+                <!-- Dynamically Rendered Quests or High-Tech Loader -->
             </div>
         </section>
 

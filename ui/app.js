@@ -1,7 +1,7 @@
 /**
  * DQS // High-End Discord Quest Spoofer Engine
- * JavaScript Client Architecture, 3D Physics Tilt, and PyWebView Bridge
- * 100% Emoji-free, Ultra-crisp High-DPI SVGs
+ * JavaScript Client Architecture, 3D Physics Tilt, Dual Video Bars, and PyWebView Bridge
+ * 100% Emoji-free, Ultra-crisp High-DPI SVGs, Animated Discord Orbs
  */
 
 // ================= 1. 3D INTERACTIVE PARTICLE CANVAS =================
@@ -32,6 +32,7 @@
         'rgba(88, 101, 242, ', // Blurple
         'rgba(147, 51, 234, ', // Purple
         'rgba(35, 165, 90, ',  // Emerald
+        'rgba(56, 189, 248, ', // Cyan
         'rgba(254, 231, 92, '  // Gold
     ];
 
@@ -49,18 +50,13 @@
 
     function render() {
         ctx.clearRect(0, 0, w, h);
-
-        // Perspective factor
         const fov = 350;
 
         for (let i = 0; i < nodeCount; i++) {
             const n = nodes[i];
-
-            // 3D Motion
             n.x += n.vx;
             n.y += n.vy;
 
-            // Mouse parallax
             const dx = (mouseX - w / 2) * 0.02;
             const dy = (mouseY - h / 2) * 0.02;
 
@@ -81,7 +77,6 @@
             ctx.shadowColor = n.color + '0.9)';
             ctx.fill();
 
-            // Connect nearby nodes with 3D depth lines
             for (let j = i + 1; j < nodeCount; j++) {
                 const n2 = nodes[j];
                 const dist = Math.hypot(n.x - n2.x, n.y - n2.y);
@@ -155,6 +150,7 @@ const DQS = {
         setHtml('btn-win-close', I.close);
 
         setHtml('ico-hdr-quests', I.quest);
+        setHtml('ico-disclaimer-shield', I.shield);
         setHtml('ico-btn-refresh', I.refresh);
         setHtml('ico-btn-enroll', I.quest);
         setHtml('ico-btn-autofarm', I.autofarm);
@@ -412,8 +408,42 @@ const DQS = {
 
     // --- Quests & Cards Rendering ---
     async refreshQuests() {
+        const I = window.DQS_ICONS;
         const container = document.getElementById('quests-list');
-        container.innerHTML = '<div class="loading-spinner" style="padding:40px;text-align:center;color:#8e92a4;">Lade Quests von Discord API...</div>';
+
+        // Futuristic Cyber Loading Screen with Skeleton Cards
+        container.innerHTML = `
+            <div class="api-loading-card card-3d">
+                <div class="loading-cyber-core">
+                    <div class="loading-ring outer"></div>
+                    <div class="loading-ring inner"></div>
+                    <span class="loading-center-icon">${I.quest}</span>
+                </div>
+                <div class="loading-text-content">
+                    <h3 class="loading-headline">SYNCHRONISIERE MIT DISCORD API</h3>
+                    <p class="loading-subtitle">Lade aktive Quests, Belohnungs-Orbs und Heartbeat-Verbindungen...</p>
+                    <div class="loading-bar-track">
+                        <div class="loading-bar-sweep"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-tile"></div>
+                <div class="skeleton-info">
+                    <div class="skeleton-bar title"></div>
+                    <div class="skeleton-bar sub"></div>
+                    <div class="skeleton-bar progress"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-tile"></div>
+                <div class="skeleton-info">
+                    <div class="skeleton-bar title"></div>
+                    <div class="skeleton-bar sub"></div>
+                    <div class="skeleton-bar progress"></div>
+                </div>
+            </div>
+        `;
 
         if (!window.pywebview?.api) return;
         const quests = await window.pywebview.api.get_quests();
@@ -455,12 +485,15 @@ const DQS = {
         const orbCount = q.orb_count || 0;
         const appId = q.app_id || '';
         const videoUrl = q.video_url;
+        const isVideo = videoUrl || taskType.includes('VIDEO') || q.has_video;
 
         // Tile source: Base64 first, fallback to HTTP/file
         const b64Tile = window.DQS_EMBEDDED_ASSETS?.tiles?.[qid];
         const tileSrc = b64Tile || `assets/quests/tiles/${qid}.png`;
 
-        const isVideo = videoUrl || taskType.includes('VIDEO');
+        // Animated Discord Orbs Logo
+        const orbImgSrc = window.DQS_EMBEDDED_ASSETS?.animated_orb || 'assets/discord_orbs_animated.gif';
+
         const taskIcon = isVideo ? I.video : I.gamepad;
         const taskLabel = isVideo ? 'Video-Quest' : `${Math.round(targetSeconds / 60)} Min. Spielzeit`;
 
@@ -468,6 +501,42 @@ const DQS = {
         const tgtMin = Math.round(targetSeconds / 60);
         let progressTxt = `${curMin}/${tgtMin} MIN. (${percent}%)`;
         if (completed || claimed) progressTxt += ' - QUEST ERFÜLLT!';
+
+        // Build Progress Bars (2 Bars if Video, 1 Bar if Desktop)
+        let progressHtml = '';
+        if (isVideo) {
+            progressHtml = `
+                <div class="dual-progress-container">
+                    <div class="progress-bar-block">
+                        <div class="progress-bar-header">
+                            <span class="progress-bar-label">${I.video} STREAM BUFFER & HEARTBEAT</span>
+                            <span class="progress-bar-value">${completed || claimed ? 'SYNCHRONISIERT (100%)' : 'STREAM BEREIT (100%)'}</span>
+                        </div>
+                        <div class="progress-track buffer">
+                            <div class="progress-fill buffer" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="progress-bar-block">
+                        <div class="progress-bar-header">
+                            <span class="progress-bar-label">${I.quest} QUEST-FORTSCHRITT</span>
+                            <span class="progress-bar-value ${completed || claimed ? 'completed' : ''}">${progressTxt}</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill ${completed || claimed ? 'completed' : ''}" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            progressHtml = `
+                <div class="quest-progress-row">
+                    <div class="progress-track">
+                        <div class="progress-fill ${completed || claimed ? 'completed' : ''}" style="width: ${percent}%"></div>
+                    </div>
+                    <span class="progress-text ${completed || claimed ? 'completed' : ''}">${progressTxt}</span>
+                </div>
+            `;
+        }
 
         card.innerHTML = `
             <div class="quest-tile-wrap">
@@ -477,15 +546,10 @@ const DQS = {
                 <div class="quest-header-row">
                     <span class="quest-game-title">${gameTitle}</span>
                     <span class="badge-tag task">${taskIcon} ${taskLabel}</span>
-                    ${orbCount > 0 ? `<span class="badge-tag orbs">${I.orbs} ${orbCount} ORBS</span>` : ''}
+                    ${orbCount > 0 ? `<span class="badge-tag orbs"><img src="${orbImgSrc}" class="discord-orb-icon" alt="Orbs"> <span>${orbCount} ORBS</span></span>` : ''}
                 </div>
                 <div class="quest-name-sub">${questName}</div>
-                <div class="quest-progress-row">
-                    <div class="progress-track">
-                        <div class="progress-fill ${completed || claimed ? 'completed' : ''}" style="width: ${percent}%"></div>
-                    </div>
-                    <span class="progress-text ${completed || claimed ? 'completed' : ''}">${progressTxt}</span>
-                </div>
+                ${progressHtml}
             </div>
             <div class="quest-actions-wrap" id="act-box-${qid}"></div>
         `;
@@ -505,7 +569,7 @@ const DQS = {
             };
             actBox.appendChild(btnClaim);
         } else {
-            // Simulate button
+            // 1. Simulate button
             const btnSim = document.createElement('button');
             btnSim.className = 'btn btn-emerald';
             btnSim.innerHTML = `${I.play} SIMULIEREN`;
@@ -514,7 +578,7 @@ const DQS = {
             };
             actBox.appendChild(btnSim);
 
-            // Video button
+            // 2. Video button
             if (videoUrl) {
                 const btnVid = document.createElement('button');
                 btnVid.className = 'btn btn-secondary';
@@ -525,7 +589,21 @@ const DQS = {
                 actBox.appendChild(btnVid);
             }
 
-            // Enroll button if not yet enrolled
+            // 3. Express button for video quests
+            if (isVideo) {
+                const btnExp = document.createElement('button');
+                btnExp.className = 'btn btn-cyan';
+                btnExp.innerHTML = `${I.autofarm} EXPRESS (5s)`;
+                btnExp.onclick = async () => {
+                    btnExp.innerHTML = `${I.autofarm} LÄUFT...`;
+                    await window.pywebview.api.complete_video_quest(qid, targetSeconds || 30);
+                    btnExp.innerHTML = `${I.check} ERFÜLLT!`;
+                    setTimeout(() => { this.refreshQuests(); }, 2500);
+                };
+                actBox.appendChild(btnExp);
+            }
+
+            // 4. Enroll button if not yet enrolled
             if (!enrolled) {
                 const btnEnroll = document.createElement('button');
                 btnEnroll.className = 'btn btn-blurple';
@@ -579,7 +657,7 @@ const DQS = {
                         <button class="btn btn-secondary" onclick="window.pywebview.api.open_url('${videoUrl}')">
                             ${I.play} 720P HD VIDEO ABSPIELEN
                         </button>
-                        <button class="btn btn-emerald" id="exp-btn-${qid}">
+                        <button class="btn btn-cyan" id="exp-btn-${qid}">
                             ${I.autofarm} EXPRESS-ABSCHLUSS (5s)
                         </button>
                     ` : `
@@ -599,7 +677,8 @@ const DQS = {
                     expBtn.onclick = async () => {
                         expBtn.innerHTML = `${I.autofarm} EXPRESS LÄUFT...`;
                         await window.pywebview.api.complete_video_quest(qid, targetSec);
-                        setTimeout(() => { this.refreshQuests(); }, 4500);
+                        expBtn.innerHTML = `${I.check} ERFÜLLT!`;
+                        setTimeout(() => { this.refreshQuests(); }, 2500);
                     };
                 }
             }
