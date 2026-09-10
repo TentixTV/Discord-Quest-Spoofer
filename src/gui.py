@@ -1136,12 +1136,20 @@ class AutoQuestApp(ctk.CTk):
         try:
             quests = self.api.get_parsed_quests()
             self.cached_quests = quests
-            self.after(0, lambda: self._render_quests(quests))
-            self.after(0, lambda: self._render_videos_tab(quests))
-            self.after(0, lambda: self.log(f"{len(quests)} Quests erfolgreich synchronisiert.", "SUCCESS"))
+            try:
+                if self.winfo_exists():
+                    self.after(0, lambda: self._render_quests(quests))
+                    self.after(0, lambda: self._render_videos_tab(quests))
+                    self.after(0, lambda: self.log(f"{len(quests)} Quests erfolgreich synchronisiert.", "SUCCESS"))
+            except Exception:
+                pass
         except Exception as e:
             err_msg = str(e)
-            self.after(0, lambda m=err_msg: self.log(f"Fehler beim Laden der Quests: {m}", "ERROR"))
+            try:
+                if self.winfo_exists():
+                    self.after(0, lambda m=err_msg: self.log(f"Fehler beim Laden der Quests: {m}", "ERROR"))
+            except Exception:
+                pass
 
     def _render_quests(self, quests):
         for widget in self.quests_scroll.winfo_children():
