@@ -19,7 +19,7 @@
                 <div class="splash-glow-core"></div>
             </div>
             <div class="splash-branding">
-                <h1 class="splash-title">DQS <span class="splash-badge">V5</span></h1>
+                <h1 class="splash-title">DQS <span class="splash-badge">V5.5.0</span></h1>
                 <div class="splash-subtitle">DISCORD QUEST SPOOFER</div>
             </div>
             <div class="splash-status-wrapper">
@@ -40,7 +40,7 @@
     <!-- Custom Frameless Titlebar (Spacious & Clean) -->
     <header id="app-titlebar" class="pywebview-drag-region">
         <div class="titlebar-left">
-            <div class="app-brand-logo">
+            <div class="app-brand-logo no-drag" id="app-logo-trigger" title="DQS Lizenz, Info & GitHub • Klick mich!" style="cursor: pointer;">
                 <img src="DQS.png" alt="DQS" class="brand-img" onerror="this.src='../DQS.png'">
                 <div class="logo-glow"></div>
             </div>
@@ -462,6 +462,144 @@
                         <span id="ico-modal-express"></span> EXPRESS-ABSCHLUSS (5s)
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Official License & Developer Info Modal (DE/EN) -->
+    <div id="license-modal" class="modal-overlay hidden">
+        <div class="modal-box license-modal-box">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <img src="DQS.png" alt="DQS" class="modal-brand-icon" onerror="this.src='../DQS.png'">
+                    <div>
+                        <h3>DQS // LIZENZ & CREDITS</h3>
+                        <span class="modal-subtitle">RELEASE V5.5.0 • OPEN SOURCE INFORMATION</span>
+                    </div>
+                </div>
+                <div class="license-lang-switch">
+                    <button class="lang-btn active" id="btn-license-lang-de" data-lang="de">DEUTSCH</button>
+                    <button class="lang-btn" id="btn-license-lang-en" data-lang="en">ENGLISH</button>
+                </div>
+                <button class="modal-close" id="btn-close-license-modal"></button>
+            </div>
+            <div class="modal-body license-modal-body">
+                <!-- German Language Content -->
+                <div id="license-pane-de" class="license-pane active">
+                    <div class="license-author-banner">
+                        <div class="author-info">
+                            <span class="author-label">Entwickler:</span>
+                            <span class="author-name">Sandro (T3X / TNTIX)</span>
+                        </div>
+                        <div class="repo-info">
+                            <span class="repo-label">Offizielles GitHub-Repository:</span>
+                            <a href="javascript:void(0)" class="github-repo-link" id="link-github-repo-de">
+                                <span id="ico-gh-logo-de"></span> TentixTV/Discord-Quest-Spoofer
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="license-alert warning-box">
+                        <div class="alert-header">
+                            <span class="alert-icon-wrap" id="ico-license-warn-de"></span>
+                            <span class="alert-title">WICHTIGER HINWEIS ZU FAKES, RE-UPLOADS & MALWARE</span>
+                        </div>
+                        <div class="alert-content">
+                            <p>
+                                Moin! Mal ganz ehrlich von Coder zu User: Wenn du diese App oder die <code>DQS_Installer.exe</code> irgendwo anders heruntergeladen hast als direkt von meinem offiziellen GitHub (also z.B. von shady YouTube-Links, Mediafire, TikTok, fremden Discord-Servern oder gecrackten Re-Upload-Seiten) — <strong>dann bist du komplett selber schuld!</strong>
+                            </p>
+                            <p>
+                                Die originalen Releases auf meinem GitHub sind <strong>zu 100% virenfrei, open-source und enthalten keinen Token-Logger, keine Backdoor und keinen Schadcode</strong>. Wer Re-Uploads von irgendwelchen Fremden nutzt und sich dabei Malware einfängt: <strong>Die Schuld liegt einzig und allein bei dir.</strong> Beschwer dich danach nicht bei mir! Hol dir die Software immer direkt und ausschließlich vom offiziellen GitHub!
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="license-alert info-box">
+                        <div class="alert-header">
+                            <span class="alert-icon-wrap" id="ico-license-info-de"></span>
+                            <span class="alert-title">MIT LIZENZ & NUTZUNGSRECHTE</span>
+                        </div>
+                        <div class="alert-content">
+                            <p>
+                                DQS ist unter der <strong>MIT-Lizenz</strong> veröffentlicht und dient nicht-kommerziellen Forschungs-, Test- und Entwicklungszwecken.
+                            </p>
+                            <p>
+                                Code einfach dreist 1:1 zu kopieren oder zu klauen ohne Credits ist ehrenlos — wenn dir das Tool gefällt, supporte das Projekt lieber mit einem <strong>Stern auf GitHub</strong> oder mach einen Pull Request!
+                            </p>
+                            <pre class="mit-license-text">Copyright (c) 2026 Sandro (TentixTV / T3X)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- English Language Content -->
+                <div id="license-pane-en" class="license-pane">
+                    <div class="license-author-banner">
+                        <div class="author-info">
+                            <span class="author-label">Developer:</span>
+                            <span class="author-name">Sandro (T3X / TNTIX)</span>
+                        </div>
+                        <div class="repo-info">
+                            <span class="repo-label">Official GitHub Repository:</span>
+                            <a href="javascript:void(0)" class="github-repo-link" id="link-github-repo-en">
+                                <span id="ico-gh-logo-en"></span> TentixTV/Discord-Quest-Spoofer
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="license-alert warning-box">
+                        <div class="alert-header">
+                            <span class="alert-icon-wrap" id="ico-license-warn-en"></span>
+                            <span class="alert-title">IMPORTANT NOTICE ON FAKES, RE-UPLOADS & MALWARE</span>
+                        </div>
+                        <div class="alert-content">
+                            <p>
+                                Hey there! Real talk from one coder to another: If you downloaded this application or the <code>DQS_Installer.exe</code> from anywhere other than my official GitHub (such as sketchy YouTube descriptions, Mediafire links, TikTok, random Discord servers, or cracked re-upload portals) — <strong>that is completely on you!</strong>
+                            </p>
+                            <p>
+                                The authentic releases on my GitHub are <strong>100% clean, open-source, and contain ZERO token loggers, backdoors, or malicious code</strong>. If you run unofficial clones and get infected with malware: <strong>The fault is yours alone.</strong> Don't come blaming me! Always verify and download the genuine build directly from official GitHub releases!
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="license-alert info-box">
+                        <div class="alert-header">
+                            <span class="alert-icon-wrap" id="ico-license-info-en"></span>
+                            <span class="alert-title">MIT LICENSE & USAGE TERMS</span>
+                        </div>
+                        <div class="alert-content">
+                            <p>
+                                DQS is published under the <strong>MIT License</strong> for non-commercial educational, testing, and development purposes.
+                            </p>
+                            <p>
+                                Stealing or re-branding the code without attribution is dishonorable — if you appreciate this project, drop a <strong>Star on GitHub</strong> or submit a Pull Request!
+                            </p>
+                            <pre class="mit-license-text">Copyright (c) 2026 Sandro (TentixTV / T3X)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer license-footer">
+                <button class="btn btn-outline" id="btn-close-license-modal-footer">SCHLIESSEN</button>
             </div>
         </div>
     </div>

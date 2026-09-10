@@ -133,19 +133,23 @@ class DiscordQuestsAPI:
             task_cfg = cfg.get("task_config_v2") or cfg.get("task_config") or {}
             tasks = task_cfg.get("tasks", {})
             
-            task_type = "UNKNOWN"
+            task_type = "PLAY_ON_DESKTOP"
             target_seconds = 900 # default 15 min
             
-            # Prioritize fast video/mobile tasks over lengthy desktop play
+            # Prioritize tasks: If actual video task exists in tasks, use it
             priority_tasks = ["WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE", "PLAY_ACTIVITY", "PLAY_ON_DESKTOP", "STREAM_ON_DESKTOP"]
             for t_name in priority_tasks:
                 if t_name in tasks:
                     task_type = t_name
                     target_seconds = tasks[t_name].get("target", 900)
                     break
-            if task_type == "UNKNOWN" and tasks:
+            if task_type == "PLAY_ON_DESKTOP" and tasks:
                 task_type = list(tasks.keys())[0]
                 target_seconds = tasks[task_type].get("target", 900)
+
+            # True Video Tasks have actual WATCH_VIDEO or WATCH_VIDEO_ON_MOBILE tasks
+            is_video_task = ("VIDEO" in task_type) or any("VIDEO" in str(k) for k in tasks.keys())
+            is_mobile_task = ("MOBILE" in task_type) or any("MOBILE" in str(k) for k in tasks.keys())
 
             # Extract ALL supported applications (Multi-Game Quest Detection)
             supported_applications = []
@@ -265,30 +269,67 @@ class DiscordQuestsAPI:
                     current_seconds = int(p_dict[task_type]["value"])
                 elif "PLAY_ON_DESKTOP" in p_dict and "value" in p_dict["PLAY_ON_DESKTOP"]:
                     current_seconds = int(p_dict["PLAY_ON_DESKTOP"]["value"])
+                elif "WATCH_VIDEO" in p_dict and "value" in p_dict["WATCH_VIDEO"]:
+                    current_seconds = int(p_dict["WATCH_VIDEO"]["value"])
+                elif "WATCH_VIDEO_ON_MOBILE" in p_dict and "value" in p_dict["WATCH_VIDEO_ON_MOBILE"]:
+                    current_seconds = int(p_dict["WATCH_VIDEO_ON_MOBILE"]["value"])
 
             if user_status and user_status.get("stream_progress_seconds"):
                 current_seconds = max(current_seconds, int(user_status["stream_progress_seconds"]))
 
             progress_percent = min(100.0, (current_seconds / target_seconds * 100.0)) if target_seconds > 0 else 0.0
 
-            # Rewards
+            # Comprehensive Rewards Parsing (Orbs, Avatar Decorations, In-Game Items / Codes / Skins)
             rewards = cfg.get("rewards_config", {}).get("rewards", [])
             orb_count = 0
             reward_names = []
+            primary_reward_type = "ORBS" if any("orb_quantity" in rw for rw in rewards) else "ITEM"
+            primary_reward_name = ""
+            reward_asset_url = None
+            reward_instructions = ""
+
             for rw in rewards:
+                rw_type = rw.get("type")
+                rw_name = rw.get("messages", {}).get("name") or rw.get("messages", {}).get("name_with_article") or ""
                 if "orb_quantity" in rw:
                     orb_count += int(rw["orb_quantity"])
                     reward_names.append(f"{rw['orb_quantity']} Orbs")
-                elif "messages" in rw and "name" in rw["messages"]:
-                    reward_names.append(rw["messages"]["name"])
+                    if not primary_reward_name:
+                        primary_reward_name = f"{rw['orb_quantity']} Orbs"
+                        primary_reward_type = "ORBS"
+                elif rw_type == 3 or "avatar" in rw_name.lower() or "deko" in rw_name.lower():
+                    # Avatar Decoration
+                    reward_names.append(rw_name or "Avatardekoration")
+                    primary_reward_name = rw_name or "Avatardekoration"
+                    primary_reward_type = "AVATAR_DECO"
+                elif rw_type == 1 or "code" in rw_name.lower() or "paket" in rw_name.lower() or "skin" in rw_name.lower() or "boost" in rw_name.lower():
+                    # In-Game Item / Promo Code / Weapon Skin
+                    reward_names.append(rw_name or "In-Game Belohnung")
+                    primary_reward_name = rw_name or "In-Game Belohnung"
+                    primary_reward_type = "INGAME_ITEM"
+                elif rw_name:
+                    reward_names.append(rw_name)
+                    if not primary_reward_name:
+                        primary_reward_name = rw_name
 
-            # Media Assets (Hero Image, Trailer / Quest Video)
+                if rw.get("asset"):
+                    reward_asset_url = f"https://cdn.discordapp.com/{rw['asset']}"
+                
+                # Check redemption instructions
+                instr_dict = rw.get("messages", {}).get("redemption_instructions_by_platform", {})
+                if instr_dict and isinstance(instr_dict, dict):
+                    reward_instructions = list(instr_dict.values())[0]
+
+            if not primary_reward_name:
+                primary_reward_name = ", ".join(reward_names) if reward_names else "Belohnung"
+
+            # Media Assets (Hero Image, Trailer / Preview Video)
             assets = cfg.get("assets", {})
             hero_asset = assets.get("hero") or assets.get("quest_bar_hero")
             video_asset = assets.get("hero_video") or assets.get("quest_bar_hero_video")
             hero_url = f"https://cdn.discordapp.com/{hero_asset}" if hero_asset else None
             video_url = f"https://cdn.discordapp.com/{video_asset}" if video_asset else None
-            has_video = (video_url is not None) or ("VIDEO" in task_type)
+            has_trailer = video_url is not None
 
             parsed.append({
                 "id": qid,
@@ -312,65 +353,135 @@ class DiscordQuestsAPI:
                 "completed": completed,
                 "claimed": claimed,
                 "orb_count": orb_count,
+                "primary_reward_type": primary_reward_type,
+                "primary_reward_name": primary_reward_name,
+                "reward_asset_url": reward_asset_url,
+                "reward_instructions": reward_instructions,
                 "rewards_text": ", ".join(reward_names) if reward_names else "Belohnung",
                 "expires_at": expires_str,
                 "hero_url": hero_url,
                 "video_url": video_url,
-                "has_video": has_video,
+                "trailer_url": video_url,
+                "has_trailer": has_trailer,
+                "has_video": is_video_task,
+                "is_video_task": is_video_task,
+                "is_mobile_task": is_mobile_task,
                 "raw_quest": q
             })
 
         return parsed
 
-    def enroll_quest(self, quest_id: str, location: int = 1) -> bool:
+    def enroll_quest(self, quest_id: str, location: int = 11) -> bool:
         """Enrolls the account into the specified quest."""
         url = f"https://discord.com/api/v9/quests/{quest_id}/enroll"
-        r = requests.post(url, headers=get_headers(self.token), json={"location": location}, timeout=10)
-        return r.status_code in (200, 204)
-
-    def claim_reward(self, quest_id: str, platform: int = 0) -> Dict[str, Any]:
-        """Claims the completed quest reward."""
-        url = f"https://discord.com/api/v9/quests/{quest_id}/claim"
-        r = requests.post(url, headers=get_headers(self.token), json={"platform": platform}, timeout=10)
-        if r.status_code == 200:
-            return {"success": True, "data": r.json()}
-        return {"success": False, "error": r.text, "status": r.status_code}
-
-    def complete_video_quest(self, quest_id: str, target_seconds: int = 30, callback=None) -> bool:
-        """Fast-completes video-based Discord quests with auto-enrollment and stream simulation."""
+        payload = {"location": location, "is_targeted": False, "metadata_sealed": None}
         try:
-            self.enroll_quest(quest_id)
+            r = requests.post(url, headers=get_headers(self.token), json=payload, timeout=8)
+            if r.status_code in (200, 204):
+                return True
         except Exception:
             pass
+        try:
+            r = requests.post(url, headers=get_headers(self.token), json={"location": 1}, timeout=8)
+            return r.status_code in (200, 204)
+        except Exception:
+            return False
+
+    def claim_reward(self, quest_id: str, platform: int = 0) -> Dict[str, Any]:
+        """Claims completed quest reward via /claim-reward and /claim endpoints."""
+        payload = {
+            "platform": platform,
+            "location": 11 if platform == 0 else 2,
+            "is_targeted": False,
+            "metadata_sealed": None
+        }
+
+        # Try /claim-reward first (standard modern Discord web/desktop endpoint)
+        url1 = f"https://discord.com/api/v9/quests/{quest_id}/claim-reward"
+        try:
+            r = requests.post(url1, headers=get_headers(self.token), json=payload, timeout=8)
+            if r.status_code in (200, 201):
+                data = r.json()
+                code = data.get("code") or data.get("claim_code") or (data.get("reward") or {}).get("code")
+                return {"success": True, "data": data, "code": code}
+        except Exception:
+            pass
+
+        # Fallback to /claim endpoint
+        url2 = f"https://discord.com/api/v9/quests/{quest_id}/claim"
+        try:
+            r = requests.post(url2, headers=get_headers(self.token), json={"platform": platform}, timeout=8)
+            if r.status_code in (200, 201):
+                data = r.json()
+                code = data.get("code") or data.get("claim_code") or (data.get("reward") or {}).get("code")
+                return {"success": True, "data": data, "code": code}
+            return {"success": False, "error": r.text, "status": r.status_code}
+        except Exception as e:
+            return {"success": False, "error": str(e), "status": 500}
+
+    def complete_video_quest(self, quest_id: str, target_seconds: int = 30, is_mobile: bool = False, callback=None) -> Dict[str, Any]:
+        """Fast-completes video-based Discord quests with auto-enrollment, mobile simulation, and claim."""
+        loc = 2 if is_mobile else 11
+        try:
+            self.enroll_quest(quest_id, location=loc)
+        except Exception:
+            try:
+                self.enroll_quest(quest_id, location=1)
+            except Exception:
+                pass
 
         url = f"https://discord.com/api/v9/quests/{quest_id}/video-progress"
         ts = max(30, int(target_seconds or 30))
 
-        # Fast stepping (4 steps over ~1.2s for smooth UI feedback)
-        steps = [round(ts * 0.25), round(ts * 0.5), round(ts * 0.75), ts]
+        mobile_headers = get_headers(self.token)
+        if is_mobile:
+            mobile_headers["User-Agent"] = "Discord-Android/220.18 (Android; 14; Mobile; Pixel 8)"
+            mobile_headers["X-Discord-Platform"] = "android"
+
+        steps = [
+            round(ts * 0.25, 4),
+            round(ts * 0.50, 4),
+            round(ts * 0.75, 4),
+            float(ts)
+        ]
+
+        last_resp = None
         for s in steps:
             if callback:
-                callback(s, ts)
+                callback(int(s), ts)
             try:
-                r = requests.post(url, headers=get_headers(self.token), json={"timestamp": s}, timeout=4)
+                headers = mobile_headers if is_mobile else get_headers(self.token)
+                r = requests.post(url, headers=headers, json={"timestamp": s}, timeout=5)
                 if r.status_code == 200:
-                    data = r.json()
-                    if data.get("completed_at") or (isinstance(data.get("user_status"), dict) and data["user_status"].get("completed_at")):
+                    last_resp = r.json()
+                    if last_resp.get("completed_at") or (isinstance(last_resp.get("user_status"), dict) and last_resp["user_status"].get("completed_at")):
                         break
-                elif r.status_code == 404:
-                    # Not a native video endpoint; break immediately without hanging
-                    break
+                elif r.status_code in (400, 404) and is_mobile:
+                    r2 = requests.post(url, headers=get_headers(self.token), json={"timestamp": s}, timeout=5)
+                    if r2.status_code == 200:
+                        last_resp = r2.json()
             except Exception:
                 pass
-            time.sleep(0.3)
+            time.sleep(0.35)
 
-        # Attempt claim immediately upon express completion
+        time.sleep(1)
+        claim_res = self.claim_reward(quest_id, platform=2 if is_mobile else 0)
+        return {"completed": True, "claim": claim_res}
+
+    def send_activity_heartbeat(self, quest_id: str, app_id: str = "", terminal: bool = False) -> Dict[str, Any]:
+        """Sends an activity participation heartbeat to Discord."""
+        url = f"https://discord.com/api/v9/quests/{quest_id}/heartbeat"
+        body = {
+            "application_id": str(app_id or ""),
+            "terminal": terminal
+        }
         try:
-            self.claim_reward(quest_id)
-        except Exception:
-            pass
-
-        return True
+            r = requests.post(url, headers=get_headers(self.token), json=body, timeout=8)
+            if r.status_code == 200:
+                return {"success": True, "data": r.json()}
+            return {"success": False, "status": r.status_code, "error": r.text}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     def get_application_executables(self, app_id: str) -> List[str]:
         """Fetches official Windows executable names for an application from Discord."""

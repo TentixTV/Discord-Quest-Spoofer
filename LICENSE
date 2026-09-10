@@ -1,47 +1,45 @@
-PROPRIETARY SOFTWARE LICENSE & TERMS OF USE
-DQS - DISCORD QUEST SPOOFER (V3)
+MIT LICENSE & USAGE TERMS
+DQS - DISCORD QUEST SPOOFER (RELEASE V5.5.0)
 Copyright (c) 2026 Sandro (T3X / TNTIX). All Rights Reserved.
 Official Repository: https://github.com/TentixTV/Discord-Quest-Spoofer
 
 ================================================================================
-1. GRANT OF LICENSE
+1. MIT LICENSE GRANT
 ================================================================================
-This software application ('DQS' or 'Software') is proprietary software created
-and owned by Sandro (also known as T3X / TNTIX). Subject to the terms of this
-License, you are granted a personal, revocable, non-exclusive, non-transferable
-license to run and use the compiled binary executable of this Software solely
-for personal automation and testing purposes.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
 ================================================================================
-2. RESTRICTIONS ON REVERSE ENGINEERING & REDISTRIBUTION
+2. CODER-TO-CODER NOTICE / WICHTIGER SICHERHEITSHINWEIS
 ================================================================================
-You explicitly agree NOT to:
-  (a) Decompile, disassemble, reverse engineer, decrypt, or extract source code
-      or underlying architecture from the Software binaries.
-  (b) Modify, adapt, translate, or create derivative works based upon the Software.
-  (c) Resell, rent, lease, sublicense, commercialize, or charge fees for the
-      Software or any derivative work thereof.
-  (d) Distribute infected, cracked, modified, or repackaged versions under the
-      name DQS, T3X, or TNTIX.
+Moin! Mal ganz ehrlich von Coder zu User:
+Das offizielle DQS Release von Sandro (T3X / TNTIX) auf GitHub ist zu 100% virenfrei,
+enthält KEINE Backdoors, KEIN Phishing und KEINE Token-Logger.
 
-================================================================================
-3. OFFICIAL SOURCE & SECURITY DISCLAIMER (WICHTIGER SICHERHEITSHINWEIS)
-================================================================================
-The ONLY genuine, safe, and verified distribution channel for this Software is:
+Wenn du diese App oder die DQS_Installer.exe irgendwo anders heruntergeladen hast
+als direkt von meinem offiziellen GitHub (z.B. unseriöse YouTube-Beschreibungen,
+Mediafire, TikTok, fremde Discord-Server oder gecrackte Re-Upload-Seiten):
+-> DANN BIST DU KOMPLETT SELBER SCHULD!
+
+Wer re-uploadeten Müll von Fremden startet und sich Malware fängt:
+Die Schuld liegt einzig und allein bei dir. Beschwer dich danach nicht bei mir!
+Hol dir die Software immer direkt und ausschließlich vom offiziellen GitHub:
     https://github.com/TentixTV/Discord-Quest-Spoofer
 
-ACHTUNG / WARNING:
-Wenn die Software nicht direkt über das offizielle GitHub-Repository von TentixTV
-heruntergeladen wurde, haftet der Urheber NICHT für manipulierte Kopien oder
-Schadsoftware von Drittanbietern. Das Original von Sandro (T3X / TNTIX) ist zu
-100% frei von Viren, Backdoors oder Token-Loggern. Wer Dateien von fremden Quellen
-bezieht, handelt auf eigene Verantwortung ('Wer es woanders her hat, ist selber schuld').
-
 ================================================================================
-4. DISCLAIMER OF WARRANTY
+3. DISCLAIMER OF WARRANTY
 ================================================================================
-THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, ACCOUNT SUSPENSION, OR OTHER LIABILITY
-ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE THEREOF.
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

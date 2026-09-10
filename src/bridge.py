@@ -168,7 +168,7 @@ class DQSBridge:
             pass
         return True
 
-    def complete_video_quest(self, quest_id, target_seconds=30):
+    def complete_video_quest(self, quest_id, target_seconds=30, is_mobile=False):
         if not self._api and self._current_user:
             self._api = DiscordQuestsAPI(self._current_user["token"])
         if not self._api:
@@ -179,12 +179,20 @@ class DQSBridge:
                 if self._window:
                     self._window.evaluate_js(f"window.onExpressProgress && window.onExpressProgress('{quest_id}', {pct});")
 
-            ok = self._api.complete_video_quest(quest_id, target_seconds=target_seconds, callback=_cb)
-            claim_res = self._api.claim_reward(quest_id)
+            res_obj = self._api.complete_video_quest(quest_id, target_seconds=target_seconds, is_mobile=is_mobile, callback=_cb)
             self.play_success_sound()
-            return {"success": True, "claim": claim_res}
+            return {"success": True, "claim": res_obj.get("claim")}
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    def open_external_url(self, url: str):
+        try:
+            if url and (url.startswith("http://") or url.startswith("https://")):
+                webbrowser.open(url)
+                return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+        return {"success": False}
 
     def enroll_all_quests(self):
         if not self._api:

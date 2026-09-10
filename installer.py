@@ -137,7 +137,7 @@ class DQSInstaller(ctk.CTk):
         lbl_title.pack(anchor="w")
 
         lbl_sub = ctk.CTkLabel(
-            title_sub, text="DISCORD QUEST SPOOFER • RELEASE V3",
+            title_sub, text="DISCORD QUEST SPOOFER • RELEASE V5.5.0",
             font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
             text_color=COLOR_TEXT_MUTED
         )

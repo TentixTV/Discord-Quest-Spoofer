@@ -45,8 +45,7 @@ def calculate_quests_duration(quests: List[Dict[str, Any]]) -> Dict[str, Any]:
         open_count += 1
         task_type = q.get("task_type", "UNKNOWN")
         target_sec = q.get("target_seconds", 900)
-        curr_sec = q.get("current_seconds", 0)
-        is_video = task_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE", "PLAY_ACTIVITY") or bool(q.get("has_video"))
+        is_video = bool(q.get("is_video_task")) or task_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE")
         
         if q.get("completed"):
             continue
@@ -152,19 +151,23 @@ class QuestFarmer:
             task_type = q["task_type"]
             target_sec = q.get("target_seconds", 900)
             curr_sec = q.get("current_seconds", 0)
-            reward_desc = q["rewards_text"]
+            reward_desc = q.get("primary_reward_name") or q.get("rewards_text") or "Belohnung"
             orb_amount = q.get("orb_count", 0)
-            is_video_task = task_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE", "PLAY_ACTIVITY") or bool(q.get("has_video"))
+            reward_type = q.get("primary_reward_type", "ITEM")
+            
+            is_video_task = bool(q.get("is_video_task")) or task_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE")
+            is_mobile_task = bool(q.get("is_mobile_task")) or ("MOBILE" in task_type)
             needed_this_quest = 10 if is_video_task else max(0, target_sec - curr_sec)
 
             self.log(f"--------------------------------------------------", "TIME")
             self.log(f"[{idx}/{total_count}] Starte Quest: '{qname}' ({game_title})", "INFO")
-            self.log(f"Dauer dieser Quest: {format_duration(needed_this_quest)} | Verbleibende Gesamtdauer: {format_duration(get_queue_remaining(idx, needed_this_quest))}", "INFO")
+            self.log(f"Belohnung: {reward_desc} ({reward_type}) | Dauer: {format_duration(needed_this_quest)}", "INFO")
 
             # 1. Einschreiben falls noch nicht geschehen
             if not q.get("enrolled"):
                 self.log(f"Schreibe Account in '{qname}' ein...", "INFO")
-                enrolled = self.api.enroll_quest(qid)
+                loc = 2 if is_mobile_task else 11
+                enrolled = self.api.enroll_quest(qid, location=loc)
                 if enrolled:
                     self.log(f"Account erfolgreich eingeschrieben!", "SUCCESS")
                     q["enrolled"] = True
@@ -174,9 +177,15 @@ class QuestFarmer:
             # 2. Prüfen ob bereits 100% fertig, aber noch nicht geclaimt
             if q.get("completed") and not q.get("claimed"):
                 self.log(f"Quest bereits erfuellt! Hole Belohnung ab...", "SUCCESS")
-                res = self.api.claim_reward(qid)
+                res = self.api.claim_reward(qid, platform=2 if is_mobile_task else 0)
                 if res.get("success"):
-                    self.log(f"[ERFOLG] Belohnung '{reward_desc}' erfolgreich erhalten!", "SUCCESS")
+                    code = res.get("code")
+                    if reward_type == "AVATAR_DECO":
+                        self.log(f"[ERFOLG] Avatar-Dekoration '{reward_desc}' dauerhaft freigeschaltet!", "SUCCESS")
+                    elif code:
+                        self.log(f"[ERFOLG] In-Game Item erhalten! Freischalt-Code: {code}", "SUCCESS")
+                    else:
+                        self.log(f"[ERFOLG] Belohnung '{reward_desc}' erfolgreich erhalten!", "SUCCESS")
                     total_orbs_gained += orb_amount
                     q["claimed"] = True
                     play_beep(0)
@@ -184,7 +193,8 @@ class QuestFarmer:
 
             # 3. Task ausführen
             if is_video_task:
-                self.log(f"Video/Express-Aufgabe erkannt ({format_duration(10)}). Führe Sofortabschluss aus...", "INFO")
+                mode_label = "Mobilgerät (Android-Simulation)" if is_mobile_task else "Video-Stream"
+                self.log(f"{mode_label}-Aufgabe erkannt ({format_duration(10)}). Führe Express-Abschluss aus...", "INFO")
                 def video_cb(c, t):
                     pct = (c / t) * 100.0
                     self.log(f"Video-Fortschritt: {c}/{t}s ({pct:.0f}%)", "INFO")
@@ -204,17 +214,41 @@ class QuestFarmer:
                             "overall_duration_text": format_duration(overall_rem)
                         })
 
-                ok = self.api.complete_video_quest(qid, target_sec, video_cb)
-                if ok:
-                    self.log(f"Video abgeschlossen! Fordere Belohnung an...", "SUCCESS")
-                    time.sleep(2)
-                    res = self.api.claim_reward(qid)
-                    if res.get("success"):
-                        self.log(f"[ERFOLG] Belohnung '{reward_desc}' abgeholt!", "SUCCESS")
-                        total_orbs_gained += orb_amount
-                        play_beep(0)
+                res_obj = self.api.complete_video_quest(qid, target_sec, is_mobile=is_mobile_task, callback=video_cb)
+                claim_res = res_obj.get("claim", {})
+                if claim_res.get("success"):
+                    code = claim_res.get("code")
+                    if reward_type == "AVATAR_DECO":
+                        self.log(f"[ERFOLG] Avatar-Dekoration '{reward_desc}' erfolgreich freigeschaltet!", "SUCCESS")
+                    elif code:
+                        self.log(f"[ERFOLG] Belohnung erhalten! Freischalt-Code: {code}", "SUCCESS")
+                    else:
+                        self.log(f"[ERFOLG] Belohnung '{reward_desc}' erfolgreich abgeholt!", "SUCCESS")
+                    total_orbs_gained += orb_amount
+                    play_beep(0)
                 else:
-                    self.log(f"Video-Abschluss fehlgeschlagen.", "ERROR")
+                    self.log(f"Video-Abschluss übermittelt. Prüfe Status im Quests-Tab.", "INFO")
+
+            elif task_type == "PLAY_ACTIVITY":
+                self.log(f"Discord Activity erkannt ('{game_title}'). Sende Aktivitäts-Heartbeats...", "INFO")
+                needed_seconds = max(0, target_sec - curr_sec)
+                simulated = 0
+                while simulated < needed_seconds and self.running:
+                    time.sleep(15)
+                    simulated += 15
+                    self.api.send_activity_heartbeat(qid, app_id, terminal=(simulated >= needed_seconds))
+                    self.log(f"Activity-Heartbeat gesendet: {min(simulated, needed_seconds)}/{needed_seconds}s...", "INFO")
+                claim_res = self.api.claim_reward(qid)
+                if claim_res.get("success"):
+                    code = claim_res.get("code")
+                    if reward_type == "AVATAR_DECO":
+                        self.log(f"[ERFOLG] Avatar-Dekoration '{reward_desc}' freigeschaltet!", "SUCCESS")
+                    elif code:
+                        self.log(f"[ERFOLG] Item-Code erhalten: {code}", "SUCCESS")
+                    else:
+                        self.log(f"[ERFOLG] Activity-Belohnung '{reward_desc}' freigeschaltet!", "SUCCESS")
+                    total_orbs_gained += orb_amount
+                    play_beep(0)
 
             else:
                 # Desktop Game Simulation
@@ -286,7 +320,13 @@ class QuestFarmer:
                     time.sleep(3)
                     claim_res = self.api.claim_reward(qid)
                     if claim_res.get("success"):
-                        self.log(f"[ERFOLG] Belohnung '{reward_desc}' erhalten!", "SUCCESS")
+                        code = claim_res.get("code")
+                        if reward_type == "AVATAR_DECO":
+                            self.log(f"[ERFOLG] Avatar-Dekoration '{reward_desc}' erfolgreich freigeschaltet!", "SUCCESS")
+                        elif code:
+                            self.log(f"[ERFOLG] In-Game Item '{reward_desc}' erhalten! Dein Freischalt-Code: {code}", "SUCCESS")
+                        else:
+                            self.log(f"[ERFOLG] Belohnung '{reward_desc}' erhalten!", "SUCCESS")
                         total_orbs_gained += orb_amount
                         play_beep(0)
                     else:

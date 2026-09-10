@@ -4,7 +4,7 @@
  * 100% Emoji-free, Ultra-crisp High-DPI SVGs, Animated Discord Orbs
  */
 
-// ================= 1. 3D INTERACTIVE PARTICLE CANVAS =================
+// ================= 1. HIGH-END 3D COSMIC PARTICLE CANVAS =================
 (function init3DParticleCanvas() {
     const canvas = document.getElementById('bg-canvas');
     if (!canvas) return;
@@ -26,39 +26,41 @@
         mouseY = e.clientY;
     });
 
-    const nodeCount = 45;
+    const nodeCount = 55;
     const nodes = [];
     const colors = [
         'rgba(88, 101, 242, ', // Blurple
-        'rgba(147, 51, 234, ', // Purple
-        'rgba(35, 165, 90, ',  // Emerald
-        'rgba(56, 189, 248, ', // Cyan
-        'rgba(254, 231, 92, '  // Gold
+        'rgba(6, 182, 212, ',  // Cyan
+        'rgba(168, 85, 247, ', // Purple
+        'rgba(34, 197, 94, ',  // Emerald
+        'rgba(250, 204, 21, '  // Gold
     ];
 
     for (let i = 0; i < nodeCount; i++) {
         nodes.push({
             x: Math.random() * w,
             y: Math.random() * h,
-            z: Math.random() * 400 + 100, // 3D depth
-            radius: Math.random() * 2 + 1,
+            z: Math.random() * 450 + 80, // 3D depth
+            radius: Math.random() * 2.2 + 0.8,
             color: colors[Math.floor(Math.random() * colors.length)],
-            vx: (Math.random() - 0.5) * 0.4,
-            vy: (Math.random() - 0.5) * 0.4
+            vx: (Math.random() - 0.5) * 0.45,
+            vy: (Math.random() - 0.5) * 0.45,
+            pulse: Math.random() * Math.PI
         });
     }
 
     function render() {
         ctx.clearRect(0, 0, w, h);
-        const fov = 350;
+        const fov = 380;
 
         for (let i = 0; i < nodeCount; i++) {
             const n = nodes[i];
             n.x += n.vx;
             n.y += n.vy;
+            n.pulse += 0.025;
 
-            const dx = (mouseX - w / 2) * 0.02;
-            const dy = (mouseY - h / 2) * 0.02;
+            const dx = (mouseX - w / 2) * 0.025;
+            const dy = (mouseY - h / 2) * 0.025;
 
             if (n.x < 0) n.x = w;
             if (n.x > w) n.x = 0;
@@ -68,29 +70,31 @@
             const scale = fov / (fov + n.z);
             const projX = (n.x - w / 2 + dx) * scale + w / 2;
             const projY = (n.y - h / 2 + dy) * scale + h / 2;
-            const projRadius = n.radius * scale;
+            const pulseScale = 1 + Math.sin(n.pulse) * 0.25;
+            const projRadius = Math.max(0.6, n.radius * scale * pulseScale);
 
             ctx.beginPath();
-            ctx.arc(projX, projY, Math.max(0.5, projRadius), 0, Math.PI * 2);
-            ctx.fillStyle = n.color + '0.7)';
-            ctx.shadowBlur = 8 * scale;
+            ctx.arc(projX, projY, projRadius, 0, Math.PI * 2);
+            ctx.fillStyle = n.color + '0.75)';
+            ctx.shadowBlur = 10 * scale;
             ctx.shadowColor = n.color + '0.9)';
             ctx.fill();
 
+            // Connect nearest nodes
             for (let j = i + 1; j < nodeCount; j++) {
                 const n2 = nodes[j];
                 const dist = Math.hypot(n.x - n2.x, n.y - n2.y);
-                if (dist < 110) {
+                if (dist < 125) {
                     const scale2 = fov / (fov + n2.z);
                     const projX2 = (n2.x - w / 2 + dx) * scale2 + w / 2;
                     const projY2 = (n2.y - h / 2 + dy) * scale2 + h / 2;
 
-                    const alpha = (1 - dist / 110) * 0.25;
+                    const alpha = (1 - dist / 125) * 0.28;
                     ctx.beginPath();
                     ctx.moveTo(projX, projY);
                     ctx.lineTo(projX2, projY2);
                     ctx.strokeStyle = `rgba(88, 101, 242, ${alpha})`;
-                    ctx.lineWidth = 0.75 * scale;
+                    ctx.lineWidth = 0.8 * scale;
                     ctx.stroke();
                 }
             }
@@ -120,6 +124,7 @@ const DQS = {
         this.setupSimulator();
         this.setupConsoleTab();
         this.setupVideoModal();
+        this.setupLicenseModal();
 
         // Load data from bridge
         await this.loadCurrentUser();
@@ -236,6 +241,15 @@ const DQS = {
         setHtml('ico-modal-video', I.video);
         setHtml('btn-close-video-modal', I.close);
         setHtml('ico-modal-express', I.autofarm);
+
+        // License & Security Modal
+        setHtml('ico-license-warn-de', I.shield);
+        setHtml('ico-license-info-de', I.quest);
+        setHtml('ico-gh-logo-de', I.github);
+        setHtml('btn-close-license-modal', I.close);
+        setHtml('ico-license-warn-en', I.shield);
+        setHtml('ico-license-info-en', I.quest);
+        setHtml('ico-gh-logo-en', I.github);
     },
 
     // --- Render Discord Badges (Base64 Guaranteed) ---
@@ -558,7 +572,11 @@ const DQS = {
         const orbCount = q.orb_count || 0;
         const appId = q.app_id || '';
         const videoUrl = q.video_url;
-        const isVideo = videoUrl || taskType.includes('VIDEO') || q.has_video;
+        const isVideo = Boolean(q.is_video_task || taskType.includes('WATCH_VIDEO'));
+        const isMobile = Boolean(q.is_mobile_task || taskType.includes('MOBILE'));
+        const hasTrailer = Boolean(q.has_trailer && q.trailer_url);
+        const rewardType = q.primary_reward_type || 'ITEM';
+        const rewardName = q.primary_reward_name || q.rewards_text || '';
         const isMultiGame = Boolean(q.is_multi_game && q.supported_applications && q.supported_applications.length > 1);
 
         // Tile source: Base64 first, fallback to HTTP/file
@@ -569,7 +587,12 @@ const DQS = {
         const orbImgSrc = window.DQS_EMBEDDED_ASSETS?.animated_orb || 'assets/discord_orbs_animated.gif';
 
         const taskIcon = isVideo ? I.video : I.gamepad;
-        const taskLabel = isVideo ? 'Video-Quest' : `${Math.round(targetSeconds / 60)} Min. Spielzeit`;
+        let taskLabel = `${Math.round(targetSeconds / 60)} Min. Spielzeit`;
+        if (isVideo) {
+            taskLabel = isMobile ? 'Mobilgerät Video' : 'Video-Quest';
+        } else if (taskType === 'PLAY_ACTIVITY') {
+            taskLabel = 'Discord Activity';
+        }
 
         const curMin = Math.floor(currentSeconds / 60);
         const tgtMin = Math.round(targetSeconds / 60);
@@ -635,6 +658,13 @@ const DQS = {
             `;
         }
 
+        let rewardBadgeHtml = '';
+        if (rewardType === 'AVATAR_DECO') {
+            rewardBadgeHtml = `<span class="badge-tag avatar-deco">${I.gift} AVATAR-DEKO: <strong>${rewardName}</strong></span>`;
+        } else if (rewardType === 'INGAME_ITEM') {
+            rewardBadgeHtml = `<span class="badge-tag ingame-item">${I.gift} ITEM/SKIN: <strong>${rewardName}</strong></span>`;
+        }
+
         card.innerHTML = `
             <div class="quest-tile-wrap">
                 <img src="${tileSrc}" alt="${gameTitle}" class="quest-tile-img" onerror="if(window.DQS_EMBEDDED_ASSETS?.tiles?.['${qid}']) this.src=window.DQS_EMBEDDED_ASSETS.tiles['${qid}']; else this.src='DQS.png';">
@@ -643,6 +673,8 @@ const DQS = {
                 <div class="quest-header-row">
                     <span class="quest-game-title">${gameTitle}</span>
                     <span class="badge-tag task">${taskIcon} ${taskLabel}</span>
+                    ${rewardBadgeHtml}
+                    ${isMobile ? `<span class="badge-tag mobile-task">${I.gamepad} MOBILGERÄT (ANDROID)</span>` : ''}
                     ${isMultiGame ? `<span class="badge-tag multi">${I.gamepad} MULTI-GAME (${q.supported_applications.length})</span>` : ''}
                     <span class="badge-tag required-game">${I.gamepad} BENÖTIGT: <strong class="req-game-name">${q.required_game_name || gameTitle}</strong></span>
                     ${!isVideo && q.required_exe ? `<span class="badge-tag process-exe">PROZESS: <code class="req-exe-name">${q.required_exe}</code></span>` : ''}
@@ -687,47 +719,65 @@ const DQS = {
             btnClaim.innerHTML = `${I.gift} BELOHNUNG ABHOLEN`;
             btnClaim.onclick = async () => {
                 btnClaim.innerHTML = `Löst ein...`;
-                await window.pywebview.api.claim_quest(qid);
+                const res = await window.pywebview.api.claim_quest(qid);
+                if (res && res.code) {
+                    try {
+                        await navigator.clipboard.writeText(res.code);
+                    } catch (err) {}
+                    alert(`In-Game Belohnung freigeschaltet!\n\nFreischalt-Code: ${res.code}\n(Code wurde automatisch in die Zwischenablage kopiert!)`);
+                } else if (rewardType === 'AVATAR_DECO') {
+                    alert(`Avatar-Dekoration "${rewardName}" erfolgreich und dauerhaft in deinem Discord-Inventar freigeschaltet!`);
+                }
                 this.refreshQuests();
             };
             actBox.appendChild(btnClaim);
         } else {
-            // 1. Simulate button
-            const btnSim = document.createElement('button');
-            btnSim.className = 'btn btn-emerald';
-            btnSim.innerHTML = `${I.play} SIMULIEREN`;
-            btnSim.onclick = () => {
-                const targetAppId = q.selected_app?.id || q.required_app_id || appId;
-                const targetTitle = q.selected_app?.name || q.required_game_name || q.sim_game_title || gameTitle;
-                const targetExe = q.selected_app?.exe || q.required_exe || '';
-                this.simulateQuest(targetAppId, targetTitle, targetExe);
-            };
-            actBox.appendChild(btnSim);
-
-            // 2. Video button
-            if (videoUrl) {
-                const btnVid = document.createElement('button');
-                btnVid.className = 'btn btn-secondary';
-                btnVid.innerHTML = `${I.video} VIDEO ANSCHAUEN`;
-                btnVid.onclick = () => {
-                    this.openVideoModal(qid, gameTitle, questName, videoUrl, targetSeconds);
-                };
-                actBox.appendChild(btnVid);
-            }
-
-            // 3. Express button for video quests
+            // 1. If it's a real video task
             if (isVideo) {
                 const btnExp = document.createElement('button');
                 btnExp.id = `btn-exp-${qid}`;
                 btnExp.className = 'btn btn-cyan';
-                btnExp.innerHTML = `${I.autofarm} EXPRESS (5s)`;
+                btnExp.innerHTML = `${I.autofarm} ${isMobile ? 'EXPRESS (MOBIL)' : 'EXPRESS (5s)'}`;
                 btnExp.onclick = () => {
-                    this.startExpressQuest(qid, targetSeconds || 30, gameTitle);
+                    this.startExpressQuest(qid, targetSeconds || 30, gameTitle, isMobile);
                 };
                 actBox.appendChild(btnExp);
+
+                if (videoUrl) {
+                    const btnVid = document.createElement('button');
+                    btnVid.className = 'btn btn-secondary';
+                    btnVid.innerHTML = `${I.video} VIDEO ANSCHAUEN`;
+                    btnVid.onclick = () => {
+                        this.openVideoModal(qid, gameTitle, questName, videoUrl, targetSeconds);
+                    };
+                    actBox.appendChild(btnVid);
+                }
+            } else {
+                // Desktop Game Simulation
+                const btnSim = document.createElement('button');
+                btnSim.className = 'btn btn-emerald';
+                btnSim.innerHTML = `${I.play} SIMULIEREN`;
+                btnSim.onclick = () => {
+                    const targetAppId = q.selected_app?.id || q.required_app_id || appId;
+                    const targetTitle = q.selected_app?.name || q.required_game_name || q.sim_game_title || gameTitle;
+                    const targetExe = q.selected_app?.exe || q.required_exe || '';
+                    this.simulateQuest(targetAppId, targetTitle, targetExe);
+                };
+                actBox.appendChild(btnSim);
+
+                // Trailer preview button if game has promotional video
+                if (hasTrailer && q.trailer_url) {
+                    const btnTrailer = document.createElement('button');
+                    btnTrailer.className = 'btn btn-trailer-watch';
+                    btnTrailer.innerHTML = `${I.video} TRAILER`;
+                    btnTrailer.onclick = () => {
+                        this.openVideoModal(qid, gameTitle, `${questName} (Trailer)`, q.trailer_url, 30);
+                    };
+                    actBox.appendChild(btnTrailer);
+                }
             }
 
-            // 4. Enroll button if not yet enrolled
+            // Enroll button if not yet enrolled
             if (!enrolled) {
                 const btnEnroll = document.createElement('button');
                 btnEnroll.className = 'btn btn-blurple';
@@ -745,7 +795,7 @@ const DQS = {
     },
 
     // --- Interactive Moving Express Quest Completer ---
-    startExpressQuest(qid, targetSeconds = 30, gameTitle = '') {
+    startExpressQuest(qid, targetSeconds = 30, gameTitle = '', isMobile = false) {
         const I = window.DQS_ICONS;
         this.activeExpressVideoTitle = gameTitle ? `Video: ${gameTitle}` : 'Express Video Stream';
         this.updateProfileActivity(false, null, 0);
@@ -767,8 +817,8 @@ const DQS = {
         if (trackQuest) trackQuest.classList.add('express-active');
         if (fillBuffer) fillBuffer.classList.add('express-animating');
 
-        // Call backend completion asynchronously
-        window.pywebview?.api?.complete_video_quest(qid, targetSeconds);
+        // Call backend completion asynchronously with isMobile
+        window.pywebview?.api?.complete_video_quest(qid, targetSeconds, isMobile);
 
         let elapsed = 0;
         const totalDuration = 4500; // 4.5 seconds for complete visual cycle
@@ -875,6 +925,66 @@ const DQS = {
         if (modal) modal.classList.add('hidden');
     },
 
+    // --- License & Security Modal (T3X / Sandro) ---
+    setupLicenseModal() {
+        const modal = document.getElementById('license-modal');
+        const trigger = document.getElementById('app-logo-trigger');
+        const closeHeader = document.getElementById('btn-close-license-modal');
+        const closeFooter = document.getElementById('btn-close-license-modal-footer');
+        const btnDe = document.getElementById('btn-license-lang-de');
+        const btnEn = document.getElementById('btn-license-lang-en');
+        const paneDe = document.getElementById('license-pane-de');
+        const paneEn = document.getElementById('license-pane-en');
+        const linkGhDe = document.getElementById('link-github-repo-de');
+        const linkGhEn = document.getElementById('link-github-repo-en');
+
+        const openModal = () => {
+            if (modal) modal.classList.remove('hidden');
+        };
+        const closeModal = () => {
+            if (modal) modal.classList.add('hidden');
+        };
+
+        if (trigger) trigger.addEventListener('click', openModal);
+        if (closeHeader) closeHeader.addEventListener('click', closeModal);
+        if (closeFooter) closeFooter.addEventListener('click', closeModal);
+
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+        }
+
+        const setLang = (lang) => {
+            if (lang === 'de') {
+                btnDe?.classList.add('active');
+                btnEn?.classList.remove('active');
+                paneDe?.classList.add('active');
+                paneEn?.classList.remove('active');
+            } else {
+                btnEn?.classList.add('active');
+                btnDe?.classList.remove('active');
+                paneEn?.classList.add('active');
+                paneDe?.classList.remove('active');
+            }
+        };
+
+        if (btnDe) btnDe.addEventListener('click', () => setLang('de'));
+        if (btnEn) btnEn.addEventListener('click', () => setLang('en'));
+
+        const openGh = () => {
+            const repoUrl = 'https://github.com/TentixTV/Discord-Quest-Spoofer';
+            if (window.pywebview?.api?.open_external_url) {
+                window.pywebview.api.open_external_url(repoUrl);
+            } else {
+                window.open(repoUrl, '_blank');
+            }
+        };
+
+        if (linkGhDe) linkGhDe.addEventListener('click', openGh);
+        if (linkGhEn) linkGhEn.addEventListener('click', openGh);
+    },
+
     // --- Videos Tab ---
     renderVideosTab(quests) {
         const I = window.DQS_ICONS;
@@ -887,15 +997,24 @@ const DQS = {
             const qid = q.id;
             const gameTitle = q.game_title;
             const questName = q.quest_name;
-            const videoUrl = q.video_url;
+            const videoUrl = q.video_url || q.trailer_url;
+            const isVideoTask = Boolean(q.is_video_task);
+            const isMobile = Boolean(q.is_mobile_task);
             const targetSec = q.target_seconds || 30;
 
             const b64Tile = window.DQS_EMBEDDED_ASSETS?.tiles?.[qid];
             const tileSrc = b64Tile || `assets/quests/tiles/${qid}.png`;
 
-            const formatDesc = videoUrl 
-                ? 'Format: 720p HD MP4 (Offizieller Discord Stream) | Dauer: ~30 Sek.' 
-                : 'Format: Offizieller HD Gameplay Trailer & Stream | Dauer: ~15 Min.';
+            let formatDesc = '';
+            if (isVideoTask) {
+                formatDesc = isMobile 
+                    ? 'Format: Mobilgerät Video-Aufgabe (Android) | Express: ~5 Sek.' 
+                    : 'Format: 720p HD MP4 (Offizieller Discord Video-Stream) | Express: ~5 Sek.';
+            } else if (videoUrl) {
+                formatDesc = 'Format: Offizieller HD Trailer & Vorschau | Gameplay-Quest: ~15 Min.';
+            } else {
+                formatDesc = 'Format: Standard Discord Game Quest | Gameplay-Quest: ~15 Min.';
+            }
 
             card.innerHTML = `
                 <div class="quest-tile-wrap">
@@ -904,21 +1023,26 @@ const DQS = {
                 <div class="quest-info-wrap">
                     <div class="quest-header-row">
                         <span class="quest-game-title">${gameTitle} - ${questName}</span>
+                        ${isMobile ? `<span class="badge-tag mobile-task">${I.gamepad} MOBILGERÄT</span>` : ''}
                     </div>
                     <div class="quest-name-sub" style="margin-top:4px;">${formatDesc}</div>
                 </div>
                 <div class="quest-actions-wrap">
-                    ${videoUrl ? `
-                        <button class="btn btn-secondary" id="vid-play-${qid}">
-                            ${I.play} 720P HD VIDEO ANSCHAUEN
-                        </button>
+                    ${isVideoTask ? `
+                        ${videoUrl ? `
+                            <button class="btn btn-secondary" id="vid-play-${qid}">
+                                ${I.play} 720P HD VIDEO ANSCHAUEN
+                            </button>
+                        ` : ''}
                         <button class="btn btn-cyan" id="exp-btn-${qid}">
-                            ${I.autofarm} EXPRESS-ABSCHLUSS (5s)
+                            ${I.autofarm} ${isMobile ? 'EXPRESS (MOBIL)' : 'EXPRESS-ABSCHLUSS (5s)'}
                         </button>
                     ` : `
-                        <button class="btn btn-secondary" onclick="window.pywebview.api.open_url('https://www.youtube.com/results?search_query=${encodeURIComponent(gameTitle + ' official trailer')}')">
-                            ${I.play} TRAILER ANSEHEN
-                        </button>
+                        ${videoUrl ? `
+                            <button class="btn btn-secondary" id="vid-play-${qid}">
+                                ${I.play} TRAILER ANSEHEN
+                            </button>
+                        ` : ''}
                         <button class="btn btn-emerald" onclick="DQS.simulateQuest('${q.app_id}', '${gameTitle}')">
                             ${I.gamepad} IM SIMULATOR STARTEN
                         </button>
@@ -933,10 +1057,12 @@ const DQS = {
                         this.openVideoModal(qid, gameTitle, questName, videoUrl, targetSec);
                     };
                 }
+            }
+            if (isVideoTask) {
                 const expBtn = card.querySelector(`#exp-btn-${qid}`);
                 if (expBtn) {
                     expBtn.onclick = () => {
-                        this.startExpressQuest(qid, targetSec, gameTitle);
+                        this.startExpressQuest(qid, targetSec, gameTitle, isMobile);
                     };
                 }
             }
@@ -1095,6 +1221,27 @@ const DQS = {
                 } else {
                     simStatus.innerText = `STATUS: LIVE-SYNC AKTIV • DISCORD DETEKTION BESTÄTIGT (${elapsedSec}s)`;
                     simStatus.style.color = '#38bdf8';
+                }
+            }
+
+            // Live-Sync progress in Quests Tab simultaneously
+            if (st && st.quest_id) {
+                const qFill = document.getElementById(`fill-quest-${st.quest_id}`);
+                const qVal = document.getElementById(`val-quest-${st.quest_id}`);
+                if (qFill) {
+                    qFill.style.width = `${pct}%`;
+                    qFill.classList.add('active-glow');
+                    if (pct >= 100) qFill.classList.add('completed');
+                }
+                if (qVal) {
+                    const cm = Math.floor(curSec / 60);
+                    const tm = Math.round(tgtSec / 60);
+                    if (pct >= 100) {
+                        qVal.innerText = `${tm}/${tm} MIN. (100%) - QUEST ERFÜLLT!`;
+                        qVal.classList.add('completed');
+                    } else {
+                        qVal.innerText = `${cm}/${tm} MIN. (${Math.round(pct)}%)`;
+                    }
                 }
             }
         } else {
