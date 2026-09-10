@@ -299,7 +299,7 @@ class DQSInstaller(ctk.CTk):
                     shutil.copy2(src_found, os.path.join(target_dir, dst_name))
                 time.sleep(0.1)
 
-            # Copy assets folder if present
+            # Copy assets folder recursively if present
             assets_src = None
             for search_base in [bundle, current, os.path.dirname(os.path.abspath(__file__))]:
                 cand = os.path.join(search_base, "assets")
@@ -308,11 +308,18 @@ class DQSInstaller(ctk.CTk):
                     break
             if assets_src:
                 dest_assets = os.path.join(target_dir, "assets")
-                os.makedirs(dest_assets, exist_ok=True)
-                for f in os.listdir(assets_src):
-                    s_file = os.path.join(assets_src, f)
-                    if os.path.isfile(s_file):
-                        shutil.copy2(s_file, os.path.join(dest_assets, f))
+                shutil.copytree(assets_src, dest_assets, dirs_exist_ok=True)
+
+            # Copy bin folder recursively if present
+            bin_src = None
+            for search_base in [bundle, current, os.path.dirname(os.path.abspath(__file__))]:
+                cand = os.path.join(search_base, "bin")
+                if os.path.exists(cand) and os.path.isdir(cand):
+                    bin_src = cand
+                    break
+            if bin_src:
+                dest_bin = os.path.join(target_dir, "bin")
+                shutil.copytree(bin_src, dest_bin, dirs_exist_ok=True)
 
             self._update_progress(0.75, "Erstelle Uninstaller...")
             uninstaller_path = os.path.join(target_dir, "Uninstall.bat")

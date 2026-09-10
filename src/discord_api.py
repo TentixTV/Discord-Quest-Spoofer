@@ -106,6 +106,14 @@ class DiscordQuestsAPI:
                 elif "messages" in rw and "name" in rw["messages"]:
                     reward_names.append(rw["messages"]["name"])
 
+            # Media Assets (Hero Image, Trailer / Quest Video)
+            assets = cfg.get("assets", {})
+            hero_asset = assets.get("hero") or assets.get("quest_bar_hero")
+            video_asset = assets.get("hero_video") or assets.get("quest_bar_hero_video")
+            hero_url = f"https://cdn.discordapp.com/{hero_asset}" if hero_asset else None
+            video_url = f"https://cdn.discordapp.com/{video_asset}" if video_asset else None
+            has_video = (video_url is not None) or ("VIDEO" in task_type)
+
             parsed.append({
                 "id": qid,
                 "quest_name": quest_name,
@@ -123,6 +131,9 @@ class DiscordQuestsAPI:
                 "orb_count": orb_count,
                 "rewards_text": ", ".join(reward_names) if reward_names else "Belohnung",
                 "expires_at": expires_str,
+                "hero_url": hero_url,
+                "video_url": video_url,
+                "has_video": has_video,
                 "raw_quest": q
             })
 
