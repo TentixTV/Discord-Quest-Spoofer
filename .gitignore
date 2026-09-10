@@ -1,6 +1,11 @@
 __pycache__/
 *.pyc
 build/
+dist/
 *.spec
 .vscode/
 .idea/
+
+# Large compiled binaries (hosted via GitHub Releases)
+DQS.exe
+DQS_Installer.exe

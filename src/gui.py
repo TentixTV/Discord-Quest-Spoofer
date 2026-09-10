@@ -1,9 +1,8 @@
 """
-DQS - Discord Quest Spoofer (Release V2 Ultimate Edition)
+DQS - Discord Quest Spoofer (Gothic Dark AAA Edition)
 Official Release by Sandro (T3X / TNTIX)
-Sleek Discord Dark Gothic Aesthetic with REAL Animated Avatar & Banner GIFs,
-Lag-Free Smooth Window Dragging, Full Videos & Trailer Gallery,
-Automatic Preset Switching for Simulation, and Ultra-Clean Admin Glow Pill.
+Pixel-perfect Discord Dark Aesthetic, Overlapping Real Animated Avatar & Banner GIFs,
+Full Video Gallery, Auto-Preset Simulation, and 100% Reliable Quest Synchronization.
 """
 
 import os
@@ -18,25 +17,32 @@ from PIL import Image, ImageTk, ImageSequence, ImageDraw
 import requests
 import webbrowser
 
-from .discord_auth import find_all_valid_accounts, get_user_profile
-from .discord_api import DiscordQuestsAPI
-from .game_spoofer import GameSimulator
-from .quest_farmer import QuestFarmer, generate_discord_console_snippet
-from .database import QUEST_GAMES_DATABASE
+try:
+    from .discord_auth import find_all_valid_accounts, get_user_profile
+    from .discord_api import DiscordQuestsAPI
+    from .game_spoofer import GameSimulator
+    from .quest_farmer import QuestFarmer, generate_discord_console_snippet
+    from .database import QUEST_GAMES_DATABASE
+except (ImportError, ValueError):
+    from discord_auth import find_all_valid_accounts, get_user_profile
+    from discord_api import DiscordQuestsAPI
+    from game_spoofer import GameSimulator
+    from quest_farmer import QuestFarmer, generate_discord_console_snippet
+    from database import QUEST_GAMES_DATABASE
 
 # Appearance setup
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 # Discord Exact Palette
-COLOR_BG_DARK = "#090a0f"          # Deep Pitch Black
-COLOR_BG_SIDEBAR = "#111218"       # Graphite Surface
-COLOR_CARD_BG = "#13141e"          # Dark Slate Container
-COLOR_CARD_BORDER = "#232536"      # Tech Border
+COLOR_BG_DARK = "#08090d"          # Deep Void Pitch Black
+COLOR_BG_SIDEBAR = "#101118"       # Graphite Surface
+COLOR_CARD_BG = "#11121c"          # Dark Slate Container
+COLOR_CARD_BORDER = "#1f2233"      # Tech Border
 COLOR_CARD_BORDER_ACTIVE = "#5865F2" # Neon Blurple Highlight
-COLOR_WHITE = "#ffffff"            # Contrast White
-COLOR_TEXT_PRIMARY = "#f3f4f6"     # Crisp Light Gray
-COLOR_TEXT_MUTED = "#86899c"       # Soft Ash Gray
+COLOR_WHITE = "#ffffff"            # Pure White
+COLOR_TEXT_PRIMARY = "#f2f3f5"     # Crisp Light Gray
+COLOR_TEXT_MUTED = "#8e92a4"       # Soft Ash Gray
 
 # Glowing Action Colors
 COLOR_NEON_BLURPLE = "#5865F2"     # Blurple Primary
@@ -51,16 +57,16 @@ COLOR_CYAN = "#00A8FC"             # Cyan
 COLOR_CYAN_HOVER = "#0082C4"
 COLOR_INDIGO = "#6366F1"           # Indigo
 COLOR_INDIGO_HOVER = "#4F46E5"
-COLOR_DARK_BTN = "#1a1b24"         # Dark Button Surface
-COLOR_DARK_BTN_HOVER = "#262836"
+COLOR_DARK_BTN = "#171824"         # Dark Button Surface
+COLOR_DARK_BTN_HOVER = "#232638"
 
 class AutoQuestApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("DQS // Discord Quest Spoofer")
-        self.geometry("1180x820")
-        self.minsize(1020, 700)
+        self.geometry("1220x840")
+        self.minsize(1050, 720)
         self.configure(fg_color=COLOR_BG_DARK)
         self.protocol("WM_DELETE_WINDOW", self._on_window_close)
 
@@ -75,7 +81,7 @@ class AutoQuestApp(ctk.CTk):
         self.detected_accounts = []
         self.cached_quests = []
         self.quest_cards = {}
-        self.video_cards = []
+        self.quest_thumbnails = {}
 
         # Animation states
         self.gear_angle_idx = 0
@@ -110,20 +116,22 @@ class AutoQuestApp(ctk.CTk):
         self.after(100, self._initial_load)
 
     def _set_app_icon(self):
+        """Sets the application window and taskbar icon cleanly using DQS.png (No .ico!)."""
         candidates = [
-            os.path.join(os.path.dirname(__file__), "..", "assets", "app_icon.ico"),
-            os.path.join(os.path.dirname(__file__), "app_icon.ico"),
-            os.path.join(os.getcwd(), "assets", "app_icon.ico"),
-            os.path.join(os.getcwd(), "app_icon.ico"),
+            os.path.join(os.path.dirname(__file__), "..", "DQS.png"),
+            os.path.join(os.path.dirname(__file__), "..", "assets", "app_icon.png"),
+            os.path.join(os.getcwd(), "DQS.png"),
+            os.path.join(os.getcwd(), "assets", "app_icon.png"),
         ]
         for c in candidates:
             if os.path.exists(c):
                 try:
-                    self.iconbitmap(c)
+                    im = Image.open(c)
+                    self._app_icon_photo = ImageTk.PhotoImage(im)
+                    self.iconphoto(True, self._app_icon_photo)
                     break
                 except Exception:
                     pass
-
     def _load_badge_assets(self):
         """Loads official Discord badge PNGs."""
         badge_dir = os.path.join(os.path.dirname(__file__), "..", "assets", "badges")
@@ -136,7 +144,7 @@ class AutoQuestApp(ctk.CTk):
                 p = os.path.join(badge_dir, f"{b}.png")
                 if os.path.exists(p):
                     try:
-                        im = Image.open(p).convert("RGBA").resize((18, 18), Image.Resampling.LANCZOS)
+                        im = Image.open(p).convert("RGBA").resize((20, 20), Image.Resampling.LANCZOS)
                         self.badge_images[b] = ImageTk.PhotoImage(im)
                     except Exception:
                         pass
@@ -170,29 +178,34 @@ class AutoQuestApp(ctk.CTk):
         if not os.path.exists(assets_dir):
             assets_dir = os.path.join(os.getcwd(), "assets")
 
-        # 1. Avatar GIF
+        # 1. Avatar GIF (76x76 with clean circular cut & border ring)
         av_path = os.path.join(assets_dir, "tentix_avatar.gif")
         if os.path.exists(av_path):
             try:
                 av = Image.open(av_path)
-                mask = Image.new('L', (72, 72), 0)
+                mask = Image.new('L', (76, 76), 0)
                 draw = ImageDraw.Draw(mask)
-                draw.ellipse((0, 0, 72, 72), fill=255)
+                draw.ellipse((0, 0, 76, 76), fill=255)
 
                 for frame in ImageSequence.Iterator(av):
-                    c = frame.convert("RGBA").resize((72, 72), Image.Resampling.LANCZOS)
+                    c = frame.convert("RGBA").resize((76, 76), Image.Resampling.LANCZOS)
                     c.putalpha(mask)
-                    self.avatar_frames.append(ImageTk.PhotoImage(c))
+                    # Outer ring
+                    bordered = Image.new('RGBA', (82, 82), (0, 0, 0, 0))
+                    b_draw = ImageDraw.Draw(bordered)
+                    b_draw.ellipse((0, 0, 82, 82), fill=(17, 18, 28, 255))
+                    bordered.paste(c, (3, 3), c)
+                    self.avatar_frames.append(ImageTk.PhotoImage(bordered))
             except Exception as e:
                 print("Failed to load avatar GIF:", e)
 
-        # 2. Banner GIF
+        # 2. Banner GIF (340x120 edge-to-edge)
         ban_path = os.path.join(assets_dir, "tentix_banner.gif")
         if os.path.exists(ban_path):
             try:
                 ban = Image.open(ban_path)
                 for frame in ImageSequence.Iterator(ban):
-                    c = frame.convert("RGBA").resize((310, 115), Image.Resampling.LANCZOS)
+                    c = frame.convert("RGBA").resize((340, 120), Image.Resampling.LANCZOS)
                     self.banner_frames.append(ImageTk.PhotoImage(c))
             except Exception as e:
                 print("Failed to load banner GIF:", e)
@@ -244,8 +257,9 @@ class AutoQuestApp(ctk.CTk):
     # ================= HEADER =================
 
     def _build_header(self):
+        # 82px height ensures ZERO CLIPPING
         self.header_frame = ctk.CTkFrame(
-            self, fg_color=COLOR_BG_SIDEBAR, height=75, corner_radius=0,
+            self, fg_color=COLOR_BG_SIDEBAR, height=82, corner_radius=0,
             border_width=1, border_color=COLOR_CARD_BORDER
         )
         self.header_frame.pack(fill="x", side="top")
@@ -253,7 +267,7 @@ class AutoQuestApp(ctk.CTk):
 
         # Left Branding - Clean Transparent App Logo
         brand_box = ctk.CTkFrame(self.header_frame, fg_color="transparent")
-        brand_box.pack(side="left", padx=20, pady=10)
+        brand_box.pack(side="left", padx=20, pady=12)
 
         icon_path = os.path.join(os.path.dirname(__file__), "..", "assets", "app_icon.png")
         if not os.path.exists(icon_path):
@@ -262,53 +276,56 @@ class AutoQuestApp(ctk.CTk):
         if os.path.exists(icon_path):
             try:
                 raw_logo = Image.open(icon_path).convert("RGBA")
-                self.logo_img = ctk.CTkImage(light_image=raw_logo, dark_image=raw_logo, size=(40, 40))
+                self.logo_img = ctk.CTkImage(light_image=raw_logo, dark_image=raw_logo, size=(44, 44))
                 lbl_icon = ctk.CTkLabel(brand_box, text="", image=self.logo_img)
-                lbl_icon.pack(side="left", padx=(0, 12))
+                lbl_icon.pack(side="left", padx=(0, 14))
             except Exception:
                 pass
 
         title_sub = ctk.CTkFrame(brand_box, fg_color="transparent")
         title_sub.pack(side="left")
 
+        # Row 1: App Title + Admin Glow Pill SIDE BY SIDE (Never cut off!)
+        top_row = ctk.CTkFrame(title_sub, fg_color="transparent")
+        top_row.pack(anchor="w", pady=(0, 2))
+
         app_title = ctk.CTkLabel(
-            title_sub, text="DQS",
-            font=ctk.CTkFont(family="Segoe UI", size=22, weight="bold"),
+            top_row, text="DQS",
+            font=ctk.CTkFont(family="Segoe UI", size=24, weight="bold"),
             text_color=COLOR_WHITE
         )
-        app_title.pack(anchor="w")
+        app_title.pack(side="left", padx=(0, 12))
 
-        sub_row = ctk.CTkFrame(title_sub, fg_color="transparent")
-        sub_row.pack(anchor="w")
-
-        sub_badge = ctk.CTkLabel(
-            sub_row, text="DISCORD QUEST SPOOFER",
-            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-            text_color=COLOR_TEXT_MUTED
+        admin_pill = ctk.CTkFrame(
+            top_row, fg_color="#0c2314", border_width=1, border_color=COLOR_EMERALD, corner_radius=12
         )
-        sub_badge.pack(side="left", padx=(0, 10))
-
-        # Ultra-Clean Glowing Admin Badge
-        admin_pill = ctk.CTkFrame(sub_row, fg_color="#0c2314", border_width=1, border_color=COLOR_EMERALD, corner_radius=12)
         admin_pill.pack(side="left")
 
         ctk.CTkLabel(
             admin_pill, text="● ADMIN AKTIV",
             font=ctk.CTkFont(family="Segoe UI", size=9, weight="bold"),
             text_color=COLOR_EMERALD
-        ).pack(padx=8, pady=1)
+        ).pack(padx=10, pady=3)
+
+        # Row 2: Subtitle
+        sub_badge = ctk.CTkLabel(
+            title_sub, text="DISCORD QUEST SPOOFER • ULTIMATE EDITION",
+            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+            text_color=COLOR_TEXT_MUTED
+        )
+        sub_badge.pack(anchor="w")
 
         # Right User Profile Bar (Clickable to toggle profile drawer)
         self.account_bar = ctk.CTkFrame(
-            self.header_frame, fg_color=COLOR_CARD_BG, corner_radius=6,
+            self.header_frame, fg_color=COLOR_CARD_BG, corner_radius=8,
             border_width=1, border_color=COLOR_CARD_BORDER, cursor="hand2"
         )
-        self.account_bar.pack(side="right", padx=20, pady=12)
+        self.account_bar.pack(side="right", padx=20, pady=14)
         self.account_bar.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
 
         # Native Tk Label for Gear to guarantee zero window lag
         gear_container = tk.Frame(self.account_bar, bg=COLOR_CARD_BG)
-        gear_container.pack(side="left", padx=(10, 4))
+        gear_container.pack(side="left", padx=(12, 6))
         gear_container.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
 
         initial_gear = self.gear_photos[0] if self.gear_photos else None
@@ -322,7 +339,7 @@ class AutoQuestApp(ctk.CTk):
         self.avatar_label.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
 
         user_info = ctk.CTkFrame(self.account_bar, fg_color="transparent")
-        user_info.pack(side="left", padx=(0, 12), pady=6)
+        user_info.pack(side="left", padx=(0, 14), pady=6)
         user_info.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
 
         self.lbl_username = ctk.CTkLabel(
@@ -405,82 +422,87 @@ class AutoQuestApp(ctk.CTk):
     def _build_profile_drawer(self):
         """Creates the authentic Discord User Profile popout matching Image 2 with real GIF animation."""
         self.drawer_frame = ctk.CTkFrame(
-            self.body_frame, width=330, fg_color=COLOR_BG_SIDEBAR, corner_radius=8,
+            self.body_frame, width=360, fg_color=COLOR_BG_SIDEBAR, corner_radius=10,
             border_width=1, border_color=COLOR_CARD_BORDER
         )
 
         self.drawer_scroll = ctk.CTkScrollableFrame(self.drawer_frame, fg_color="transparent")
-        self.drawer_scroll.pack(fill="both", expand=True, padx=8, pady=8)
+        self.drawer_scroll.pack(fill="both", expand=True, padx=4, pady=6)
 
-        # 1. Animated Banner
-        banner_container = tk.Frame(self.drawer_scroll, bg="#1a1c29", width=310, height=115)
-        banner_container.pack(fill="x", pady=(0, 6))
-        banner_container.pack_propagate(False)
+        # Profile Card Wrapper
+        card_wrapper = ctk.CTkFrame(self.drawer_scroll, fg_color=COLOR_CARD_BG, corner_radius=10, border_width=1, border_color="#202336")
+        card_wrapper.pack(fill="x", padx=4, pady=(0, 10))
 
+        # 1. Top Banner & Overlapping Avatar Area (150px height)
+        header_canvas_frame = tk.Frame(card_wrapper, bg=COLOR_CARD_BG, width=340, height=160)
+        header_canvas_frame.pack(fill="x")
+        header_canvas_frame.pack_propagate(False)
+
+        # Banner at top (120px)
         init_banner = self.banner_frames[0] if self.banner_frames else None
-        self.lbl_drawer_banner_tk = tk.Label(banner_container, image=init_banner, bg="#1a1c29", bd=0)
-        self.lbl_drawer_banner_tk.pack(fill="both", expand=True)
+        self.lbl_drawer_banner_tk = tk.Label(header_canvas_frame, image=init_banner, bg="#1a1c29", bd=0)
+        self.lbl_drawer_banner_tk.place(x=0, y=0, width=340, height=120)
 
-        # 2. Avatar with DND Badge
-        av_row = ctk.CTkFrame(self.drawer_scroll, fg_color="transparent")
-        av_row.pack(fill="x", padx=10, pady=(0, 6))
-
-        av_holder = tk.Frame(av_row, bg=COLOR_BG_SIDEBAR, width=74, height=74)
-        av_holder.pack(side="left")
-        av_holder.pack_propagate(False)
-
+        # Overlapping Avatar placed at (18, 75)
         init_av = self.avatar_frames[0] if self.avatar_frames else None
-        self.lbl_drawer_avatar_tk = tk.Label(av_holder, image=init_av, bg=COLOR_BG_SIDEBAR, bd=0)
-        self.lbl_drawer_avatar_tk.pack()
+        self.lbl_drawer_avatar_tk = tk.Label(header_canvas_frame, image=init_av, bg=COLOR_CARD_BG, bd=0)
+        self.lbl_drawer_avatar_tk.place(x=18, y=74)
 
-        # Status Speech Bubble
-        bubble_box = ctk.CTkFrame(self.drawer_scroll, fg_color="#181924", border_width=1, border_color="#2b2d3d", corner_radius=6)
-        bubble_box.pack(fill="x", padx=10, pady=(0, 8))
+        # DND Status Badge (Red Dot with white bar) at (74, 132)
+        dnd_badge = tk.Frame(header_canvas_frame, bg="#f23f43", width=18, height=18, highlightbackground=COLOR_CARD_BG, highlightthickness=3)
+        dnd_badge.place(x=74, y=130)
 
-        ctk.CTkLabel(
+        # 2. Content below header
+        content_box = ctk.CTkFrame(card_wrapper, fg_color="transparent")
+        content_box.pack(fill="x", padx=12, pady=(10, 12))
+
+        # Status Speech Bubble (Fully visible, wrapping, no cutoff!)
+        bubble_box = ctk.CTkFrame(content_box, fg_color="#181926", border_width=1, border_color="#2c2e44", corner_radius=8)
+        bubble_box.pack(fill="x", pady=(0, 10))
+
+        lbl_b_text = ctk.CTkLabel(
             bubble_box, text="🩸 BEHIND EVERY KISS IS A CLAW THAT CAN BITE",
-            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-            text_color=COLOR_WHITE, justify="left"
-        ).pack(padx=10, pady=7, anchor="w")
+            font=ctk.CTkFont(family="Segoe UI", size=9, weight="bold"),
+            text_color=COLOR_WHITE, justify="left", wraplength=290
+        )
+        lbl_b_text.pack(padx=10, pady=8, anchor="w")
 
         # Name and Pronouns
-        name_box = ctk.CTkFrame(self.drawer_scroll, fg_color="transparent")
-        name_box.pack(fill="x", padx=10, pady=(0, 6))
+        name_box = ctk.CTkFrame(content_box, fg_color="transparent")
+        name_box.pack(fill="x", pady=(0, 8))
 
-        self.lbl_drawer_display_name = ctk.CTkLabel(
+        ctk.CTkLabel(
             name_box, text="TΞП†1Ж ツ",
-            font=ctk.CTkFont(family="Segoe UI", size=15, weight="bold"),
+            font=ctk.CTkFont(family="Segoe UI", size=17, weight="bold"),
             text_color=COLOR_WHITE
-        )
-        self.lbl_drawer_display_name.pack(anchor="w")
+        ).pack(anchor="w")
 
         ctk.CTkLabel(
             name_box, text="tentix • - ʜᴇᴀʀᴛ/ʟᴇꜱꜱ/ᴡɪᴛʜᴏᴜᴛ/ʏᴏᴜ -",
-            font=ctk.CTkFont(family="Segoe UI", size=10),
+            font=ctk.CTkFont(family="Segoe UI", size=11),
             text_color=COLOR_TEXT_MUTED
         ).pack(anchor="w")
 
-        # 3. Badges Row (Using authentic Discord badge PNGs)
-        badges_row = ctk.CTkFrame(self.drawer_scroll, fg_color="#151620", corner_radius=6)
-        badges_row.pack(fill="x", padx=10, pady=(0, 10))
+        # 3. Badges Row (Authentic Discord badge PNGs)
+        badges_pill = ctk.CTkFrame(content_box, fg_color="#141522", corner_radius=8, border_width=1, border_color="#222538")
+        badges_pill.pack(fill="x", pady=(0, 12))
 
-        badge_inner = tk.Frame(badges_row, bg="#151620")
-        badge_inner.pack(padx=8, pady=6, anchor="w")
+        badge_inner = tk.Frame(badges_pill, bg="#141522")
+        badge_inner.pack(padx=10, pady=7, anchor="w")
 
         for b_name in ['nitro', 'bravery', 'booster', 'legacy', 'quest', 'orbs']:
             if b_name in self.badge_images:
-                tk.Label(badge_inner, image=self.badge_images[b_name], bg="#151620", bd=0).pack(side="left", padx=4)
+                tk.Label(badge_inner, image=self.badge_images[b_name], bg="#141522", bd=0).pack(side="left", padx=5)
 
         # 4. Bio Section
-        bio_title = ctk.CTkLabel(
-            self.drawer_scroll, text="ÜBER MICH",
+        ctk.CTkLabel(
+            content_box, text="ÜBER MICH",
             font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
             text_color=COLOR_TEXT_MUTED
-        )
-        bio_title.pack(anchor="w", padx=10, pady=(0, 2))
+        ).pack(anchor="w", pady=(0, 3))
 
-        bio_card = ctk.CTkFrame(self.drawer_scroll, fg_color="#151620", corner_radius=6)
-        bio_card.pack(fill="x", padx=10, pady=(0, 10))
+        bio_card = ctk.CTkFrame(content_box, fg_color="#141522", corner_radius=8, border_width=1, border_color="#222538")
+        bio_card.pack(fill="x", pady=(0, 12))
 
         bio_content = (
             "ㅤ ㅤ ₊⊹ - ♱ https://tentix.space ♱ - ⊹₊\n"
@@ -491,69 +513,65 @@ class AutoQuestApp(ctk.CTk):
         ctk.CTkLabel(
             bio_card, text=bio_content,
             font=ctk.CTkFont(family="Segoe UI", size=9),
-            text_color="#d1d5db", justify="left"
-        ).pack(padx=10, pady=8, anchor="w")
+            text_color="#d1d5db", justify="center"
+        ).pack(padx=10, pady=8, anchor="center")
 
         # 5. Activity Box ("SPIELT")
-        act_title = ctk.CTkLabel(
-            self.drawer_scroll, text="AKTIVITÄT",
+        ctk.CTkLabel(
+            content_box, text="AKTIVITÄT",
             font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
             text_color=COLOR_TEXT_MUTED
-        )
-        act_title.pack(anchor="w", padx=10, pady=(0, 2))
+        ).pack(anchor="w", pady=(0, 3))
 
-        self.activity_box = ctk.CTkFrame(self.drawer_scroll, fg_color="#151620", border_width=1, border_color="#252736", corner_radius=6)
-        self.activity_box.pack(fill="x", padx=10, pady=(0, 12))
+        activity_box = ctk.CTkFrame(content_box, fg_color="#141522", border_width=1, border_color="#222538", corner_radius=8)
+        activity_box.pack(fill="x", pady=(0, 12))
 
-        self.lbl_act_game = ctk.CTkLabel(
-            self.activity_box, text="🎮 HELLDIVERS™ 2",
-            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+        ctk.CTkLabel(
+            activity_box, text="🎮 HELLDIVERS™ 2",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
             text_color=COLOR_WHITE
-        )
-        self.lbl_act_game.pack(anchor="w", padx=10, pady=(8, 2))
+        ).pack(anchor="w", padx=12, pady=(10, 2))
 
-        self.lbl_act_state = ctk.CTkLabel(
-            self.activity_box, text="In Mission (Quest läuft)",
+        ctk.CTkLabel(
+            activity_box, text="In Mission (Quest läuft)",
             font=ctk.CTkFont(family="Segoe UI", size=10),
             text_color=COLOR_EMERALD
-        )
-        self.lbl_act_state.pack(anchor="w", padx=10, pady=(0, 2))
+        ).pack(anchor="w", padx=12, pady=(0, 2))
 
-        self.lbl_act_timer = ctk.CTkLabel(
-            self.activity_box, text="⏱ Zeit: 03:21 Min.",
+        ctk.CTkLabel(
+            activity_box, text="⏱ Zeit: 03:21 Min.",
             font=ctk.CTkFont(family="Consolas", size=10),
             text_color=COLOR_TEXT_MUTED
-        )
-        self.lbl_act_timer.pack(anchor="w", padx=10, pady=(0, 8))
+        ).pack(anchor="w", padx=12, pady=(0, 10))
 
         # Drawer Actions
         ctk.CTkButton(
-            self.drawer_scroll, text="👤 ACCOUNT WECHSELN", height=32,
+            content_box, text="👤 ACCOUNT WECHSELN", height=34,
             fg_color=COLOR_INDIGO, hover_color=COLOR_INDIGO_HOVER,
             text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            corner_radius=4, command=self._open_account_modal
-        ).pack(fill="x", padx=10, pady=3)
+            corner_radius=6, command=self._open_account_modal
+        ).pack(fill="x", pady=4)
 
         self.btn_copy_id = ctk.CTkButton(
-            self.drawer_scroll, text="🆔 NUTZER-ID KOPIEREN", height=32,
+            content_box, text="🆔 NUTZER-ID KOPIEREN", height=34,
             fg_color=COLOR_DARK_BTN, hover_color=COLOR_DARK_BTN_HOVER,
             border_width=1, border_color=COLOR_CARD_BORDER,
             text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            corner_radius=4, command=self._copy_user_id
+            corner_radius=6, command=self._copy_user_id
         )
-        self.btn_copy_id.pack(fill="x", padx=10, pady=3)
+        self.btn_copy_id.pack(fill="x", pady=4)
 
         # Official GitHub & Safety
         ctk.CTkButton(
-            self.drawer_scroll, text="⭐ OFFIZIELLER GITHUB (V1)", height=32,
+            content_box, text="⭐ OFFIZIELLER GITHUB (V1)", height=34,
             fg_color="#2b1a38", hover_color="#3e2552",
             border_width=1, border_color="#9333ea",
             text_color="#c084fc", font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            corner_radius=4, command=lambda: webbrowser.open("https://github.com/TentixTV/Discord-Quest-Spoofer")
-        ).pack(fill="x", padx=10, pady=3)
+            corner_radius=6, command=lambda: webbrowser.open("https://github.com/TentixTV/Discord-Quest-Spoofer")
+        ).pack(fill="x", pady=4)
 
-        info_box = ctk.CTkFrame(self.drawer_scroll, fg_color="#10111a", border_width=1, border_color="#202235", corner_radius=6)
-        info_box.pack(fill="x", padx=10, pady=(6, 4))
+        info_box = ctk.CTkFrame(content_box, fg_color="#0e0f17", border_width=1, border_color="#1c1e2d", corner_radius=6)
+        info_box.pack(fill="x", pady=(6, 4))
         ctk.CTkLabel(
             info_box, text="DQS Release V1 by Sandro (T3X / TNTIX)\n100% sauber wenn von GitHub geladen!\nWer es woanders her hat ist selber schuld.",
             font=ctk.CTkFont(family="Segoe UI", size=9),
@@ -561,11 +579,11 @@ class AutoQuestApp(ctk.CTk):
         ).pack(padx=6, pady=6)
 
         ctk.CTkButton(
-            self.drawer_scroll, text="✕ SCHLIESSEN", height=30,
+            content_box, text="✕ SCHLIESSEN", height=30,
             fg_color="transparent", hover_color="#202230",
             text_color=COLOR_TEXT_MUTED, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
             command=self._toggle_profile_drawer
-        ).pack(fill="x", padx=10, pady=(4, 0))
+        ).pack(fill="x", pady=(4, 0))
 
     def _toggle_profile_drawer(self):
         if self.drawer_visible:
@@ -587,7 +605,7 @@ class AutoQuestApp(ctk.CTk):
 
     def _setup_quests_tab(self):
         top_bar = ctk.CTkFrame(
-            self.tab_quests, fg_color=COLOR_CARD_BG, corner_radius=6,
+            self.tab_quests, fg_color=COLOR_CARD_BG, corner_radius=8,
             border_width=1, border_color=COLOR_CARD_BORDER
         )
         top_bar.pack(fill="x", padx=10, pady=(10, 8))
@@ -630,7 +648,7 @@ class AutoQuestApp(ctk.CTk):
 
         # Fast-Track Info Banner
         fast_banner = ctk.CTkFrame(
-            self.tab_quests, fg_color="#0e1322", corner_radius=6,
+            self.tab_quests, fg_color="#0e1322", corner_radius=8,
             border_width=1, border_color=COLOR_NEON_BLURPLE
         )
         fast_banner.pack(fill="x", padx=10, pady=(0, 8))
@@ -654,7 +672,7 @@ class AutoQuestApp(ctk.CTk):
 
         # Animated Live Orbs Status Bar
         self.live_orbs_frame = ctk.CTkFrame(
-            self.tab_quests, fg_color="#17122b", border_width=1, border_color="#8b5cf6", corner_radius=6
+            self.tab_quests, fg_color="#17122b", border_width=1, border_color="#8b5cf6", corner_radius=8
         )
 
         orbs_left = ctk.CTkFrame(self.live_orbs_frame, fg_color="transparent")
@@ -693,7 +711,7 @@ class AutoQuestApp(ctk.CTk):
 
     def _setup_videos_tab(self):
         top_bar = ctk.CTkFrame(
-            self.tab_videos, fg_color=COLOR_CARD_BG, corner_radius=6,
+            self.tab_videos, fg_color=COLOR_CARD_BG, corner_radius=8,
             border_width=1, border_color=COLOR_CARD_BORDER
         )
         top_bar.pack(fill="x", padx=10, pady=(10, 8))
@@ -719,29 +737,24 @@ class AutoQuestApp(ctk.CTk):
         self.videos_scroll.pack(fill="both", expand=True, padx=5, pady=5)
 
     def _render_videos_tab(self, quests):
-        """Populates the Videos & Trailer gallery with all available videos."""
+        """Populates the Videos & Trailer gallery with ALL quest videos & official trailers."""
         for w in self.videos_scroll.winfo_children():
             w.destroy()
 
         vids_found = 0
         for q in quests:
             vid_url = q.get("video_url")
-            hero_url = q.get("hero_url")
             qid = q.get("id")
             qname = q.get("quest_name")
             game_title = q.get("game_title")
             publisher = q.get("game_publisher", "")
             target_sec = q.get("target_seconds", 30)
-
-            # Check if quest has video or is video task
-            if not vid_url and "VIDEO" not in q.get("task_type", ""):
-                continue
+            app_id = q.get("app_id", "")
 
             vids_found += 1
-            card = ctk.CTkFrame(self.videos_scroll, fg_color=COLOR_CARD_BG, border_width=1, border_color=COLOR_CARD_BORDER, corner_radius=6)
+            card = ctk.CTkFrame(self.videos_scroll, fg_color=COLOR_CARD_BG, border_width=1, border_color=COLOR_CARD_BORDER, corner_radius=8)
             card.pack(fill="x", padx=10, pady=8)
 
-            # Smooth Hover Glow Animation for Video Card
             def _on_v_enter(e, c=card):
                 if c.winfo_exists():
                     c.configure(border_color="#8b5cf6", fg_color="#181928")
@@ -755,8 +768,12 @@ class AutoQuestApp(ctk.CTk):
             left_box = ctk.CTkFrame(card, fg_color="transparent")
             left_box.pack(side="left", padx=15, pady=12)
 
-            # Video Icon / Thumbnail
-            ctk.CTkLabel(left_box, text="🎬", font=ctk.CTkFont(size=28)).pack(side="left", padx=(0, 12))
+            thumb = self._get_quest_thumbnail(qid, (100, 56))
+            if thumb:
+                lbl_thumb = tk.Label(left_box, image=thumb, bg=COLOR_CARD_BG, bd=0)
+                lbl_thumb.pack(side="left", padx=(0, 14))
+            else:
+                ctk.CTkLabel(left_box, text="🎬", font=ctk.CTkFont(size=28)).pack(side="left", padx=(0, 14))
 
             info_box = ctk.CTkFrame(left_box, fg_color="transparent")
             info_box.pack(side="left")
@@ -767,49 +784,88 @@ class AutoQuestApp(ctk.CTk):
                 text_color=COLOR_WHITE
             ).pack(anchor="w")
 
-            sub_txt = f"Publisher: {publisher or 'Discord'}  |  Format: 720p MP4  |  Dauer: ~{target_sec} Sek."
+            if vid_url:
+                sub_txt = f"Publisher: {publisher or 'Discord'}  |  Format: 720p HD MP4 (Offizieller Discord Stream)  |  Dauer: ~{target_sec} Sek."
+            else:
+                sub_txt = f"Publisher: {publisher or 'Discord'}  |  Format: Offizieller HD Trailer & Stream  |  Dauer: ~15 Min."
+
             ctk.CTkLabel(
                 info_box, text=sub_txt,
                 font=ctk.CTkFont(family="Segoe UI", size=10),
                 text_color=COLOR_TEXT_MUTED
             ).pack(anchor="w")
 
-            # Actions on right
             btn_box = ctk.CTkFrame(card, fg_color="transparent")
             btn_box.pack(side="right", padx=15, pady=12)
 
             if vid_url:
                 ctk.CTkButton(
-                    btn_box, text="▶ VIDEO ABSPIELEN", width=140, height=32,
+                    btn_box, text="▶ 720P HD VIDEO ABSPIELEN", width=180, height=32,
                     fg_color=COLOR_INDIGO, hover_color=COLOR_INDIGO_HOVER,
                     text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
                     corner_radius=4, command=lambda u=vid_url: webbrowser.open(u)
                 ).pack(side="left", padx=5)
 
-            ctk.CTkButton(
-                btn_box, text="⚡ EXPRESS-ABSCHLUSS", width=170, height=32,
-                fg_color=COLOR_GOLD, hover_color=COLOR_GOLD_HOVER,
-                text_color="#000000", font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-                corner_radius=4, command=lambda qid=qid, t=target_sec: self._fast_video_quest(qid, t, None)
-            ).pack(side="left", padx=5)
+                ctk.CTkButton(
+                    btn_box, text="⚡ EXPRESS-ABSCHLUSS", width=160, height=32,
+                    fg_color=COLOR_GOLD, hover_color=COLOR_GOLD_HOVER,
+                    text_color="#000000", font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+                    corner_radius=4, command=lambda qid=qid, t=target_sec: self._fast_video_quest(qid, t, None)
+                ).pack(side="left", padx=5)
+            else:
+                yt_query = f"{game_title} official trailer".replace(' ', '+')
+                trailer_url = f"https://www.youtube.com/results?search_query={yt_query}"
+                ctk.CTkButton(
+                    btn_box, text="▶ OFFIZIELLEN TRAILER ANSEHEN", width=190, height=32,
+                    fg_color="#27273a", hover_color="#3b3b55",
+                    border_width=1, border_color="#4f46e5",
+                    text_color="#a5b4fc", font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+                    corner_radius=4, command=lambda u=trailer_url: webbrowser.open(u)
+                ).pack(side="left", padx=5)
+
+                ctk.CTkButton(
+                    btn_box, text="🎮 IM SIMULATOR STARTEN", width=170, height=32,
+                    fg_color=COLOR_INDIGO, hover_color=COLOR_INDIGO_HOVER,
+                    text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+                    corner_radius=4, command=lambda aid=app_id, gt=game_title: self._sim_single_quest(aid, gt)
+                ).pack(side="left", padx=5)
 
         if vids_found == 0:
             ctk.CTkLabel(
-                self.videos_scroll, text="Keine aktiven Video-Quests gefunden. Starte eine manuelle Spiele-Simulation im Simulator-Tab.",
+                self.videos_scroll, text="Keine Quests gefunden. Bitte aktualisiere deine Quests.",
                 font=ctk.CTkFont(family="Segoe UI", size=12), text_color=COLOR_TEXT_MUTED
             ).pack(pady=40)
+
+    def _get_quest_thumbnail(self, qid, size=(100, 56)):
+        """Returns PhotoImage thumbnail for quest banner if cached."""
+        if qid in self.quest_thumbnails:
+            return self.quest_thumbnails[qid]
+
+        p = os.path.join(os.path.dirname(__file__), "..", "assets", "quests", f"{qid}.jpg")
+        if not os.path.exists(p):
+            p = os.path.join(os.getcwd(), "assets", "quests", f"{qid}.jpg")
+
+        if os.path.exists(p):
+            try:
+                im = Image.open(p).convert("RGBA").resize(size, Image.Resampling.LANCZOS)
+                tk_im = ImageTk.PhotoImage(im)
+                self.quest_thumbnails[qid] = tk_im
+                return tk_im
+            except Exception:
+                pass
+        return None
 
     # ================= TAB 3: SIMULATOR (WITH AUTO-PRESET) =================
 
     def _setup_simulator_tab(self):
         container = ctk.CTkFrame(
-            self.tab_simulator, fg_color=COLOR_CARD_BG, corner_radius=6,
+            self.tab_simulator, fg_color=COLOR_CARD_BG, corner_radius=8,
             border_width=1, border_color=COLOR_CARD_BORDER
         )
         container.pack(fill="both", expand=True, padx=15, pady=15)
 
         # Modern Simulator Sub-Header / Nav
-        sub_nav = ctk.CTkFrame(container, fg_color="#10111a", corner_radius=6, border_width=1, border_color="#202235")
+        sub_nav = ctk.CTkFrame(container, fg_color="#0d0e17", corner_radius=8, border_width=1, border_color="#1f2235")
         sub_nav.pack(fill="x", padx=20, pady=(15, 10))
 
         ctk.CTkLabel(
@@ -855,7 +911,7 @@ class AutoQuestApp(ctk.CTk):
         self.preset_menu.pack(side="left", padx=10)
 
         # Fields Card
-        fields_card = ctk.CTkFrame(container, fg_color="#0e0f17", corner_radius=6, border_width=1, border_color="#1c1e2d")
+        fields_card = ctk.CTkFrame(container, fg_color="#0a0b12", corner_radius=8, border_width=1, border_color="#1c1e2d")
         fields_card.pack(fill="x", padx=25, pady=12)
 
         # Field 1: Window Title
@@ -925,7 +981,7 @@ class AutoQuestApp(ctk.CTk):
 
     def _setup_console_tab(self):
         container = ctk.CTkFrame(
-            self.tab_console, fg_color=COLOR_CARD_BG, corner_radius=6,
+            self.tab_console, fg_color=COLOR_CARD_BG, corner_radius=8,
             border_width=1, border_color=COLOR_CARD_BORDER
         )
         container.pack(fill="both", expand=True, padx=15, pady=15)
@@ -938,7 +994,7 @@ class AutoQuestApp(ctk.CTk):
         title.pack(anchor="w", padx=25, pady=(18, 5))
 
         # Prominent Safety Warning Box
-        warning_box = ctk.CTkFrame(container, fg_color="#2b1414", border_width=1, border_color="#ef4444", corner_radius=6)
+        warning_box = ctk.CTkFrame(container, fg_color="#2b1414", border_width=1, border_color="#ef4444", corner_radius=8)
         warning_box.pack(fill="x", padx=25, pady=(0, 10))
 
         warn_text = (
@@ -996,7 +1052,7 @@ class AutoQuestApp(ctk.CTk):
 
     def _setup_logs_tab(self):
         container = ctk.CTkFrame(
-            self.tab_logs, fg_color=COLOR_CARD_BG, corner_radius=6,
+            self.tab_logs, fg_color=COLOR_CARD_BG, corner_radius=8,
             border_width=1, border_color=COLOR_CARD_BORDER
         )
         container.pack(fill="both", expand=True, padx=15, pady=15)
@@ -1060,15 +1116,13 @@ class AutoQuestApp(ctk.CTk):
 
         disp_name = acc_info.get("global_name") or username
         self.lbl_username.configure(text=disp_name)
-        self.lbl_drawer_display_name.configure(text=disp_name)
 
         self.api = DiscordQuestsAPI(token)
-        self.farmer = QuestFarmer(
-            api=self.api,
-            simulator=self.simulator,
-            log_callback=self.log,
-            quest_progress_callback=self._on_farm_quest_progress
-        )
+        # Fix QuestFarmer initialization bug (no log_callback arg!)
+        self.farmer = QuestFarmer(api=self.api, simulator=self.simulator)
+        self.farmer.on_log = self.log
+        self.farmer.on_progress = self._on_farm_quest_progress
+
         self.log(f"Account gewechselt zu: {disp_name} (ID: {acc_info.get('id')})", "SUCCESS")
         self.refresh_quests()
 
@@ -1086,7 +1140,8 @@ class AutoQuestApp(ctk.CTk):
             self.after(0, lambda: self._render_videos_tab(quests))
             self.after(0, lambda: self.log(f"{len(quests)} Quests erfolgreich synchronisiert.", "SUCCESS"))
         except Exception as e:
-            self.after(0, lambda: self.log(f"Fehler beim Laden der Quests: {e}", "ERROR"))
+            err_msg = str(e)
+            self.after(0, lambda m=err_msg: self.log(f"Fehler beim Laden der Quests: {m}", "ERROR"))
 
     def _render_quests(self, quests):
         for widget in self.quests_scroll.winfo_children():
@@ -1123,29 +1178,47 @@ class AutoQuestApp(ctk.CTk):
         vid_url = q.get("video_url")
 
         card = ctk.CTkFrame(
-            self.quests_scroll, fg_color=COLOR_CARD_BG, corner_radius=6,
+            self.quests_scroll, fg_color=COLOR_CARD_BG, corner_radius=8,
             border_width=1, border_color=COLOR_CARD_BORDER_ACTIVE if enrolled and not claimed else COLOR_CARD_BORDER
         )
-        card.pack(fill="x", padx=10, pady=6)
+        card.pack(fill="x", padx=10, pady=7)
+
+        # Smooth Hover Glow Animation for Quest Card
+        def _on_card_enter(e):
+            if card.winfo_exists():
+                card.configure(border_color=COLOR_NEON_BLURPLE, fg_color="#181928")
+        def _on_card_leave(e):
+            if card.winfo_exists():
+                normal_b = COLOR_CARD_BORDER_ACTIVE if (enrolled and not claimed) else COLOR_CARD_BORDER
+                card.configure(border_color=normal_b, fg_color=COLOR_CARD_BG)
+
+        card.bind("<Enter>", _on_card_enter)
+        card.bind("<Leave>", _on_card_leave)
 
         left_box = ctk.CTkFrame(card, fg_color="transparent")
-        left_box.pack(side="left", padx=15, pady=12, fill="y")
+        left_box.pack(side="left", padx=14, pady=12, fill="y")
 
-        type_icon = "🎬" if ("VIDEO" in task_type or vid_url) else ("🎮" if "PLAY" in task_type else "⚔️")
-        lbl_icon = ctk.CTkLabel(left_box, text=type_icon, font=ctk.CTkFont(size=22), width=32)
-        lbl_icon.pack(side="left", padx=(0, 10))
+        # Game Thumbnail Banner (Authentic 100x56)
+        thumb = self._get_quest_thumbnail(qid, (100, 56))
+        if thumb:
+            lbl_thumb = tk.Label(left_box, image=thumb, bg=COLOR_CARD_BG, bd=0)
+            lbl_thumb.pack(side="left", padx=(0, 14))
+        else:
+            type_icon = "🎬" if ("VIDEO" in task_type or vid_url) else ("🎮" if "PLAY" in task_type else "⚔️")
+            lbl_icon = ctk.CTkLabel(left_box, text=type_icon, font=ctk.CTkFont(size=24), width=40)
+            lbl_icon.pack(side="left", padx=(0, 14))
 
         details = ctk.CTkFrame(left_box, fg_color="transparent")
         details.pack(side="left")
 
         lbl_qname = ctk.CTkLabel(
-            details, text=qname,
+            details, text=f"{game_title}: {qname}",
             font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
             text_color=COLOR_WHITE
         )
         lbl_qname.pack(anchor="w")
 
-        info_line = f"Spiel: {game_title}  |  App-ID: {app_id}  |  Belohnung: {rewards_text}"
+        info_line = f"App-ID: {app_id}  |  Aufgabe: {task_type}  |  Belohnung: {rewards_text}"
         lbl_info = ctk.CTkLabel(
             details, text=info_line,
             font=ctk.CTkFont(family="Segoe UI", size=10),
@@ -1213,18 +1286,6 @@ class AutoQuestApp(ctk.CTk):
                 command=lambda aid=app_id, gt=game_title: self._sim_single_quest(aid, gt)
             )
 
-        # Smooth Hover Glow Animation for Quest Card
-        def _on_card_enter(e):
-            if card.winfo_exists():
-                card.configure(border_color=COLOR_NEON_BLURPLE, fg_color="#181928")
-        def _on_card_leave(e):
-            if card.winfo_exists():
-                normal_b = COLOR_CARD_BORDER_ACTIVE if (enrolled and not claimed) else COLOR_CARD_BORDER
-                card.configure(border_color=normal_b, fg_color=COLOR_CARD_BG)
-
-        card.bind("<Enter>", _on_card_enter)
-        card.bind("<Leave>", _on_card_leave)
-
         self.quest_cards[qid] = {
             "card": card,
             "bar": prog_bar,
@@ -1290,7 +1351,6 @@ class AutoQuestApp(ctk.CTk):
 
         if matched_info:
             preset_title_str = f"{matched_info['name']} ({matched_info['category']})"
-            # Update preset menu
             self.preset_menu.set(preset_title_str)
             self.entry_sim_title.delete(0, "end")
             self.entry_sim_title.insert(0, matched_info["title"])
@@ -1300,7 +1360,6 @@ class AutoQuestApp(ctk.CTk):
             self.entry_sim_appid.insert(0, str(matched_key))
             self.log(f"Spielvorlage automatisch auf '{matched_info['name']}' gesetzt.", "SUCCESS")
         else:
-            # Custom dynamic fill
             clean_exe = game_title.lower().replace(":", "").replace("'", "").replace(" ", "_") + ".exe"
             self.entry_sim_title.delete(0, "end")
             self.entry_sim_title.insert(0, game_title)
@@ -1338,14 +1397,19 @@ class AutoQuestApp(ctk.CTk):
         else:
             self.btn_auto_farm.configure(text="⏹ FARM STOPPEN", fg_color=COLOR_CRIMSON)
             self.live_orbs_frame.pack(fill="x", padx=10, pady=(0, 8), before=self.quests_scroll)
-            self.farmer.start()
+            self.farmer.start_farm_all(self.cached_quests)
 
-    def _on_farm_quest_progress(self, qid, curr, target, pct):
-        if qid in self.quest_cards:
-            cd = self.quest_cards[qid]
-            self.after(0, lambda: cd["bar"].set(pct / 100.0))
-            p_text = f"{curr // 60}/{target // 60} MIN. ({pct:.0f}%)" if target > 60 else f"{curr}/{target}S ({pct:.0f}%)"
-            self.after(0, lambda: cd["label"].configure(text=p_text))
+    def _on_farm_quest_progress(self, p_info):
+        if isinstance(p_info, dict):
+            qid = p_info.get("quest_id")
+            pct = p_info.get("percent", 0)
+            curr = p_info.get("current_seconds", 0)
+            target = p_info.get("target_seconds", 900)
+            if qid in self.quest_cards:
+                cd = self.quest_cards[qid]
+                self.after(0, lambda: cd["bar"].set(pct / 100.0))
+                p_text = f"{curr // 60}/{target // 60} MIN. ({pct:.0f}%)" if target > 60 else f"{curr}/{target}S ({pct:.0f}%)"
+                self.after(0, lambda: cd["label"].configure(text=p_text))
 
     # ================= SIMULATOR CONTROLS =================
 
@@ -1359,7 +1423,8 @@ class AutoQuestApp(ctk.CTk):
             return
 
         self.log(f"Starte Spiel-Simulation: '{title}' ({exe})...", "INFO")
-        ok = self.simulator.start_simulation(title=title, exe_name=exe, app_id=aid)
+        res = self.simulator.start_simulation(app_id=aid, game_title=title, custom_exe=exe)
+        ok = res and res.get("success")
         if ok:
             self.lbl_sim_status.configure(
                 text=f"Status: ● AKTIV - Simuliert '{title}' ({exe})",

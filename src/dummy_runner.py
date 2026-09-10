@@ -24,17 +24,18 @@ def main():
     root.configure(bg="#090a0f")
     root.resizable(False, False)
 
-    # Set Window Icon if present
+    # Set Window Icon using clean PNG natively
     icon_candidates = [
-        os.path.join(os.path.dirname(__file__), "..", "assets", "app_icon.ico"),
-        os.path.join(os.path.dirname(__file__), "app_icon.ico"),
-        os.path.join(os.getcwd(), "assets", "app_icon.ico"),
-        os.path.join(os.getcwd(), "app_icon.ico"),
+        os.path.join(os.path.dirname(__file__), "..", "DQS.png"),
+        os.path.join(os.path.dirname(__file__), "..", "assets", "app_icon.png"),
+        os.path.join(os.getcwd(), "DQS.png"),
+        os.path.join(os.getcwd(), "assets", "app_icon.png"),
     ]
     for ic in icon_candidates:
         if os.path.exists(ic):
             try:
-                root.iconbitmap(ic)
+                _photo = tk.PhotoImage(file=ic)
+                root.iconphoto(True, _photo)
                 break
             except Exception:
                 pass

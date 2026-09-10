@@ -78,17 +78,20 @@ class DQSInstaller(ctk.CTk):
         self._build_ui()
 
     def _set_window_icon(self):
+        """Sets the installer window icon natively using DQS.png / app_icon.png."""
         bundle = get_bundle_dir()
         candidates = [
-            os.path.join(bundle, "assets", "app_icon.ico"),
-            os.path.join(bundle, "app_icon.ico"),
-            os.path.join(os.getcwd(), "assets", "app_icon.ico"),
-            os.path.join(os.getcwd(), "app_icon.ico"),
+            os.path.join(bundle, "DQS.png"),
+            os.path.join(bundle, "assets", "app_icon.png"),
+            os.path.join(os.getcwd(), "DQS.png"),
+            os.path.join(os.getcwd(), "assets", "app_icon.png"),
         ]
         for c in candidates:
             if os.path.exists(c):
                 try:
-                    self.iconbitmap(c)
+                    im = Image.open(c)
+                    self._inst_icon_photo = ImageTk.PhotoImage(im)
+                    self.iconphoto(True, self._inst_icon_photo)
                     break
                 except Exception:
                     pass
@@ -275,7 +278,6 @@ class DQSInstaller(ctk.CTk):
             # Files to deploy
             payloads = [
                 ("DQS.exe", "DQS.exe"),
-                ("app_icon.ico", "app_icon.ico"),
                 ("DQS.png", "DQS.png"),
                 ("Start.bat", "Start.bat"),
                 ("README.md", "README.md"),
@@ -349,7 +351,7 @@ exit
                 uf.write(uninstall_script)
 
             installed_exe = os.path.join(target_dir, "DQS.exe")
-            installed_ico = os.path.join(target_dir, "app_icon.ico")
+            installed_ico = installed_exe
 
             # Shortcuts
             self._update_progress(0.85, "Registriere Desktop- und Startmenü-Verknüpfungen...")

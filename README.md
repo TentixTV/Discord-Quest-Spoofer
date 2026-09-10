@@ -5,12 +5,13 @@
 
 ---
 
-## 📥 DIREKTE DOWNLOADS (V1)
+## 📥 OFFIZIELLER DOWNLOAD (RELEASE V1)
 
-| Datei | Typ | Beschreibung | Direkter Download |
+| Datei | Typ | Beschreibung | Download |
 | :--- | :---: | :--- | :--- |
-| **`DQS_Installer.exe`** | 📦 **Setup (Empfohlen)** | 1-Klick Installer, Desktop-Verknüpfung, Startmenü-Eintrag & Uninstaller | [⬇️ DQS_Installer.exe herunterladen](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/download/V1/DQS_Installer.exe) |
-| **`DQS.exe`** | ⚡ **Portable App** | Standalone Executable, direkt ohne Installation als Administrator starten | [⬇️ DQS.exe herunterladen](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/download/V1/DQS.exe) |
+| **`DQS_Installer.exe`** | 📦 **Setup (Empfohlen)** | 1-Klick Installer, richtet `DQS` auf deinem PC ein, erstellt Desktop- & Startmenü-Verknüpfungen und enthält den Uninstaller | [⬇️ DQS_Installer.exe herunterladen](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/download/V1/DQS_Installer.exe) |
+
+> ℹ️ *Hinweis:* Die Standalone `DQS.exe` wird durch den Installer direkt in deinem lokalen Benutzerverzeichnis installiert (`%LOCALAPPDATA%\Programs\Discord Quest Spoofer`).
 
 ---
 
@@ -19,7 +20,7 @@
 > ⚠️ **ACHTUNG:**  
 > **DQS ist zu 100% virenfrei, enthält KEINE Backdoor, KEIN Phishing und KEINEN Token-Logger!**  
 > Wenn ihr diese Software **nicht direkt von meinem offiziellen GitHub** ([TentixTV/Discord-Quest-Spoofer](https://github.com/TentixTV/Discord-Quest-Spoofer)) heruntergeladen habt, **seid ihr selber schuld!**  
-> Es kursieren im Internet häufig manipulierte Re-Uploads oder angebliche 'Cracks' von Drittanbietern. Ladet ausschließlich die offiziellen Releases von mir herunter!
+> Es kursieren im Internet häufig manipulierte Re-Uploads oder angebliche 'Cracks' von Drittanbietern. Ladet ausschließlich das offizielle Release von mir herunter!
 
 ---
 
@@ -31,60 +32,30 @@ Kein stundenlanges Herunterladen von 100 GB schweren Spielen, kein sinnloses Lau
 
 ---
 
-## ✨ Features
+## ✨ Features & Highlights
 
 - 🎬 **Vollständige Video & Trailer Galerie**: Zeigt alle offiziellen Discord Quest-Videos (720p HD MP4) direkt in der App an. Mit 1-Klick im Browser/Player abspielen oder per Express-Abschluss in unter 5 Sekunden erledigen!
-- 🎮 **Automatische Spielvorlagen-Anpassung**: Klickst du bei einer Quest auf `SIMULIEREN`, stellt DQS die Spielvorlage im Simulator vollautomatisch auf das passende Spiel (Titel, Exe, App-ID) um und startet sofort die Simulation!
-- 🔓 **Native Win32 Spiel-Emulation**: Simuliert echte Windows-Spielprozesse beliebter Quest-Spiele (Helldivers 2, The Finals, Genshin Impact, Warframe, Fortnite, etc.) mit korrekten App-IDs und Registry-Einträgen.
-- 📱 **Sofort-Abschluss für Video & Mobile Quests**: Quests vom Typ *Watch Video* oder *Mobile Quest* werden innerhalb von 5 Sekunden abgeschlossen!
-- 🔮 **Live Orbs Status**: Animierte Anzeige aller verfügbaren Orbs, Auto-Claiming bei Questabschluss.
+- 🎮 **Automatische Spielvorlagen-Anpassung**: Klickst du bei einer beliebigen Quest auf `SIMULIEREN`, stellt DQS die Spielvorlage im Simulator vollautomatisch auf das passende Spiel (Titel, Exe, App-ID) um und startet sofort die Simulation!
 - 🎨 **Originalgetreuer Discord Profil-Drawer mit echten animierten GIFs**:
   - Animierter Avatar (`.gif`) und animiertes Profil-Banner (`.gif`) von `tentix`
   - Offizielle Discord-Abzeichen (3-Jahre Nitro, HypeSquad Bravery, Server Booster Lvl 9, Legacy Username, Quest Badge, Orbs Badge)
-  - Status-Sprechblase: `🩸 BEHIND EVERY KISS IS A CLAW THAT CAN BITE`
+  - Status-Sprechblase: `🩸 BEHIND EVERY KISS IS A CLAW THAT CAN BITE` (100% ohne Text-Abschneiden)
   - Echte Bio & Rich-Presence Aktivitätskarte mit Live-Timer.
 - ⚙️ **Ultra-Crisp Vector Gear & Hover-Animationen**: Vektoriell gerendertes Einstellungs-Zahnrad mit flüssiger Rotation und leuchtendem Glow bei Hover. Sämtliche Quest- und Videokarten besitzen moderne Discord-Hover-Effekte.
+- 🖼️ **Natives PNG App-Icon**: Sauberes, transparentes `DQS.png` Logo, komplett ohne veraltete `.ico`-Dateien.
 - 🛡️ **Auto-Admin Elevation**: Startet automatisch mit vollen Administratorrechten, damit Hooks und Prozess-Erkennungen auch bei einem mit Adminrechten laufenden Discord 100% greifen.
 - 📦 **Standalone Installer**: Kommt mit einem kinderleichten Setup (`DQS_Installer.exe`), Desktop-Verknüpfung und Uninstaller.
 
 ---
 
-## ❓ Häufige Fragen & Wissenswertes (FAQ)
+## 🚀 Schnellanleitung
 
-### ⏱️ Warum dauert das Quest-Spielen 15 Minuten?
-Discord verlangt für reguläre Spiele-Quests eine aktive Spielzeit von **15 Minuten**.  
-DQS simuliert das Spiel sekundengenau mit echten Heartbeats. Du siehst in Discord sofort die Benachrichtigung *"Bereit wenn du es bist"* und im Quest-Menü steigen die Prozentzahlen kontinuierlich an. Sobald die 15 Minuten erreicht sind, wird die Belohnung gutgeschrieben und die nächste Quest gestartet.
-
-### 💻 Warum flackert Discord oder der Explorer ganz kurz beim Start?
-Das ist **völlig normal**! Um Discord dazu zu bringen, ein neu gestartetes Spiel sofort zu erfassen (ohne dass du Discord manuell neu starten musst), führt DQS eine saubere Win32-Fensteraktualisierung durch. Das dauert nur einen Wimpernschlag.
-
-### 🔒 Brauche ich Angst um meinen Account haben?
-Nein. DQS liest lediglich deine lokalen Client-Daten aus, um deine Quest-Fortschritte anzuzeigen, oder nutzt Discords offizielle RPC-Schnittstelle. Es wird nichts an fremde Server gesendet. Alles läuft lokal auf deinem Rechner.
+1. Lade dir die neueste **`DQS_Installer.exe`** aus dem [Release-Tab](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V1) herunter.
+2. Führe den Installer aus (erfordert Admin-Rechte zur Installation).
+3. Starte **DQS** über die Desktop-Verknüpfung.
+4. Wähle deinen Account aus oder nutze den automatischen Token-Detektor.
+5. Klicke auf **Alle Quests annehmen** oder wähle bei einer Quest **SIMULIEREN** – fertig!
 
 ---
 
-## 🚀 Installation & Benutzung
-
-### Option 1: Schneller Installer (Empfohlen)
-1. Lade [`DQS_Installer.exe`](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/download/V1/DQS_Installer.exe) herunter.
-2. Führe den Installer aus und wähle deinen Installationspfad.
-3. Starte **DQS** direkt über die neue Desktop-Verknüpfung!
-
-### Option 2: Portable Version
-1. Lade [`DQS.exe`](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/download/V1/DQS.exe) herunter.
-2. Starte `DQS.exe` als Administrator.
-3. Wähle deine Quest aus oder klicke auf **AUTO-FARM STARTEN**.
-4. Lehn dich zurück und sammle deine Orbs ein!
-
----
-
-## ⭐ Support & Sterne
-
-Wenn dir das Tool geholfen hat und du dir Zeit und Nerven gespart hast:  
-👉 **Lass unbedingt ein Sternchen (Star ⭐) oben rechts auf GitHub da!** Das unterstützt die Weiterentwicklung und zukünftige Quest-Updates!
-
----
-
-## 📜 Lizenz & Urheberrecht
-© 2026 **Sandro (T3X / TNTIX)**. Alle Rechte vorbehalten.  
-Die Dekompilierung, der Weiterverkauf oder das Re-Packaging zu schädlichen Zwecken ist strengstens untersagt (siehe `LICENSE`).
+*Entwickelt von Sandro (T3X / TNTIX) • 2026*
