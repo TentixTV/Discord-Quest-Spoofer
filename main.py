@@ -1,6 +1,6 @@
 """
-Discord Auto Quest Completer
-Main Application Entry Point (Admin Elevation & Multi-Engine Edition)
+DQS // Discord Quest Spoofer
+Main Application Entry Point (Edge Chromium / WebView2 GPU Edition)
 """
 
 import sys
@@ -19,11 +19,9 @@ def elevate_if_needed():
     if not is_admin():
         try:
             if getattr(sys, 'frozen', False):
-                # Running as compiled .exe
                 exe_path = sys.executable
                 params = ""
             else:
-                # Running as python script
                 exe_path = sys.executable
                 params = f'"{os.path.abspath(__file__)}"'
 
@@ -35,17 +33,45 @@ def elevate_if_needed():
         except Exception:
             pass
 
-# Ensure src folder is importable
-current_dir = os.path.dirname(os.path.abspath(__file__))
-if current_dir not in sys.path:
-    sys.path.insert(0, current_dir)
+def get_base_dir():
+    if getattr(sys, 'frozen', False):
+        if hasattr(sys, '_MEIPASS'):
+            base = sys._MEIPASS
+            if os.path.exists(os.path.join(base, "ui", "index.html")):
+                return base
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
 
-from src.gui import AutoQuestApp
+base_dir = get_base_dir()
+if base_dir not in sys.path:
+    sys.path.insert(0, base_dir)
+
+import webview
+from src.bridge import DQSBridge
 
 def main():
     elevate_if_needed()
-    app = AutoQuestApp()
-    app.mainloop()
+
+    bridge = DQSBridge()
+    html_file = os.path.abspath(os.path.join(base_dir, "ui", "index.html"))
+
+    if not os.path.exists(html_file):
+        raise FileNotFoundError(f"UI HTML not found at: {html_file}")
+
+    window = webview.create_window(
+        title="DQS // Discord Quest Spoofer",
+        url=html_file,
+        js_api=bridge,
+        width=1160,
+        height=760,
+        min_size=(980, 640),
+        frameless=True,
+        easy_drag=False,
+        background_color="#08090d"
+    )
+    bridge.set_window(window)
+
+    webview.start(gui="edgechromium", debug=False)
 
 if __name__ == "__main__":
     main()

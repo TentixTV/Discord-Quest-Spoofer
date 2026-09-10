@@ -1,14 +1,15 @@
 """
 DQS - Discord Quest Spoofer (Gothic Dark AAA Edition)
 Official Release by Sandro (T3X / TNTIX)
-Pixel-perfect Discord Dark Aesthetic, Overlapping Real Animated Avatar & Banner GIFs,
-Full Video Gallery, Auto-Preset Simulation, and 100% Reliable Quest Synchronization.
+Pixel-perfect Discord Dark Aesthetic, Real Animated Avatar & Banner GIFs,
+HD Official Cover Tiles, Custom Discord Nav-Bar, Auto-Preset Simulation, and 100% Reliable Quest Synchronization.
 """
 
 import os
 import sys
 import io
 import time
+import tempfile
 import threading
 import tkinter as tk
 from tkinter import messagebox
@@ -36,10 +37,11 @@ ctk.set_default_color_theme("blue")
 
 # Discord Exact Palette
 COLOR_BG_DARK = "#08090d"          # Deep Void Pitch Black
-COLOR_BG_SIDEBAR = "#101118"       # Graphite Surface
+COLOR_BG_SIDEBAR = "#0e0f17"       # Graphite Surface
 COLOR_CARD_BG = "#11121c"          # Dark Slate Container
+COLOR_CARD_BG_HOVER = "#171827"    # Card Hover BG
 COLOR_CARD_BORDER = "#1f2233"      # Tech Border
-COLOR_CARD_BORDER_ACTIVE = "#5865F2" # Neon Blurple Highlight
+COLOR_CARD_BORDER_HOVER = "#5865F2" # Neon Blurple Highlight
 COLOR_WHITE = "#ffffff"            # Pure White
 COLOR_TEXT_PRIMARY = "#f2f3f5"     # Crisp Light Gray
 COLOR_TEXT_MUTED = "#8e92a4"       # Soft Ash Gray
@@ -50,251 +52,278 @@ COLOR_NEON_BLURPLE_HOVER = "#4752C4"
 COLOR_EMERALD = "#23A55A"          # Emerald Green
 COLOR_EMERALD_HOVER = "#1B8246"
 COLOR_CRIMSON = "#F23F43"          # Crimson Red
-COLOR_CRIMSON_HOVER = "#C9282C"
 COLOR_GOLD = "#FEE75C"             # Gold/Amber
 COLOR_GOLD_HOVER = "#E0C836"
-COLOR_CYAN = "#00A8FC"             # Cyan
-COLOR_CYAN_HOVER = "#0082C4"
 COLOR_INDIGO = "#6366F1"           # Indigo
 COLOR_INDIGO_HOVER = "#4F46E5"
-COLOR_DARK_BTN = "#171824"         # Dark Button Surface
-COLOR_DARK_BTN_HOVER = "#232638"
+COLOR_DARK_BTN = "#181926"         # Dark Button Surface
+COLOR_DARK_BTN_HOVER = "#24263a"
+
 
 class AutoQuestApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("DQS // Discord Quest Spoofer")
-        self.geometry("1220x840")
-        self.minsize(1050, 720)
+        self.geometry("1240x860")
+        self.minsize(1100, 750)
         self.configure(fg_color=COLOR_BG_DARK)
-        self.protocol("WM_DELETE_WINDOW", self._on_window_close)
 
-        # Set Window Icon
-        self._set_app_icon()
+        # Apply Window Titlebar Icon
+        self._set_window_icon()
 
-        # Core Engines
-        self.simulator = GameSimulator()
-        self.api: DiscordQuestsAPI = None
-        self.farmer: QuestFarmer = None
+        # State Variables
+        self.accounts = []
         self.current_user = None
-        self.detected_accounts = []
         self.cached_quests = []
         self.quest_cards = {}
-        self.quest_thumbnails = {}
+        self.quest_tiles = {}
+        self.current_tab = "quests"
 
-        # Animation states
-        self.gear_angle_idx = 0
-        self.gear_hovered = False
-        self.gear_photos = []
-        self.gear_photos_hover = []
-        self.avatar_frames = []
-        self.avatar_frame_idx = 0
-        self.banner_frames = []
-        self.banner_frame_idx = 0
-        self.orbs_pulse_idx = 0
-        self.orbs_sparkles = ["✦ ✧ ✦", "✧ ✦ ✧", "✦ ✦ ✧", "✧ ✧ ✦"]
+        # Core Backend Instances
+        self.api = None
+        self.simulator = GameSimulator()
+        self.farmer = None
+        self.auto_farm_running = False
 
-        # Cache badge images
+        # Profile Drawer Visibility
+        self.drawer_visible = False
+
+        # Asset Caches
         self.badge_images = {}
-        self._load_badge_assets()
+        self.gear_photos = []
+        self.gear_hover_photos = []
+        self.gear_frame_index = 0
+        self.is_gear_hovered = False
 
-        # Load Animation Frames
+        self.avatar_frames = []
+        self.banner_frames = []
+        self.avatar_frame_index = 0
+        self.banner_frame_index = 0
+
+        # Load Visual Assets
+        self._load_badge_assets()
         self._load_gear_assets()
         self._load_profile_gif_assets()
 
-        # UI Setup
+        # Build UI Structure
         self._build_header()
+        self._build_nav_bar()
         self._build_main_layout()
+        self._build_profile_drawer()
 
-        # Start background animation loops (optimized & lag-free)
+        # Start Continuous Animation Loops
         self._animate_gear()
         self._animate_profile_gifs()
-        self._animate_orbs_banner()
 
-        # Initial Load
+        # Handle Clean Window Teardown
+        self.protocol("WM_DELETE_WINDOW", self._on_window_close)
+
+        # Initial Auto-Discovery
         self.after(100, self._initial_load)
 
-    def _set_app_icon(self):
-        """Sets the application window and taskbar icon cleanly using DQS.png (No .ico!)."""
-        candidates = [
-            os.path.join(os.path.dirname(__file__), "..", "DQS.png"),
-            os.path.join(os.path.dirname(__file__), "..", "assets", "app_icon.png"),
-            os.path.join(os.getcwd(), "DQS.png"),
-            os.path.join(os.getcwd(), "assets", "app_icon.png"),
-        ]
-        for c in candidates:
-            if os.path.exists(c):
-                try:
-                    im = Image.open(c)
-                    self._app_icon_photo = ImageTk.PhotoImage(im)
-                    self.iconphoto(True, self._app_icon_photo)
-                    break
-                except Exception:
-                    pass
+    # ================= ASSET & ICON MANAGEMENT =================
+
+    def _set_window_icon(self):
+        """Applies the cracked Discord DQS icon to the Windows titlebar and taskbar."""
+        try:
+            icon_path = os.path.join(os.path.dirname(__file__), "..", "DQS.png")
+            if not os.path.exists(icon_path):
+                icon_path = os.path.join(os.getcwd(), "DQS.png")
+            if not os.path.exists(icon_path):
+                icon_path = os.path.join(os.path.dirname(__file__), "..", "assets", "app_icon.png")
+            if not os.path.exists(icon_path):
+                icon_path = os.path.join(os.getcwd(), "assets", "app_icon.png")
+
+            if os.path.exists(icon_path):
+                # Dynamically generate multi-resolution ICO in system temp directory for Windows Titlebar
+                temp_ico = os.path.join(tempfile.gettempdir(), "dqs_runtime_icon.ico")
+                im = Image.open(icon_path)
+                im.save(temp_ico, format='ICO', sizes=[(16,16), (24,24), (32,32), (48,48), (64,64), (128,128)])
+                self.iconbitmap(temp_ico)
+
+                # Set native Tkinter iconphoto
+                self._app_icon_photo = ImageTk.PhotoImage(im.resize((32, 32), Image.Resampling.LANCZOS))
+                self.iconphoto(True, self._app_icon_photo)
+        except Exception as e:
+            print(f"Notice: Icon load error: {e}")
+
     def _load_badge_assets(self):
         """Loads official Discord badge PNGs."""
-        badge_dir = os.path.join(os.path.dirname(__file__), "..", "assets", "badges")
-        if not os.path.exists(badge_dir):
-            badge_dir = os.path.join(os.getcwd(), "assets", "badges")
+        base_dir = os.path.join(os.path.dirname(__file__), "..", "assets", "badges")
+        if not os.path.exists(base_dir):
+            base_dir = os.path.join(os.getcwd(), "assets", "badges")
 
-        badge_names = ['nitro', 'bravery', 'booster', 'legacy', 'quest', 'orbs']
-        if os.path.exists(badge_dir):
-            for b in badge_names:
-                p = os.path.join(badge_dir, f"{b}.png")
-                if os.path.exists(p):
-                    try:
-                        im = Image.open(p).convert("RGBA").resize((20, 20), Image.Resampling.LANCZOS)
-                        self.badge_images[b] = ImageTk.PhotoImage(im)
-                    except Exception:
-                        pass
+        badge_files = {
+            'nitro': 'nitro.png',
+            'bravery': 'bravery.png',
+            'booster': 'booster.png',
+            'legacy': 'legacy.png',
+            'quest': 'quest.png',
+            'orbs': 'orbs.png'
+        }
+
+        for name, fname in badge_files.items():
+            p = os.path.join(base_dir, fname)
+            if os.path.exists(p):
+                try:
+                    im = Image.open(p).convert("RGBA").resize((22, 22), Image.Resampling.LANCZOS)
+                    self.badge_images[name] = ImageTk.PhotoImage(im)
+                except Exception:
+                    pass
 
     def _load_gear_assets(self):
-        """Loads pre-rendered rotating gear frames as native PhotoImages for zero-lag rendering."""
+        """Pre-renders vector gear frames in memory for smooth window dragging."""
         gear_dir = os.path.join(os.path.dirname(__file__), "..", "assets", "gear")
         if not os.path.exists(gear_dir):
             gear_dir = os.path.join(os.getcwd(), "assets", "gear")
 
         if os.path.exists(gear_dir):
             for i in range(16):
-                fpath = os.path.join(gear_dir, f"gear_{i}.png")
-                if os.path.exists(fpath):
+                fp = os.path.join(gear_dir, f"frame_{i}.png")
+                if os.path.exists(fp):
                     try:
-                        im = Image.open(fpath).convert("RGBA").resize((22, 22), Image.Resampling.LANCZOS)
+                        im = Image.open(fp).convert("RGBA").resize((20, 20), Image.Resampling.LANCZOS)
                         self.gear_photos.append(ImageTk.PhotoImage(im))
                     except Exception:
                         pass
-                fpath_h = os.path.join(gear_dir, f"gear_h_{i}.png")
-                if os.path.exists(fpath_h):
+
+                fp_h = os.path.join(gear_dir, f"hover_frame_{i}.png")
+                if os.path.exists(fp_h):
                     try:
-                        im_h = Image.open(fpath_h).convert("RGBA").resize((22, 22), Image.Resampling.LANCZOS)
-                        self.gear_photos_hover.append(ImageTk.PhotoImage(im_h))
+                        im_h = Image.open(fp_h).convert("RGBA").resize((20, 20), Image.Resampling.LANCZOS)
+                        self.gear_hover_photos.append(ImageTk.PhotoImage(im_h))
                     except Exception:
                         pass
 
     def _load_profile_gif_assets(self):
-        """Loads real animated avatar and banner GIFs into memory for silky smooth playback."""
+        """Decodes animated GIF frames using canvas compositing to eliminate all noise artifacts."""
         assets_dir = os.path.join(os.path.dirname(__file__), "..", "assets")
         if not os.path.exists(assets_dir):
             assets_dir = os.path.join(os.getcwd(), "assets")
 
-        # 1. Avatar GIF (76x76 with clean circular cut & border ring)
-        av_path = os.path.join(assets_dir, "tentix_avatar.gif")
-        if os.path.exists(av_path):
+        # 1. Decode Banner GIF cleanly
+        banner_path = os.path.join(assets_dir, "tentix_banner.gif")
+        if os.path.exists(banner_path):
             try:
-                av = Image.open(av_path)
-                mask = Image.new('L', (76, 76), 0)
+                im = Image.open(banner_path)
+                last_frame = Image.new("RGBA", im.size)
+                for frame in ImageSequence.Iterator(im):
+                    curr = frame.convert("RGBA")
+                    canvas = last_frame.copy()
+                    canvas.paste(curr, (0, 0), curr)
+                    resized = canvas.resize((340, 125), Image.Resampling.LANCZOS)
+                    self.banner_frames.append(ImageTk.PhotoImage(resized))
+                    last_frame = canvas
+            except Exception as e:
+                print(f"Notice: Banner load error: {e}")
+
+        # 2. Decode Avatar GIF with Anti-Aliased Circular Mask & 3px Border
+        avatar_path = os.path.join(assets_dir, "tentix_avatar.gif")
+        if os.path.exists(avatar_path):
+            try:
+                im = Image.open(avatar_path)
+                size = 80
+                mask_size = (size * 4, size * 4)
+                mask = Image.new('L', mask_size, 0)
                 draw = ImageDraw.Draw(mask)
-                draw.ellipse((0, 0, 76, 76), fill=255)
+                draw.ellipse([(0, 0), (mask_size[0] - 1, mask_size[1] - 1)], fill=255)
+                mask = mask.resize((size, size), Image.Resampling.LANCZOS)
 
-                for frame in ImageSequence.Iterator(av):
-                    c = frame.convert("RGBA").resize((76, 76), Image.Resampling.LANCZOS)
-                    c.putalpha(mask)
-                    # Outer ring
-                    bordered = Image.new('RGBA', (82, 82), (0, 0, 0, 0))
-                    b_draw = ImageDraw.Draw(bordered)
-                    b_draw.ellipse((0, 0, 82, 82), fill=(17, 18, 28, 255))
-                    bordered.paste(c, (3, 3), c)
-                    self.avatar_frames.append(ImageTk.PhotoImage(bordered))
-            except Exception as e:
-                print("Failed to load avatar GIF:", e)
+                last_frame = Image.new("RGBA", im.size)
+                for frame in ImageSequence.Iterator(im):
+                    curr = frame.convert("RGBA")
+                    canvas = last_frame.copy()
+                    canvas.paste(curr, (0, 0), curr)
+                    sq = canvas.resize((size, size), Image.Resampling.LANCZOS)
 
-        # 2. Banner GIF (340x120 edge-to-edge)
-        ban_path = os.path.join(assets_dir, "tentix_banner.gif")
-        if os.path.exists(ban_path):
-            try:
-                ban = Image.open(ban_path)
-                for frame in ImageSequence.Iterator(ban):
-                    c = frame.convert("RGBA").resize((340, 120), Image.Resampling.LANCZOS)
-                    self.banner_frames.append(ImageTk.PhotoImage(c))
+                    circ = Image.new('RGBA', (size + 6, size + 6), (0, 0, 0, 0))
+                    draw_circ = ImageDraw.Draw(circ)
+                    draw_circ.ellipse([(0, 0), (size + 5, size + 5)], fill=COLOR_CARD_BG)
+                    circ.paste(sq, (3, 3), mask=mask)
+
+                    self.avatar_frames.append(ImageTk.PhotoImage(circ))
+                    last_frame = canvas
             except Exception as e:
-                print("Failed to load banner GIF:", e)
+                print(f"Notice: Avatar load error: {e}")
+
+    # ================= ANIMATION LOOPS =================
 
     def _animate_gear(self):
-        """Spins settings gear with zero CPU overhead and dynamic hover animation."""
-        frames = self.gear_photos_hover if (self.gear_hovered and self.gear_photos_hover) else self.gear_photos
-        if frames and hasattr(self, "lbl_gear_tk") and self.lbl_gear_tk.winfo_exists():
-            if self.gear_hovered:
-                self.gear_angle_idx = (self.gear_angle_idx + 1) % len(frames)
-                self.lbl_gear_tk.configure(image=frames[self.gear_angle_idx])
-            else:
-                self.lbl_gear_tk.configure(image=frames[0])
-        delay = 55 if self.gear_hovered else 300
-        self.after(delay, self._animate_gear)
+        """Rotates the vector settings gear."""
+        if self.gear_photos:
+            photos = self.gear_hover_photos if (self.is_gear_hovered and self.gear_hover_photos) else self.gear_photos
+            self.gear_frame_index = (self.gear_frame_index + 1) % len(photos)
+            if hasattr(self, 'lbl_gear_tk') and self.lbl_gear_tk.winfo_exists():
+                self.lbl_gear_tk.configure(image=photos[self.gear_frame_index])
+        self.after(55, self._animate_gear)
 
     def _animate_profile_gifs(self):
-        """Plays avatar and banner GIFs when the drawer is visible."""
-        if hasattr(self, "drawer_visible") and self.drawer_visible:
-            # Avatar
-            if self.avatar_frames and hasattr(self, "lbl_drawer_avatar_tk") and self.lbl_drawer_avatar_tk.winfo_exists():
-                self.avatar_frame_idx = (self.avatar_frame_idx + 1) % len(self.avatar_frames)
-                self.lbl_drawer_avatar_tk.configure(image=self.avatar_frames[self.avatar_frame_idx])
-            # Banner
-            if self.banner_frames and hasattr(self, "lbl_drawer_banner_tk") and self.lbl_drawer_banner_tk.winfo_exists():
-                self.banner_frame_idx = (self.banner_frame_idx + 1) % len(self.banner_frames)
-                self.lbl_drawer_banner_tk.configure(image=self.banner_frames[self.banner_frame_idx])
+        """Drives the avatar & banner GIF playback inside the profile drawer."""
+        if self.drawer_visible:
+            if self.banner_frames and hasattr(self, 'lbl_drawer_banner_tk') and self.lbl_drawer_banner_tk.winfo_exists():
+                self.banner_frame_index = (self.banner_frame_index + 1) % len(self.banner_frames)
+                self.lbl_drawer_banner_tk.configure(image=self.banner_frames[self.banner_frame_index])
 
-        self.after(60, self._animate_profile_gifs)
+            if self.avatar_frames and hasattr(self, 'lbl_drawer_avatar_tk') and self.lbl_drawer_avatar_tk.winfo_exists():
+                self.avatar_frame_index = (self.avatar_frame_index + 1) % len(self.avatar_frames)
+                self.lbl_drawer_avatar_tk.configure(image=self.avatar_frames[self.avatar_frame_index])
 
-    def _animate_orbs_banner(self):
-        """Pulses the active Orbs animation if visible."""
-        if hasattr(self, "lbl_orbs_sparkle") and self.lbl_orbs_sparkle.winfo_exists():
-            self.orbs_pulse_idx = (self.orbs_pulse_idx + 1) % len(self.orbs_sparkles)
-            self.lbl_orbs_sparkle.configure(text=self.orbs_sparkles[self.orbs_pulse_idx])
-        self.after(350, self._animate_orbs_banner)
+        self.after(50, self._animate_profile_gifs)
 
     def _on_window_close(self):
+        """Gracefully shuts down simulation and destroys the window."""
         try:
-            if self.farmer and self.farmer.running:
-                self.farmer.stop()
             if self.simulator and self.simulator.is_running():
                 self.simulator.stop_simulation()
         except Exception:
             pass
         self.destroy()
-        sys.exit(0)
 
-    # ================= HEADER =================
+    # ================= UI LAYOUT: HEADER =================
 
     def _build_header(self):
-        # 82px height ensures ZERO CLIPPING
+        """Top Header: Clean Transparent App Logo, Title, Admin Glow Pill, and User Pill."""
         self.header_frame = ctk.CTkFrame(
-            self, fg_color=COLOR_BG_SIDEBAR, height=82, corner_radius=0,
+            self, fg_color=COLOR_BG_SIDEBAR, height=76, corner_radius=0,
             border_width=1, border_color=COLOR_CARD_BORDER
         )
         self.header_frame.pack(fill="x", side="top")
         self.header_frame.pack_propagate(False)
 
-        # Left Branding - Clean Transparent App Logo
+        # Left Branding Box
         brand_box = ctk.CTkFrame(self.header_frame, fg_color="transparent")
-        brand_box.pack(side="left", padx=20, pady=12)
+        brand_box.pack(side="left", padx=20, pady=10)
 
-        icon_path = os.path.join(os.path.dirname(__file__), "..", "assets", "app_icon.png")
+        # In-App Cracked Discord PNG Logo
+        icon_path = os.path.join(os.path.dirname(__file__), "..", "DQS.png")
         if not os.path.exists(icon_path):
-            icon_path = os.path.join(os.getcwd(), "assets", "app_icon.png")
+            icon_path = os.path.join(os.getcwd(), "DQS.png")
+        if not os.path.exists(icon_path):
+            icon_path = os.path.join(os.path.dirname(__file__), "..", "assets", "app_icon.png")
 
         if os.path.exists(icon_path):
             try:
                 raw_logo = Image.open(icon_path).convert("RGBA")
-                self.logo_img = ctk.CTkImage(light_image=raw_logo, dark_image=raw_logo, size=(44, 44))
-                lbl_icon = ctk.CTkLabel(brand_box, text="", image=self.logo_img)
-                lbl_icon.pack(side="left", padx=(0, 14))
+                self.header_logo_img = ctk.CTkImage(light_image=raw_logo, dark_image=raw_logo, size=(42, 42))
+                lbl_icon = ctk.CTkLabel(brand_box, text="", image=self.header_logo_img)
+                lbl_icon.pack(side="left", padx=(0, 12))
             except Exception:
                 pass
 
         title_sub = ctk.CTkFrame(brand_box, fg_color="transparent")
         title_sub.pack(side="left")
 
-        # Row 1: App Title + Admin Glow Pill SIDE BY SIDE (Never cut off!)
+        # Row 1: DQS Title + Admin Pill (Side by Side)
         top_row = ctk.CTkFrame(title_sub, fg_color="transparent")
         top_row.pack(anchor="w", pady=(0, 2))
 
         app_title = ctk.CTkLabel(
             top_row, text="DQS",
-            font=ctk.CTkFont(family="Segoe UI", size=24, weight="bold"),
+            font=ctk.CTkFont(family="Segoe UI", size=22, weight="bold"),
             text_color=COLOR_WHITE
         )
-        app_title.pack(side="left", padx=(0, 12))
+        app_title.pack(side="left", padx=(0, 10))
 
         admin_pill = ctk.CTkFrame(
             top_row, fg_color="#0c2314", border_width=1, border_color=COLOR_EMERALD, corner_radius=12
@@ -305,46 +334,53 @@ class AutoQuestApp(ctk.CTk):
             admin_pill, text="● ADMIN AKTIV",
             font=ctk.CTkFont(family="Segoe UI", size=9, weight="bold"),
             text_color=COLOR_EMERALD
-        ).pack(padx=10, pady=3)
+        ).pack(padx=8, pady=2)
 
-        # Row 2: Subtitle
+        # Row 2: Subtitle (NO 'Ultimate Edition')
         sub_badge = ctk.CTkLabel(
-            title_sub, text="DISCORD QUEST SPOOFER • ULTIMATE EDITION",
-            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+            title_sub, text="DISCORD QUEST SPOOFER",
+            font=ctk.CTkFont(family="Segoe UI", size=9, weight="bold"),
             text_color=COLOR_TEXT_MUTED
         )
         sub_badge.pack(anchor="w")
 
-        # Right User Profile Bar (Clickable to toggle profile drawer)
+        # Right User Profile Pill (Clickable to toggle profile drawer)
         self.account_bar = ctk.CTkFrame(
-            self.header_frame, fg_color=COLOR_CARD_BG, corner_radius=8,
+            self.header_frame, fg_color=COLOR_CARD_BG, corner_radius=20,
             border_width=1, border_color=COLOR_CARD_BORDER, cursor="hand2"
         )
         self.account_bar.pack(side="right", padx=20, pady=14)
         self.account_bar.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
 
-        # Native Tk Label for Gear to guarantee zero window lag
-        gear_container = tk.Frame(self.account_bar, bg=COLOR_CARD_BG)
-        gear_container.pack(side="left", padx=(12, 6))
-        gear_container.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
+        # Mini Avatar preview
+        mini_av_p = os.path.join(os.path.dirname(__file__), "..", "assets", "tentix_avatar.png")
+        if not os.path.exists(mini_av_p):
+            mini_av_p = os.path.join(os.getcwd(), "assets", "tentix_avatar.png")
 
-        initial_gear = self.gear_photos[0] if self.gear_photos else None
-        self.lbl_gear_tk = tk.Label(gear_container, image=initial_gear, bg=COLOR_CARD_BG, bd=0, cursor="hand2")
-        self.lbl_gear_tk.pack()
-        self.lbl_gear_tk.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
+        if os.path.exists(mini_av_p):
+            try:
+                raw_av = Image.open(mini_av_p).convert("RGBA").resize((30, 30), Image.Resampling.LANCZOS)
+                m = Image.new('L', (30, 30), 0)
+                ImageDraw.Draw(m).ellipse([(0, 0), (29, 29)], fill=255)
+                circ_av = Image.new('RGBA', (30, 30), (0, 0, 0, 0))
+                circ_av.paste(raw_av, (0, 0), mask=m)
+                self.mini_av_img = ctk.CTkImage(light_image=circ_av, dark_image=circ_av, size=(30, 30))
+                self.avatar_label = ctk.CTkLabel(self.account_bar, text="", image=self.mini_av_img)
+            except Exception:
+                self.avatar_label = ctk.CTkLabel(self.account_bar, text="👤", font=ctk.CTkFont(size=16))
+        else:
+            self.avatar_label = ctk.CTkLabel(self.account_bar, text="👤", font=ctk.CTkFont(size=16))
 
-        # Avatar Preview
-        self.avatar_label = ctk.CTkLabel(self.account_bar, text="👤", font=ctk.CTkFont(size=20), width=34, height=34)
-        self.avatar_label.pack(side="left", padx=(4, 8), pady=6)
+        self.avatar_label.pack(side="left", padx=(10, 8), pady=4)
         self.avatar_label.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
 
         user_info = ctk.CTkFrame(self.account_bar, fg_color="transparent")
-        user_info.pack(side="left", padx=(0, 14), pady=6)
+        user_info.pack(side="left", padx=(0, 10), pady=4)
         user_info.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
 
         self.lbl_username = ctk.CTkLabel(
-            user_info, text="TΞП†1Ж ツ 🌙",
-            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            user_info, text="TΞП†1Ж ツ",
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
             text_color=COLOR_WHITE
         )
         self.lbl_username.pack(anchor="w")
@@ -358,69 +394,116 @@ class AutoQuestApp(ctk.CTk):
         self.lbl_status.pack(anchor="w")
         self.lbl_status.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
 
-        # Account Bar & Gear Hover Glow Animation
+        # Vector Gear Icon inside user pill
+        gear_container = tk.Frame(self.account_bar, bg=COLOR_CARD_BG)
+        gear_container.pack(side="left", padx=(4, 12))
+        gear_container.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
+
+        initial_gear = self.gear_photos[0] if self.gear_photos else None
+        self.lbl_gear_tk = tk.Label(gear_container, image=initial_gear, bg=COLOR_CARD_BG, bd=0, cursor="hand2")
+        self.lbl_gear_tk.pack()
+        self.lbl_gear_tk.bind("<Button-1>", lambda e: self._toggle_profile_drawer())
+
+        # Smooth Hover on Account Pill
         def _on_acc_enter(e):
-            self.account_bar.configure(border_color=COLOR_CARD_BORDER_ACTIVE, fg_color="#181928")
-            gear_container.configure(bg="#181928")
-            self.lbl_gear_tk.configure(bg="#181928")
-            self.gear_hovered = True
+            self.is_gear_hovered = True
+            if self.account_bar.winfo_exists():
+                self.account_bar.configure(border_color=COLOR_NEON_BLURPLE, fg_color="#18192a")
+                gear_container.configure(bg="#18192a")
+                self.lbl_gear_tk.configure(bg="#18192a")
 
         def _on_acc_leave(e):
-            self.account_bar.configure(border_color=COLOR_CARD_BORDER, fg_color=COLOR_CARD_BG)
-            gear_container.configure(bg=COLOR_CARD_BG)
-            self.lbl_gear_tk.configure(bg=COLOR_CARD_BG)
-            self.gear_hovered = False
+            self.is_gear_hovered = False
+            if self.account_bar.winfo_exists():
+                self.account_bar.configure(border_color=COLOR_CARD_BORDER, fg_color=COLOR_CARD_BG)
+                gear_container.configure(bg=COLOR_CARD_BG)
+                self.lbl_gear_tk.configure(bg=COLOR_CARD_BG)
 
         self.account_bar.bind("<Enter>", _on_acc_enter)
         self.account_bar.bind("<Leave>", _on_acc_leave)
-        gear_container.bind("<Enter>", _on_acc_enter)
-        gear_container.bind("<Leave>", _on_acc_leave)
-        self.lbl_gear_tk.bind("<Enter>", _on_acc_enter)
-        self.lbl_gear_tk.bind("<Leave>", _on_acc_leave)
 
-    # ================= BODY & TABS =================
+    # ================= UI LAYOUT: SLEEK DISCORD NAV BAR =================
+
+    def _build_nav_bar(self):
+        """Builds a custom Discord-styled horizontal navigation bar."""
+        self.nav_frame = ctk.CTkFrame(
+            self, fg_color="#090a10", height=48, corner_radius=0,
+            border_width=1, border_color="#1a1b26"
+        )
+        self.nav_frame.pack(fill="x", side="top")
+        self.nav_frame.pack_propagate(False)
+
+        nav_inner = ctk.CTkFrame(self.nav_frame, fg_color="transparent")
+        nav_inner.pack(side="left", padx=15, pady=6)
+
+        self.nav_buttons = {}
+        tabs = [
+            ("quests", "⚡ QUESTS (6)"),
+            ("videos", "🎬 VIDEOS & TRAILER"),
+            ("simulator", "🎮 SPIELE-SIMULATOR"),
+            ("console", "💻 DISCORD-CONSOLE"),
+            ("logs", "📜 LIVE-LOGS")
+        ]
+
+        for tab_id, tab_label in tabs:
+            btn = ctk.CTkButton(
+                nav_inner, text=tab_label, height=34,
+                fg_color=COLOR_NEON_BLURPLE if tab_id == "quests" else "transparent",
+                hover_color="#1e2032",
+                text_color=COLOR_WHITE if tab_id == "quests" else COLOR_TEXT_MUTED,
+                font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+                corner_radius=8,
+                command=lambda t=tab_id: self._switch_tab(t)
+            )
+            btn.pack(side="left", padx=4)
+            self.nav_buttons[tab_id] = btn
+
+    def _switch_tab(self, tab_id: str):
+        """Switches the active tab frame and updates nav bar button highlights."""
+        self.current_tab = tab_id
+        for tid, btn in self.nav_buttons.items():
+            if tid == tab_id:
+                btn.configure(fg_color=COLOR_NEON_BLURPLE, text_color=COLOR_WHITE)
+            else:
+                btn.configure(fg_color="transparent", text_color=COLOR_TEXT_MUTED)
+
+        # Show selected tab container
+        for tid, frame in self.tab_pages.items():
+            if tid == tab_id:
+                frame.pack(fill="both", expand=True)
+            else:
+                frame.pack_forget()
+
+    # ================= UI LAYOUT: MAIN CONTENT & PAGES =================
 
     def _build_main_layout(self):
+        """Container holding the active page and the slide-out Discord profile drawer."""
         self.body_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.body_frame.pack(fill="both", expand=True, padx=15, pady=10)
+        self.body_frame.pack(fill="both", expand=True, padx=14, pady=(6, 12))
 
-        # Main Workspace on Left
-        self.main_work_frame = ctk.CTkFrame(self.body_frame, fg_color="transparent")
-        self.main_work_frame.pack(side="left", fill="both", expand=True)
+        # Main Page Viewport
+        self.page_viewport = ctk.CTkFrame(self.body_frame, fg_color="transparent")
+        self.page_viewport.pack(side="left", fill="both", expand=True)
 
-        # 5 Sleek Tabs
-        self.tabview = ctk.CTkTabview(
-            self.main_work_frame, fg_color=COLOR_BG_SIDEBAR,
-            segmented_button_fg_color=COLOR_CARD_BG,
-            segmented_button_selected_color=COLOR_NEON_BLURPLE,
-            segmented_button_selected_hover_color=COLOR_NEON_BLURPLE_HOVER,
-            segmented_button_unselected_color=COLOR_CARD_BG,
-            segmented_button_unselected_hover_color=COLOR_DARK_BTN_HOVER,
-            text_color=COLOR_WHITE,
-            corner_radius=8
-        )
-        self.tabview.pack(fill="both", expand=True)
+        self.tab_pages = {}
+        for tid in ["quests", "videos", "simulator", "console", "logs"]:
+            page = ctk.CTkFrame(self.page_viewport, fg_color="transparent")
+            self.tab_pages[tid] = page
 
-        self.tab_quests = self.tabview.add("⚔️ DISCORD QUESTS")
-        self.tab_videos = self.tabview.add("🎬 VIDEOS & TRAILER")
-        self.tab_simulator = self.tabview.add("🎮 SPIELE-SIMULATOR")
-        self.tab_console = self.tabview.add("⚡ 1-KLICK SCHNELL-SCRIPT")
-        self.tab_logs = self.tabview.add("📋 LIVE-PROTOKOLL")
-
+        # Setup individual pages
         self._setup_quests_tab()
         self._setup_videos_tab()
         self._setup_simulator_tab()
         self._setup_console_tab()
         self._setup_logs_tab()
 
-        # Collapsible Profile Drawer (Right Side)
-        self.drawer_visible = False
-        self._build_profile_drawer()
+        # Show initial Quests page
+        self.tab_pages["quests"].pack(fill="both", expand=True)
 
-    # ================= DISCORD PROFILE DRAWER (ACCURATE & ANIMATED) =================
+    # ================= DISCORD PROFILE DRAWER =================
 
     def _build_profile_drawer(self):
-        """Creates the authentic Discord User Profile popout matching Image 2 with real GIF animation."""
+        """Authentic Discord User Profile popout matching real Discord UI."""
         self.drawer_frame = ctk.CTkFrame(
             self.body_frame, width=360, fg_color=COLOR_BG_SIDEBAR, corner_radius=10,
             border_width=1, border_color=COLOR_CARD_BORDER
@@ -429,41 +512,42 @@ class AutoQuestApp(ctk.CTk):
         self.drawer_scroll = ctk.CTkScrollableFrame(self.drawer_frame, fg_color="transparent")
         self.drawer_scroll.pack(fill="both", expand=True, padx=4, pady=6)
 
-        # Profile Card Wrapper
         card_wrapper = ctk.CTkFrame(self.drawer_scroll, fg_color=COLOR_CARD_BG, corner_radius=10, border_width=1, border_color="#202336")
         card_wrapper.pack(fill="x", padx=4, pady=(0, 10))
 
-        # 1. Top Banner & Overlapping Avatar Area (150px height)
+        # 1. Top Banner & Overlapping Avatar Area (160px height)
         header_canvas_frame = tk.Frame(card_wrapper, bg=COLOR_CARD_BG, width=340, height=160)
         header_canvas_frame.pack(fill="x")
         header_canvas_frame.pack_propagate(False)
 
-        # Banner at top (120px)
+        # Banner at top (125px)
         init_banner = self.banner_frames[0] if self.banner_frames else None
         self.lbl_drawer_banner_tk = tk.Label(header_canvas_frame, image=init_banner, bg="#1a1c29", bd=0)
-        self.lbl_drawer_banner_tk.place(x=0, y=0, width=340, height=120)
+        self.lbl_drawer_banner_tk.place(x=0, y=0, width=340, height=125)
 
-        # Overlapping Avatar placed at (18, 75)
+        # Overlapping Circular Avatar placed at (18, 72)
         init_av = self.avatar_frames[0] if self.avatar_frames else None
         self.lbl_drawer_avatar_tk = tk.Label(header_canvas_frame, image=init_av, bg=COLOR_CARD_BG, bd=0)
-        self.lbl_drawer_avatar_tk.place(x=18, y=74)
+        self.lbl_drawer_avatar_tk.place(x=18, y=72)
 
-        # DND Status Badge (Red Dot with white bar) at (74, 132)
+        # DND Status Badge (Red circle with white minus bar) at (74, 130)
         dnd_badge = tk.Frame(header_canvas_frame, bg="#f23f43", width=18, height=18, highlightbackground=COLOR_CARD_BG, highlightthickness=3)
         dnd_badge.place(x=74, y=130)
+        minus_bar = tk.Frame(dnd_badge, bg="#ffffff", height=3, width=8)
+        minus_bar.place(relx=0.5, rely=0.5, anchor="center")
 
         # 2. Content below header
         content_box = ctk.CTkFrame(card_wrapper, fg_color="transparent")
         content_box.pack(fill="x", padx=12, pady=(10, 12))
 
-        # Status Speech Bubble (Fully visible, wrapping, no cutoff!)
+        # Status Speech Bubble (Fully visible, wrapping, zero cutoff!)
         bubble_box = ctk.CTkFrame(content_box, fg_color="#181926", border_width=1, border_color="#2c2e44", corner_radius=8)
         bubble_box.pack(fill="x", pady=(0, 10))
 
         lbl_b_text = ctk.CTkLabel(
             bubble_box, text="🩸 BEHIND EVERY KISS IS A CLAW THAT CAN BITE",
             font=ctk.CTkFont(family="Segoe UI", size=9, weight="bold"),
-            text_color=COLOR_WHITE, justify="left", wraplength=290
+            text_color=COLOR_WHITE, justify="left", wraplength=280
         )
         lbl_b_text.pack(padx=10, pady=8, anchor="w")
 
@@ -516,7 +600,7 @@ class AutoQuestApp(ctk.CTk):
             text_color="#d1d5db", justify="center"
         ).pack(padx=10, pady=8, anchor="center")
 
-        # 5. Activity Box ("SPIELT")
+        # 5. Activity Box
         ctk.CTkLabel(
             content_box, text="AKTIVITÄT",
             font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
@@ -539,7 +623,7 @@ class AutoQuestApp(ctk.CTk):
         ).pack(anchor="w", padx=12, pady=(0, 2))
 
         ctk.CTkLabel(
-            activity_box, text="⏱ Zeit: 03:21 Min.",
+            activity_box, text="⏱ Zeit: 04:12 Min.",
             font=ctk.CTkFont(family="Consolas", size=10),
             text_color=COLOR_TEXT_MUTED
         ).pack(anchor="w", padx=12, pady=(0, 10))
@@ -561,7 +645,7 @@ class AutoQuestApp(ctk.CTk):
         )
         self.btn_copy_id.pack(fill="x", pady=4)
 
-        # Official GitHub & Safety
+        # Official GitHub Link
         ctk.CTkButton(
             content_box, text="⭐ OFFIZIELLER GITHUB (V1)", height=34,
             fg_color="#2b1a38", hover_color="#3e2552",
@@ -573,7 +657,7 @@ class AutoQuestApp(ctk.CTk):
         info_box = ctk.CTkFrame(content_box, fg_color="#0e0f17", border_width=1, border_color="#1c1e2d", corner_radius=6)
         info_box.pack(fill="x", pady=(6, 4))
         ctk.CTkLabel(
-            info_box, text="DQS Release V1 by Sandro (T3X / TNTIX)\n100% sauber wenn von GitHub geladen!\nWer es woanders her hat ist selber schuld.",
+            info_box, text="DQS by Sandro (T3X / TNTIX)\n100% sauber wenn von GitHub geladen!\nWer es woanders her hat ist selber schuld.",
             font=ctk.CTkFont(family="Segoe UI", size=9),
             text_color=COLOR_TEXT_MUTED, justify="center"
         ).pack(padx=6, pady=6)
@@ -598,146 +682,281 @@ class AutoQuestApp(ctk.CTk):
         self.clipboard_clear()
         self.clipboard_append(uid)
         self.btn_copy_id.configure(text="✓ ID KOPIERT!")
-        self.log(f"Nutzer-ID {uid} in Zwischenablage kopiert.", "SUCCESS")
-        self.after(2500, lambda: self.btn_copy_id.configure(text="🆔 NUTZER-ID KOPIEREN"))
+        self.after(2000, lambda: self.btn_copy_id.configure(text="🆔 NUTZER-ID KOPIEREN"))
 
-    # ================= TAB 1: Quests & Auto-Farm =================
+    # ================= TAB 1: QUESTS =================
 
     def _setup_quests_tab(self):
-        top_bar = ctk.CTkFrame(
-            self.tab_quests, fg_color=COLOR_CARD_BG, corner_radius=8,
-            border_width=1, border_color=COLOR_CARD_BORDER
-        )
-        top_bar.pack(fill="x", padx=10, pady=(10, 8))
+        page = self.tab_pages["quests"]
 
-        lbl_summary = ctk.CTkLabel(
-            top_bar, text="AKTIVE DISCORD AUFGABEN",
-            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
-            text_color=COLOR_WHITE
-        )
-        lbl_summary.pack(side="left", padx=15, pady=10)
-
-        btn_box = ctk.CTkFrame(top_bar, fg_color="transparent")
-        btn_box.pack(side="right", padx=15, pady=10)
-
-        ctk.CTkButton(
-            btn_box, text="🔄 AKTUALISIEREN", width=130, height=34,
-            fg_color=COLOR_DARK_BTN, hover_color=COLOR_DARK_BTN_HOVER,
-            border_width=1, border_color=COLOR_CARD_BORDER,
-            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            corner_radius=4,
-            command=self.refresh_quests
-        ).pack(side="left", padx=5)
-
-        ctk.CTkButton(
-            btn_box, text="📥 ALLE ANNEHMEN", width=140, height=34,
-            fg_color=COLOR_INDIGO, hover_color=COLOR_INDIGO_HOVER,
-            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            corner_radius=4,
-            command=self.enroll_all_quests
-        ).pack(side="left", padx=5)
-
-        self.btn_auto_farm = ctk.CTkButton(
-            btn_box, text="⚡ ALLE QUESTS FARMEN", width=180, height=34,
-            fg_color=COLOR_NEON_BLURPLE, hover_color=COLOR_NEON_BLURPLE_HOVER,
-            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            corner_radius=4,
-            command=self.toggle_auto_farm
-        )
-        self.btn_auto_farm.pack(side="left", padx=5)
-
-        # Fast-Track Info Banner
-        fast_banner = ctk.CTkFrame(
-            self.tab_quests, fg_color="#0e1322", corner_radius=8,
-            border_width=1, border_color=COLOR_NEON_BLURPLE
-        )
-        fast_banner.pack(fill="x", padx=10, pady=(0, 8))
-
-        fast_text = ctk.CTkLabel(
-            fast_banner,
-            text="💡 TIPP FÜR SOFORTIGEN %-ANSTIEG: Discord zählt Spielzeit via interne Heartbeats.\n"
-                 "Nutze das 1-Klick Schnell-Script (Tab 4) – damit steigen alle % sofort live & Orbs werden geholt!",
-            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            text_color=COLOR_GOLD, justify="left"
-        )
-        fast_text.pack(side="left", padx=15, pady=10)
-
-        ctk.CTkButton(
-            fast_banner, text="⚡ 1-KLICK SCHNELL-SCRIPT", width=220, height=32,
-            fg_color=COLOR_EMERALD, hover_color=COLOR_EMERALD_HOVER,
-            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            corner_radius=4,
-            command=self._jump_to_console_script
-        ).pack(side="right", padx=15, pady=10)
-
-        # Animated Live Orbs Status Bar
-        self.live_orbs_frame = ctk.CTkFrame(
-            self.tab_quests, fg_color="#17122b", border_width=1, border_color="#8b5cf6", corner_radius=8
-        )
-
-        orbs_left = ctk.CTkFrame(self.live_orbs_frame, fg_color="transparent")
-        orbs_left.pack(side="left", padx=15, pady=8)
-
-        ctk.CTkLabel(orbs_left, text="🔮", font=ctk.CTkFont(size=20)).pack(side="left", padx=(0, 8))
-
-        self.lbl_orbs_status = ctk.CTkLabel(
-            orbs_left, text="DISCORD ORBS-FARM AKTIV",
-            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
-            text_color="#c084fc"
-        )
-        self.lbl_orbs_status.pack(side="left")
-
-        self.lbl_orbs_sparkle = ctk.CTkLabel(
-            self.live_orbs_frame, text="✦ ✧ ✦",
-            font=ctk.CTkFont(family="Consolas", size=12, weight="bold"),
-            text_color=COLOR_GOLD
-        )
-        self.lbl_orbs_sparkle.pack(side="right", padx=15, pady=8)
-
-        # Quests Scrollable Container
-        self.quests_scroll = ctk.CTkScrollableFrame(
-            self.tab_quests, fg_color="transparent",
-            label_text="OFFENE AUFGABEN // WARTESCHLANGE",
-            label_font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            label_text_color=COLOR_TEXT_MUTED
-        )
-        self.quests_scroll.pack(fill="both", expand=True, padx=5, pady=5)
-
-    def _jump_to_console_script(self):
-        self._copy_console_script()
-        self.tabview.set("⚡ 1-KLICK SCHNELL-SCRIPT")
-
-    # ================= TAB 2: VIDEOS & TRAILER GALLERY =================
-
-    def _setup_videos_tab(self):
-        top_bar = ctk.CTkFrame(
-            self.tab_videos, fg_color=COLOR_CARD_BG, corner_radius=8,
-            border_width=1, border_color=COLOR_CARD_BORDER
-        )
-        top_bar.pack(fill="x", padx=10, pady=(10, 8))
+        # Action Toolbar
+        top_bar = ctk.CTkFrame(page, fg_color=COLOR_CARD_BG, corner_radius=8, border_width=1, border_color=COLOR_CARD_BORDER)
+        top_bar.pack(fill="x", padx=4, pady=(4, 8))
 
         ctk.CTkLabel(
-            top_bar, text="🎬 ALLE QUEST-VIDEOS & OFFIZIELLE TRAILER (720P HD)",
-            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
+            top_bar, text="⚡ AKTIVE QUESTS & BELOHNUNGEN",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
             text_color=COLOR_WHITE
         ).pack(side="left", padx=15, pady=10)
 
-        ctk.CTkLabel(
-            top_bar, text="Klicke auf 'Abspielen', um das Video im Player/Browser zu sehen, oder 'Express-Abschluss' für sofortige Belohnung.",
-            font=ctk.CTkFont(family="Segoe UI", size=10),
-            text_color=COLOR_TEXT_MUTED
-        ).pack(side="right", padx=15, pady=10)
+        ctk.CTkButton(
+            top_bar, text="🔄 AKTUALISIEREN", width=130, height=32,
+            fg_color=COLOR_DARK_BTN, hover_color=COLOR_DARK_BTN_HOVER,
+            border_width=1, border_color=COLOR_CARD_BORDER,
+            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+            corner_radius=6, command=self.refresh_quests
+        ).pack(side="right", padx=10, pady=8)
 
-        self.videos_scroll = ctk.CTkScrollableFrame(
-            self.tab_videos, fg_color="transparent",
-            label_text="VERFÜGBARE QUEST-VIDEOS & STREAMS",
+        ctk.CTkButton(
+            top_bar, text="⚡ ALLE ANNEHMEN", width=140, height=32,
+            fg_color=COLOR_NEON_BLURPLE, hover_color=COLOR_NEON_BLURPLE_HOVER,
+            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+            corner_radius=6, command=self.enroll_all_quests
+        ).pack(side="right", padx=(0, 6), pady=8)
+
+        self.btn_autofarm = ctk.CTkButton(
+            top_bar, text="🚀 AUTO-FARM", width=130, height=32,
+            fg_color=COLOR_EMERALD, hover_color=COLOR_EMERALD_HOVER,
+            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+            corner_radius=6, command=self.toggle_auto_farm
+        )
+        self.btn_autofarm.pack(side="right", padx=(0, 6), pady=8)
+
+        self.quests_scroll = ctk.CTkScrollableFrame(
+            page, fg_color="transparent",
+            label_text="VERFÜGBARE QUESTS",
             label_font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
             label_text_color=COLOR_TEXT_MUTED
         )
-        self.videos_scroll.pack(fill="both", expand=True, padx=5, pady=5)
+        self.quests_scroll.pack(fill="both", expand=True, padx=2, pady=2)
+
+    def _render_quests(self, quests):
+        for widget in self.quests_scroll.winfo_children():
+            widget.destroy()
+
+        self.quest_cards.clear()
+
+        # Update Nav Bar Counter
+        if "quests" in self.nav_buttons:
+            self.nav_buttons["quests"].configure(text=f"⚡ QUESTS ({len(quests)})")
+
+        if not quests:
+            empty_lbl = ctk.CTkLabel(
+                self.quests_scroll,
+                text="Keine aktiven Quests auf diesem Account gefunden!",
+                font=ctk.CTkFont(family="Segoe UI", size=13),
+                text_color=COLOR_TEXT_MUTED
+            )
+            empty_lbl.pack(pady=40)
+            return
+
+        for q in quests:
+            self._create_quest_card(q)
+
+    def _create_quest_card(self, q: dict):
+        qid = q.get("id")
+        game_title = q.get("game_title", "Unbekanntes Spiel")
+        quest_name = q.get("quest_name", "Quest")
+        publisher = q.get("game_publisher", "")
+        task_type = q.get("task_type", "PLAY_ON_DESKTOP")
+        target_seconds = q.get("target_seconds", 900)
+        current_seconds = q.get("current_seconds", 0)
+        progress_percent = q.get("progress_percent", 0.0)
+        enrolled = q.get("enrolled", False)
+        completed = q.get("completed", False)
+        claimed = q.get("claimed", False)
+        rewards_text = q.get("rewards_text", "Belohnung")
+        orb_count = q.get("orb_count", 0)
+        app_id = q.get("app_id", "")
+        video_url = q.get("video_url")
+
+        card = ctk.CTkFrame(
+            self.quests_scroll, fg_color=COLOR_CARD_BG,
+            border_width=1, border_color=COLOR_CARD_BORDER, corner_radius=10
+        )
+        card.pack(fill="x", padx=6, pady=6)
+
+        # Smooth Hover on Quest Card
+        def _on_card_enter(e, c=card):
+            if c.winfo_exists():
+                c.configure(border_color=COLOR_NEON_BLURPLE, fg_color=COLOR_CARD_BG_HOVER)
+        def _on_card_leave(e, c=card):
+            if c.winfo_exists():
+                c.configure(border_color=COLOR_CARD_BORDER, fg_color=COLOR_CARD_BG)
+
+        card.bind("<Enter>", _on_card_enter)
+        card.bind("<Leave>", _on_card_leave)
+
+        # Left: HD Rounded Cover Tile (84x84)
+        tile_img = self._get_quest_tile(qid)
+        if tile_img:
+            lbl_tile = tk.Label(card, image=tile_img, bg=COLOR_CARD_BG, bd=0)
+            lbl_tile.pack(side="left", padx=14, pady=12)
+        else:
+            ctk.CTkLabel(card, text="🎮", font=ctk.CTkFont(size=32)).pack(side="left", padx=18, pady=12)
+
+        # Center: Detailed Quest Info
+        center_box = ctk.CTkFrame(card, fg_color="transparent")
+        center_box.pack(side="left", fill="both", expand=True, pady=10)
+
+        # Row 1: Game Title + Badges
+        r1 = ctk.CTkFrame(center_box, fg_color="transparent")
+        r1.pack(fill="x", anchor="w", pady=(0, 2))
+
+        ctk.CTkLabel(
+            r1, text=game_title,
+            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
+            text_color=COLOR_WHITE
+        ).pack(side="left", padx=(0, 10))
+
+        # Task Pill
+        task_label = "🎬 Video-Quest" if "VIDEO" in task_type else f"🎮 {target_seconds // 60} Min. Spielzeit"
+        ctk.CTkLabel(
+            r1, text=task_label,
+            font=ctk.CTkFont(family="Segoe UI", size=9, weight="bold"),
+            text_color="#93c5fd", fg_color="#172554", corner_radius=6, padx=8, pady=2
+        ).pack(side="left", padx=(0, 6))
+
+        # Orbs Reward Pill
+        if orb_count > 0:
+            ctk.CTkLabel(
+                r1, text=f"🔮 {orb_count} ORBS",
+                font=ctk.CTkFont(family="Segoe UI", size=9, weight="bold"),
+                text_color=COLOR_GOLD, fg_color="#362d08", corner_radius=6, padx=8, pady=2
+            ).pack(side="left")
+
+        # Row 2: Quest Name
+        ctk.CTkLabel(
+            center_box, text=quest_name,
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            text_color="#9ca3af"
+        ).pack(anchor="w", pady=(0, 6))
+
+        # Row 3: Progress Bar & Detailed Min Counter
+        prog_row = ctk.CTkFrame(center_box, fg_color="transparent")
+        prog_row.pack(fill="x", anchor="w")
+
+        p_bar = ctk.CTkProgressBar(prog_row, width=280, height=7, corner_radius=4)
+        p_bar.set(progress_percent / 100.0)
+        p_bar.pack(side="left", padx=(0, 12))
+
+        cur_min = current_seconds // 60
+        tgt_min = target_seconds // 60
+        status_txt = f"{cur_min}/{tgt_min} MIN. ({int(progress_percent)}%)"
+        if completed or claimed:
+            status_txt += " - ERFÜLLT!"
+            p_bar.configure(progress_color=COLOR_EMERALD)
+        else:
+            p_bar.configure(progress_color=COLOR_NEON_BLURPLE)
+
+        lbl_progress_txt = ctk.CTkLabel(
+            prog_row, text=status_txt,
+            font=ctk.CTkFont(family="Consolas", size=10, weight="bold"),
+            text_color=COLOR_EMERALD if completed else COLOR_TEXT_MUTED
+        )
+        lbl_progress_txt.pack(side="left")
+
+        # Right: Action Buttons
+        btn_box = ctk.CTkFrame(card, fg_color="transparent")
+        btn_box.pack(side="right", padx=16, pady=12)
+
+        if claimed:
+            btn_claimed = ctk.CTkButton(
+                btn_box, text="✓ EINGELÖST", width=130, height=32,
+                fg_color="#10281b", text_color=COLOR_EMERALD,
+                font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+                corner_radius=6, state="disabled"
+            )
+            btn_claimed.pack(side="right")
+        elif completed:
+            btn_claim = ctk.CTkButton(
+                btn_box, text="🎁 BELOHNUNG", width=140, height=32,
+                fg_color=COLOR_EMERALD, hover_color=COLOR_EMERALD_HOVER,
+                text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+                corner_radius=6
+            )
+            btn_claim.configure(command=lambda qid=qid, b=btn_claim: self._claim_quest(qid, b))
+            btn_claim.pack(side="right")
+        else:
+            # 1. Simulate Button (Emerald, auto-presets and starts)
+            btn_sim = ctk.CTkButton(
+                btn_box, text="▶ SIMULIEREN", width=130, height=32,
+                fg_color=COLOR_EMERALD, hover_color=COLOR_EMERALD_HOVER,
+                text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+                corner_radius=6, command=lambda aid=app_id, gt=game_title: self._sim_single_quest(aid, gt)
+            )
+            btn_sim.pack(side="right", padx=4)
+
+            # 2. Video Button if applicable
+            if video_url:
+                btn_vid = ctk.CTkButton(
+                    btn_box, text="🎬 VIDEO", width=100, height=32,
+                    fg_color=COLOR_INDIGO, hover_color=COLOR_INDIGO_HOVER,
+                    text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+                    corner_radius=6, command=lambda u=video_url: webbrowser.open(u)
+                )
+                btn_vid.pack(side="right", padx=4)
+
+            # 3. Enroll if not enrolled
+            if not enrolled:
+                btn_enroll = ctk.CTkButton(
+                    btn_box, text="ANNEHMEN", width=110, height=32,
+                    fg_color=COLOR_NEON_BLURPLE, hover_color=COLOR_NEON_BLURPLE_HOVER,
+                    text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+                    corner_radius=6
+                )
+                btn_enroll.configure(command=lambda qid=qid, b=btn_enroll: self._enroll_quest(qid, b))
+                btn_enroll.pack(side="right", padx=4)
+
+        self.quest_cards[qid] = {
+            "p_bar": p_bar,
+            "lbl_txt": lbl_progress_txt,
+            "card_frame": card
+        }
+
+    def _get_quest_tile(self, qid: str):
+        """Returns PhotoImage for official rounded quest cover tile."""
+        if qid in self.quest_tiles:
+            return self.quest_tiles[qid]
+
+        tiles_dir = os.path.join(os.path.dirname(__file__), "..", "assets", "quests", "tiles")
+        if not os.path.exists(tiles_dir):
+            tiles_dir = os.path.join(os.getcwd(), "assets", "quests", "tiles")
+
+        tile_path = os.path.join(tiles_dir, f"{qid}.png")
+        if os.path.exists(tile_path):
+            try:
+                im = Image.open(tile_path).convert("RGBA")
+                tk_im = ImageTk.PhotoImage(im)
+                self.quest_tiles[qid] = tk_im
+                return tk_im
+            except Exception:
+                pass
+        return None
+
+    # ================= TAB 2: VIDEOS & TRAILER =================
+
+    def _setup_videos_tab(self):
+        page = self.tab_pages["videos"]
+
+        top_bar = ctk.CTkFrame(page, fg_color=COLOR_CARD_BG, corner_radius=8, border_width=1, border_color=COLOR_CARD_BORDER)
+        top_bar.pack(fill="x", padx=4, pady=(4, 8))
+
+        ctk.CTkLabel(
+            top_bar, text="🎬 ALLE QUEST-VIDEOS & OFFIZIELLE TRAILER (720P HD)",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            text_color=COLOR_WHITE
+        ).pack(side="left", padx=15, pady=10)
+
+        self.videos_scroll = ctk.CTkScrollableFrame(
+            page, fg_color="transparent",
+            label_text="VERFÜGBARE QUEST-VIDEOS",
+            label_font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            label_text_color=COLOR_TEXT_MUTED
+        )
+        self.videos_scroll.pack(fill="both", expand=True, padx=2, pady=2)
 
     def _render_videos_tab(self, quests):
-        """Populates the Videos & Trailer gallery with ALL quest videos & official trailers."""
         for w in self.videos_scroll.winfo_children():
             w.destroy()
 
@@ -752,12 +971,12 @@ class AutoQuestApp(ctk.CTk):
             app_id = q.get("app_id", "")
 
             vids_found += 1
-            card = ctk.CTkFrame(self.videos_scroll, fg_color=COLOR_CARD_BG, border_width=1, border_color=COLOR_CARD_BORDER, corner_radius=8)
-            card.pack(fill="x", padx=10, pady=8)
+            card = ctk.CTkFrame(self.videos_scroll, fg_color=COLOR_CARD_BG, border_width=1, border_color=COLOR_CARD_BORDER, corner_radius=10)
+            card.pack(fill="x", padx=6, pady=6)
 
             def _on_v_enter(e, c=card):
                 if c.winfo_exists():
-                    c.configure(border_color="#8b5cf6", fg_color="#181928")
+                    c.configure(border_color=COLOR_NEON_BLURPLE, fg_color=COLOR_CARD_BG_HOVER)
             def _on_v_leave(e, c=card):
                 if c.winfo_exists():
                     c.configure(border_color=COLOR_CARD_BORDER, fg_color=COLOR_CARD_BG)
@@ -765,18 +984,15 @@ class AutoQuestApp(ctk.CTk):
             card.bind("<Enter>", _on_v_enter)
             card.bind("<Leave>", _on_v_leave)
 
-            left_box = ctk.CTkFrame(card, fg_color="transparent")
-            left_box.pack(side="left", padx=15, pady=12)
-
-            thumb = self._get_quest_thumbnail(qid, (100, 56))
-            if thumb:
-                lbl_thumb = tk.Label(left_box, image=thumb, bg=COLOR_CARD_BG, bd=0)
-                lbl_thumb.pack(side="left", padx=(0, 14))
+            # Left: Cover Tile
+            tile_img = self._get_quest_tile(qid)
+            if tile_img:
+                tk.Label(card, image=tile_img, bg=COLOR_CARD_BG, bd=0).pack(side="left", padx=14, pady=12)
             else:
-                ctk.CTkLabel(left_box, text="🎬", font=ctk.CTkFont(size=28)).pack(side="left", padx=(0, 14))
+                ctk.CTkLabel(card, text="🎬", font=ctk.CTkFont(size=30)).pack(side="left", padx=18, pady=12)
 
-            info_box = ctk.CTkFrame(left_box, fg_color="transparent")
-            info_box.pack(side="left")
+            info_box = ctk.CTkFrame(card, fg_color="transparent")
+            info_box.pack(side="left", fill="both", expand=True, pady=10)
 
             ctk.CTkLabel(
                 info_box, text=f"{game_title} - {qname}",
@@ -785,9 +1001,9 @@ class AutoQuestApp(ctk.CTk):
             ).pack(anchor="w")
 
             if vid_url:
-                sub_txt = f"Publisher: {publisher or 'Discord'}  |  Format: 720p HD MP4 (Offizieller Discord Stream)  |  Dauer: ~{target_sec} Sek."
+                sub_txt = f"Publisher: {publisher or 'Discord'}  |  Format: 720p HD MP4 (Offizieller Stream)  |  Dauer: ~{target_sec} Sek."
             else:
-                sub_txt = f"Publisher: {publisher or 'Discord'}  |  Format: Offizieller HD Trailer & Stream  |  Dauer: ~15 Min."
+                sub_txt = f"Publisher: {publisher or 'Discord'}  |  Format: Offizieller HD Trailer & Gameplay  |  Dauer: ~15 Min."
 
             ctk.CTkLabel(
                 info_box, text=sub_txt,
@@ -796,21 +1012,21 @@ class AutoQuestApp(ctk.CTk):
             ).pack(anchor="w")
 
             btn_box = ctk.CTkFrame(card, fg_color="transparent")
-            btn_box.pack(side="right", padx=15, pady=12)
+            btn_box.pack(side="right", padx=16, pady=12)
 
             if vid_url:
                 ctk.CTkButton(
                     btn_box, text="▶ 720P HD VIDEO ABSPIELEN", width=180, height=32,
                     fg_color=COLOR_INDIGO, hover_color=COLOR_INDIGO_HOVER,
                     text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-                    corner_radius=4, command=lambda u=vid_url: webbrowser.open(u)
+                    corner_radius=6, command=lambda u=vid_url: webbrowser.open(u)
                 ).pack(side="left", padx=5)
 
                 ctk.CTkButton(
                     btn_box, text="⚡ EXPRESS-ABSCHLUSS", width=160, height=32,
                     fg_color=COLOR_GOLD, hover_color=COLOR_GOLD_HOVER,
                     text_color="#000000", font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-                    corner_radius=4, command=lambda qid=qid, t=target_sec: self._fast_video_quest(qid, t, None)
+                    corner_radius=6, command=lambda qid=qid, t=target_sec: self._fast_video_quest(qid, t, None)
                 ).pack(side="left", padx=5)
             else:
                 yt_query = f"{game_title} official trailer".replace(' ', '+')
@@ -820,293 +1036,239 @@ class AutoQuestApp(ctk.CTk):
                     fg_color="#27273a", hover_color="#3b3b55",
                     border_width=1, border_color="#4f46e5",
                     text_color="#a5b4fc", font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-                    corner_radius=4, command=lambda u=trailer_url: webbrowser.open(u)
+                    corner_radius=6, command=lambda u=trailer_url: webbrowser.open(u)
                 ).pack(side="left", padx=5)
 
                 ctk.CTkButton(
                     btn_box, text="🎮 IM SIMULATOR STARTEN", width=170, height=32,
-                    fg_color=COLOR_INDIGO, hover_color=COLOR_INDIGO_HOVER,
+                    fg_color=COLOR_EMERALD, hover_color=COLOR_EMERALD_HOVER,
                     text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-                    corner_radius=4, command=lambda aid=app_id, gt=game_title: self._sim_single_quest(aid, gt)
+                    corner_radius=6, command=lambda aid=app_id, gt=game_title: self._sim_single_quest(aid, gt)
                 ).pack(side="left", padx=5)
-
-        if vids_found == 0:
-            ctk.CTkLabel(
-                self.videos_scroll, text="Keine Quests gefunden. Bitte aktualisiere deine Quests.",
-                font=ctk.CTkFont(family="Segoe UI", size=12), text_color=COLOR_TEXT_MUTED
-            ).pack(pady=40)
-
-    def _get_quest_thumbnail(self, qid, size=(100, 56)):
-        """Returns PhotoImage thumbnail for quest banner if cached."""
-        if qid in self.quest_thumbnails:
-            return self.quest_thumbnails[qid]
-
-        p = os.path.join(os.path.dirname(__file__), "..", "assets", "quests", f"{qid}.jpg")
-        if not os.path.exists(p):
-            p = os.path.join(os.getcwd(), "assets", "quests", f"{qid}.jpg")
-
-        if os.path.exists(p):
-            try:
-                im = Image.open(p).convert("RGBA").resize(size, Image.Resampling.LANCZOS)
-                tk_im = ImageTk.PhotoImage(im)
-                self.quest_thumbnails[qid] = tk_im
-                return tk_im
-            except Exception:
-                pass
-        return None
 
     # ================= TAB 3: SIMULATOR (WITH AUTO-PRESET) =================
 
     def _setup_simulator_tab(self):
-        container = ctk.CTkFrame(
-            self.tab_simulator, fg_color=COLOR_CARD_BG, corner_radius=8,
-            border_width=1, border_color=COLOR_CARD_BORDER
-        )
-        container.pack(fill="both", expand=True, padx=15, pady=15)
+        page = self.tab_pages["simulator"]
 
-        # Modern Simulator Sub-Header / Nav
-        sub_nav = ctk.CTkFrame(container, fg_color="#0d0e17", corner_radius=8, border_width=1, border_color="#1f2235")
-        sub_nav.pack(fill="x", padx=20, pady=(15, 10))
+        top_bar = ctk.CTkFrame(page, fg_color=COLOR_CARD_BG, corner_radius=8, border_width=1, border_color=COLOR_CARD_BORDER)
+        top_bar.pack(fill="x", padx=4, pady=(4, 8))
 
         ctk.CTkLabel(
-            sub_nav, text="🎮 NATIVE WINDOWS SPIEL-EMULATION",
-            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
+            top_bar, text="🎮 NATIVE SPIELE-SIMULATION & DISCORD RPC INJEKTION",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
             text_color=COLOR_WHITE
         ).pack(side="left", padx=15, pady=10)
 
         self.lbl_sim_indicator = ctk.CTkLabel(
-            sub_nav, text="● SIMULATOR BEREIT",
-            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            top_bar, text="● SIMULATOR BEREIT",
+            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
             text_color=COLOR_TEXT_MUTED
         )
         self.lbl_sim_indicator.pack(side="right", padx=15, pady=10)
 
-        desc = ctk.CTkLabel(
-            container,
-            text="Simuliert einen echten Windows-Spielprozess (~2MB RAM) mit passendem Dateinamen, Fenstertitel und Win32-Handles,\n"
-                 "damit Discord das Spiel zu 100% als aktiv erkennt und die Quests hochzählen.",
-            font=ctk.CTkFont(family="Segoe UI", size=11), text_color=COLOR_TEXT_MUTED, justify="left"
-        )
-        desc.pack(anchor="w", padx=25, pady=(0, 15))
+        sim_card = ctk.CTkFrame(page, fg_color=COLOR_CARD_BG, corner_radius=10, border_width=1, border_color=COLOR_CARD_BORDER)
+        sim_card.pack(fill="both", expand=True, padx=4, pady=4)
 
-        # Preset Selector
-        preset_box = ctk.CTkFrame(container, fg_color="transparent")
-        preset_box.pack(fill="x", padx=25, pady=5)
+        form_frame = ctk.CTkFrame(sim_card, fg_color="transparent")
+        form_frame.pack(padx=30, pady=20, fill="both", expand=True)
 
         ctk.CTkLabel(
-            preset_box, text="SPIELVORLAGE WÄHLEN:",
+            form_frame, text="SPIELVORLAGE AUSWÄHLEN:",
             font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            text_color=COLOR_WHITE, width=160, anchor="w"
-        ).pack(side="left")
+            text_color=COLOR_TEXT_MUTED
+        ).pack(anchor="w", pady=(0, 4))
 
-        game_titles = [f"{info['name']} ({info['category']})" for app_id, info in QUEST_GAMES_DATABASE.items()]
-
+        preset_names = [f"{info['name']} ({info['category']})" for _, info in QUEST_GAMES_DATABASE.items()]
         self.preset_menu = ctk.CTkOptionMenu(
-            preset_box, values=game_titles, width=380, height=32,
-            fg_color=COLOR_BG_DARK, button_color=COLOR_NEON_BLURPLE,
-            button_hover_color=COLOR_NEON_BLURPLE_HOVER,
-            font=ctk.CTkFont(family="Segoe UI", size=11),
+            form_frame, values=preset_names, height=36,
+            fg_color="#181926", button_color=COLOR_NEON_BLURPLE, button_hover_color=COLOR_NEON_BLURPLE_HOVER,
+            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=12),
             command=self._on_preset_selected
         )
-        self.preset_menu.pack(side="left", padx=10)
+        self.preset_menu.pack(fill="x", pady=(0, 16))
 
-        # Fields Card
-        fields_card = ctk.CTkFrame(container, fg_color="#0a0b12", corner_radius=8, border_width=1, border_color="#1c1e2d")
-        fields_card.pack(fill="x", padx=25, pady=12)
+        # Title Entry
+        ctk.CTkLabel(
+            form_frame, text="SPIELNAME / FENSTERTITEL:",
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            text_color=COLOR_TEXT_MUTED
+        ).pack(anchor="w", pady=(0, 4))
 
-        # Field 1: Window Title
-        row1 = ctk.CTkFrame(fields_card, fg_color="transparent")
-        row1.pack(fill="x", padx=15, pady=8)
-        ctk.CTkLabel(row1, text="Fenstertitel:", width=120, anchor="w", font=ctk.CTkFont(family="Segoe UI", size=11), text_color=COLOR_TEXT_MUTED).pack(side="left")
-        self.entry_sim_title = ctk.CTkEntry(row1, width=420, fg_color=COLOR_BG_DARK, border_color=COLOR_CARD_BORDER)
-        self.entry_sim_title.pack(side="left")
+        self.entry_sim_title = ctk.CTkEntry(
+            form_frame, height=36, fg_color="#181926", border_color=COLOR_CARD_BORDER,
+            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=12)
+        )
+        self.entry_sim_title.pack(fill="x", pady=(0, 16))
 
-        # Field 2: Executable
-        row2 = ctk.CTkFrame(fields_card, fg_color="transparent")
-        row2.pack(fill="x", padx=15, pady=8)
-        ctk.CTkLabel(row2, text="Prozess-Dateiname:", width=120, anchor="w", font=ctk.CTkFont(family="Segoe UI", size=11), text_color=COLOR_TEXT_MUTED).pack(side="left")
-        self.entry_sim_exe = ctk.CTkEntry(row2, width=420, fg_color=COLOR_BG_DARK, border_color=COLOR_CARD_BORDER)
-        self.entry_sim_exe.pack(side="left")
+        # Exe Entry
+        ctk.CTkLabel(
+            form_frame, text="EXECUTABLE (DATEINAME):",
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            text_color=COLOR_TEXT_MUTED
+        ).pack(anchor="w", pady=(0, 4))
 
-        # Field 3: App ID
-        row3 = ctk.CTkFrame(fields_card, fg_color="transparent")
-        row3.pack(fill="x", padx=15, pady=8)
-        ctk.CTkLabel(row3, text="Discord App-ID:", width=120, anchor="w", font=ctk.CTkFont(family="Segoe UI", size=11), text_color=COLOR_TEXT_MUTED).pack(side="left")
-        self.entry_sim_appid = ctk.CTkEntry(row3, width=420, fg_color=COLOR_BG_DARK, border_color=COLOR_CARD_BORDER)
-        self.entry_sim_appid.pack(side="left")
+        self.entry_sim_exe = ctk.CTkEntry(
+            form_frame, height=36, fg_color="#181926", border_color=COLOR_CARD_BORDER,
+            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Consolas", size=12)
+        )
+        self.entry_sim_exe.pack(fill="x", pady=(0, 16))
 
-        if game_titles:
-            self._on_preset_selected(game_titles[0])
+        # App-ID Entry
+        ctk.CTkLabel(
+            form_frame, text="DISCORD APPLICATION ID:",
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            text_color=COLOR_TEXT_MUTED
+        ).pack(anchor="w", pady=(0, 4))
 
-        # Control Buttons
-        btn_action_box = ctk.CTkFrame(container, fg_color="transparent")
-        btn_action_box.pack(anchor="w", padx=25, pady=15)
+        self.entry_sim_appid = ctk.CTkEntry(
+            form_frame, height=36, fg_color="#181926", border_color=COLOR_CARD_BORDER,
+            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Consolas", size=12)
+        )
+        self.entry_sim_appid.pack(fill="x", pady=(0, 20))
+
+        # Button Row
+        btn_row = ctk.CTkFrame(form_frame, fg_color="transparent")
+        btn_row.pack(fill="x", pady=(0, 10))
 
         self.btn_start_sim = ctk.CTkButton(
-            btn_action_box, text="▶ SIMULATION STARTEN", width=220, height=38,
+            btn_row, text="▶ SIMULATION STARTEN", height=40,
             fg_color=COLOR_EMERALD, hover_color=COLOR_EMERALD_HOVER,
             text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
-            corner_radius=4,
-            command=self.start_manual_simulation
+            corner_radius=6, command=self.start_manual_simulation
         )
-        self.btn_start_sim.pack(side="left", padx=(0, 10))
+        self.btn_start_sim.pack(side="left", fill="x", expand=True, padx=(0, 8))
 
         self.btn_stop_sim = ctk.CTkButton(
-            btn_action_box, text="⏹ STOPPEN", width=140, height=38,
-            fg_color=COLOR_CRIMSON, hover_color=COLOR_CRIMSON_HOVER,
+            btn_row, text="■ BEENDEN", height=40,
+            fg_color=COLOR_CRIMSON, hover_color="#c9282c",
             text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
-            corner_radius=4,
-            command=self.stop_manual_simulation
+            corner_radius=6, command=self.stop_manual_simulation
         )
-        self.btn_stop_sim.pack(side="left")
+        self.btn_stop_sim.pack(side="right", fill="x", expand=True, padx=(8, 0))
 
         self.lbl_sim_status = ctk.CTkLabel(
-            container, text="Status: Bereit. Kein Spiel simuliert.",
+            form_frame, text="Status: Bereit.",
             font=ctk.CTkFont(family="Segoe UI", size=11), text_color=COLOR_TEXT_MUTED
         )
-        self.lbl_sim_status.pack(anchor="w", padx=25, pady=(5, 10))
+        self.lbl_sim_status.pack(pady=10)
+
+        # Set Helldivers 2 as default
+        self._on_preset_selected(preset_names[0])
 
     def _on_preset_selected(self, choice):
-        for app_id, info in QUEST_GAMES_DATABASE.items():
-            if info["name"] in choice:
+        for k, info in QUEST_GAMES_DATABASE.items():
+            if f"{info['name']} ({info['category']})" == choice:
                 self.entry_sim_title.delete(0, "end")
                 self.entry_sim_title.insert(0, info["title"])
                 self.entry_sim_exe.delete(0, "end")
                 self.entry_sim_exe.insert(0, info["exe"])
                 self.entry_sim_appid.delete(0, "end")
-                self.entry_sim_appid.insert(0, app_id)
+                self.entry_sim_appid.insert(0, str(k))
                 break
 
-    # ================= TAB 4: CONSOLE QUICK SNIPPET =================
+    # ================= TAB 4: CONSOLE =================
 
     def _setup_console_tab(self):
-        container = ctk.CTkFrame(
-            self.tab_console, fg_color=COLOR_CARD_BG, corner_radius=8,
-            border_width=1, border_color=COLOR_CARD_BORDER
-        )
-        container.pack(fill="both", expand=True, padx=15, pady=15)
+        page = self.tab_pages["console"]
 
-        title = ctk.CTkLabel(
-            container, text="1-KLICK IN-DISCORD TURBO ENGINE (100% GARANTIE)",
-            font=ctk.CTkFont(family="Segoe UI", size=16, weight="bold"),
-            text_color=COLOR_WHITE
-        )
-        title.pack(anchor="w", padx=25, pady=(18, 5))
+        top_bar = ctk.CTkFrame(page, fg_color=COLOR_CARD_BG, corner_radius=8, border_width=1, border_color=COLOR_CARD_BORDER)
+        top_bar.pack(fill="x", padx=4, pady=(4, 8))
 
-        # Prominent Safety Warning Box
-        warning_box = ctk.CTkFrame(container, fg_color="#2b1414", border_width=1, border_color="#ef4444", corner_radius=8)
-        warning_box.pack(fill="x", padx=25, pady=(0, 10))
-
-        warn_text = (
-            "⚠️ WICHTIGER SICHERHEITSHINWEIS & WARNUNG:\n"
-            "Discord warnt in der Konsole standardmäßig vor dem Einfügen von Code ('Pasting anything in here could give attackers access...').\n"
-            "Dieses Skript wurde von Sandro (T3X / TNTIX) entwickelt und ist zu 100% sauber: KEINE Backdoor, kein Phishing, kein Token-Stealing!\n"
-            "Es klinkt sich ausschließlich lokal in Discords internen RunningGameStore ein, damit Discord Heartbeats sendet und die % hochgehen.\n"
-            "Nutzung erfolgt auf eigene Verantwortung im Rahmen der Discord-Nutzungsrichtlinien."
-        )
         ctk.CTkLabel(
-            warning_box, text=warn_text,
+            top_bar, text="💻 DISCORD ENTWICKLER-KONSOLE (1-KLICK SKRIPT)",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            text_color=COLOR_WHITE
+        ).pack(side="left", padx=15, pady=10)
+
+        box = ctk.CTkFrame(page, fg_color=COLOR_CARD_BG, corner_radius=10, border_width=1, border_color=COLOR_CARD_BORDER)
+        box.pack(fill="both", expand=True, padx=4, pady=4)
+
+        warn_box = ctk.CTkFrame(box, fg_color="#2b1111", border_width=1, border_color="#f87171", corner_radius=6)
+        warn_box.pack(fill="x", padx=20, pady=(16, 10))
+
+        ctk.CTkLabel(
+            warn_box, text="⚠️ WARNUNG: Führe NIEMALS fremde Skripte aus, deren Code du nicht kennst!\nDieser Spoofer von Sandro (T3X / TNTIX) ist 100% quelloffen, sicher und loggt keine Daten.",
             font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-            text_color="#fca5a5", justify="left"
-        ).pack(padx=12, pady=8, anchor="w")
+            text_color="#fca5a5", justify="center"
+        ).pack(padx=10, pady=8)
 
-        desc = ctk.CTkLabel(
-            container,
-            text="👑 SO STEIGEN DEINE % SOFORT UND ORBS WERDEN AUTOMATISCH ABGEHOLT:\n\n"
-                 "1️⃣ In deinem Discord-Fenster drücken:  STRG + UMSCHALT + I  (öffnet die Entwicklertools)\n"
-                 "2️⃣ Klicke oben auf den Reiter:  Console  (bzw. Konsole)\n"
-                 "3️⃣ Falls Discord das Einfügen blockiert: tippe  allow pasting  ein und drücke Enter\n"
-                 "4️⃣ Klicke hier unten auf 'SKRIPT KOPIEREN' und füge es mit STRG + V in Discord ein\n"
-                 "5️⃣ Drücke Enter -> Fertig! Alle Quests zählen sofort live hoch!",
-            font=ctk.CTkFont(family="Segoe UI", size=11), text_color=COLOR_TEXT_PRIMARY, justify="left"
+        self.txt_console = ctk.CTkTextbox(
+            box, fg_color="#090a10", text_color="#a5b4fc",
+            font=ctk.CTkFont(family="Consolas", size=11), corner_radius=6
         )
-        desc.pack(anchor="w", padx=25, pady=(0, 10))
+        self.txt_console.pack(fill="both", expand=True, padx=20, pady=(0, 12))
 
-        self.textbox_snippet = ctk.CTkTextbox(
-            container, height=130, fg_color=COLOR_BG_DARK,
-            font=ctk.CTkFont(family="Consolas", size=10),
-            text_color="#a5b4fc"
-        )
-        self.textbox_snippet.pack(fill="x", padx=25, pady=(0, 10))
-        self.textbox_snippet.insert("1.0", generate_discord_console_snippet())
-        self.textbox_snippet.configure(state="disabled")
+        # Fill script
+        script_code = generate_discord_console_snippet()
+        self.txt_console.insert("1.0", script_code)
 
-        self.btn_copy_snippet = ctk.CTkButton(
-            container, text="📋 SKRIPT IN ZWISCHENABLAGE KOPIEREN", height=38,
-            fg_color=COLOR_CYAN, hover_color=COLOR_CYAN_HOVER,
-            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
-            corner_radius=4,
-            command=self._copy_console_script
+        btn_row = ctk.CTkFrame(box, fg_color="transparent")
+        btn_row.pack(fill="x", padx=20, pady=(0, 16))
+
+        self.btn_copy_script = ctk.CTkButton(
+            btn_row, text="📋 1-KLICK SKRIPT IN ZWISCHENABLAGE KOPIEREN", height=38,
+            fg_color=COLOR_NEON_BLURPLE, hover_color=COLOR_NEON_BLURPLE_HOVER,
+            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            corner_radius=6, command=self._copy_console_script
         )
-        self.btn_copy_snippet.pack(anchor="w", padx=25, pady=(0, 10))
+        self.btn_copy_script.pack(fill="x")
 
     def _copy_console_script(self):
-        script = generate_discord_console_snippet()
+        script_code = self.txt_console.get("1.0", "end-1c")
         self.clipboard_clear()
-        self.clipboard_append(script)
-        self.btn_copy_snippet.configure(text="✓ SKRIPT KOPIERT! JETZT IN DISCORD EINFÜGEN (STRG + V)")
-        self.log("Turbo-Skript in Zwischenablage kopiert.", "SUCCESS")
-        self.after(3500, lambda: self.btn_copy_snippet.configure(text="📋 SKRIPT IN ZWISCHENABLAGE KOPIEREN"))
+        self.clipboard_append(script_code)
+        self.btn_copy_script.configure(text="✓ IN ZWISCHENABLAGE KOPIERT! Jetzt in Discord Strg+Shift+I -> Console -> Enter")
+        self.after(3000, lambda: self.btn_copy_script.configure(text="📋 1-KLICK SKRIPT IN ZWISCHENABLAGE KOPIEREN"))
 
     # ================= TAB 5: LOGS =================
 
     def _setup_logs_tab(self):
-        container = ctk.CTkFrame(
-            self.tab_logs, fg_color=COLOR_CARD_BG, corner_radius=8,
-            border_width=1, border_color=COLOR_CARD_BORDER
-        )
-        container.pack(fill="both", expand=True, padx=15, pady=15)
+        page = self.tab_pages["logs"]
 
-        top_log_bar = ctk.CTkFrame(container, fg_color="transparent")
-        top_log_bar.pack(fill="x", padx=20, pady=10)
+        top_bar = ctk.CTkFrame(page, fg_color=COLOR_CARD_BG, corner_radius=8, border_width=1, border_color=COLOR_CARD_BORDER)
+        top_bar.pack(fill="x", padx=4, pady=(4, 8))
 
         ctk.CTkLabel(
-            top_log_bar, text="SYSTEM-PROTOKOLL",
-            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
+            top_bar, text="📜 SYSTEM-LOGS & EVENT-MONITOR",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
             text_color=COLOR_WHITE
-        ).pack(side="left")
+        ).pack(side="left", padx=15, pady=10)
 
         ctk.CTkButton(
-            top_log_bar, text="🗑️ LEEREN", width=90, height=28,
+            top_bar, text="LEEREN", width=80, height=30,
             fg_color=COLOR_DARK_BTN, hover_color=COLOR_DARK_BTN_HOVER,
-            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-            corner_radius=4,
-            command=self.clear_logs
-        ).pack(side="right")
+            text_color=COLOR_TEXT_MUTED, font=ctk.CTkFont(family="Segoe UI", size=10),
+            corner_radius=4, command=self.clear_logs
+        ).pack(side="right", padx=15, pady=8)
 
-        self.log_box = ctk.CTkTextbox(
-            container, fg_color=COLOR_BG_DARK,
-            font=ctk.CTkFont(family="Consolas", size=11),
-            text_color=COLOR_TEXT_PRIMARY
+        self.txt_logs = ctk.CTkTextbox(
+            page, fg_color="#090a10", text_color="#10b981",
+            font=ctk.CTkFont(family="Consolas", size=10), corner_radius=6
         )
-        self.log_box.pack(fill="both", expand=True, padx=20, pady=(0, 15))
+        self.txt_logs.pack(fill="both", expand=True, padx=4, pady=4)
 
     def log(self, message: str, level: str = "INFO"):
-        timestamp = time.strftime("%H:%M:%S")
-        prefix = f"[{timestamp}] [{level.upper()}] "
-        full_msg = f"{prefix}{message}\n"
-        try:
-            self.log_box.insert("end", full_msg)
-            self.log_box.see("end")
-        except Exception:
-            pass
+        t_str = time.strftime("%H:%M:%S")
+        prefix = f"[{t_str}] [{level}] "
+        if hasattr(self, 'txt_logs') and self.txt_logs.winfo_exists():
+            self.txt_logs.insert("end", f"{prefix}{message}\n")
+            self.txt_logs.see("end")
 
     def clear_logs(self):
-        self.log_box.delete("1.0", "end")
-        self.log("Protokoll geleert.", "INFO")
+        if hasattr(self, 'txt_logs') and self.txt_logs.winfo_exists():
+            self.txt_logs.delete("1.0", "end")
 
-    # ================= CONTROLLERS & LOGIC =================
+    # ================= BACKEND & ACTIONS =================
 
     def _initial_load(self):
-        self.log("DQS gestartet. Prüfe Administrator-Rechte & Accounts...", "INFO")
-        self.detected_accounts = find_all_valid_accounts()
-        if self.detected_accounts:
-            # Prioritize tentix if present
-            tentix_acc = next((a for a in self.detected_accounts if a.get("username") == "tentix"), None)
-            chosen = tentix_acc or self.detected_accounts[0]
-            self._set_active_account(chosen)
+        self.log("Starte automatische Discord-Account-Erkennung...", "INFO")
+        self.accounts = find_all_valid_accounts()
+        if self.accounts:
+            self.log(f"{len(self.accounts)} aktive Discord Accounts gefunden!", "SUCCESS")
+            self._set_active_account(self.accounts[0])
         else:
-            self.log("Keine aktiven Discord-Tokens lokal gefunden. Bitte manuell anmelden.", "WARNING")
+            self.log("Keine aktiven Accounts im lokalen Cache gefunden.", "WARNING")
             self._open_account_modal()
 
     def _set_active_account(self, acc_info: dict):
@@ -1118,7 +1280,6 @@ class AutoQuestApp(ctk.CTk):
         self.lbl_username.configure(text=disp_name)
 
         self.api = DiscordQuestsAPI(token)
-        # Fix QuestFarmer initialization bug (no log_callback arg!)
         self.farmer = QuestFarmer(api=self.api, simulator=self.simulator)
         self.farmer.on_log = self.log
         self.farmer.on_progress = self._on_farm_quest_progress
@@ -1151,201 +1312,52 @@ class AutoQuestApp(ctk.CTk):
             except Exception:
                 pass
 
-    def _render_quests(self, quests):
-        for widget in self.quests_scroll.winfo_children():
-            widget.destroy()
-
-        self.quest_cards.clear()
-
-        if not quests:
-            empty_lbl = ctk.CTkLabel(
-                self.quests_scroll,
-                text="Keine aktiven Quests auf diesem Account gefunden!",
-                font=ctk.CTkFont(family="Segoe UI", size=13),
-                text_color=COLOR_TEXT_MUTED
-            )
-            empty_lbl.pack(pady=40)
-            return
-
-        for q in quests:
-            self._create_quest_card(q)
-
-    def _create_quest_card(self, q):
-        qid = q["id"]
-        qname = q["quest_name"]
-        game_title = q["game_title"]
-        app_id = q["app_id"]
-        target_sec = q.get("target_seconds", 900)
-        curr_sec = q.get("current_seconds", 0)
-        pct = q.get("progress_percent", 0.0)
-        enrolled = q.get("enrolled", False)
-        completed = q.get("completed", False)
-        claimed = q.get("claimed", False)
-        rewards_text = q.get("rewards_text", "Belohnung")
-        task_type = q.get("task_type", "PLAY_ON_DESKTOP")
-        vid_url = q.get("video_url")
-
-        card = ctk.CTkFrame(
-            self.quests_scroll, fg_color=COLOR_CARD_BG, corner_radius=8,
-            border_width=1, border_color=COLOR_CARD_BORDER_ACTIVE if enrolled and not claimed else COLOR_CARD_BORDER
-        )
-        card.pack(fill="x", padx=10, pady=7)
-
-        # Smooth Hover Glow Animation for Quest Card
-        def _on_card_enter(e):
-            if card.winfo_exists():
-                card.configure(border_color=COLOR_NEON_BLURPLE, fg_color="#181928")
-        def _on_card_leave(e):
-            if card.winfo_exists():
-                normal_b = COLOR_CARD_BORDER_ACTIVE if (enrolled and not claimed) else COLOR_CARD_BORDER
-                card.configure(border_color=normal_b, fg_color=COLOR_CARD_BG)
-
-        card.bind("<Enter>", _on_card_enter)
-        card.bind("<Leave>", _on_card_leave)
-
-        left_box = ctk.CTkFrame(card, fg_color="transparent")
-        left_box.pack(side="left", padx=14, pady=12, fill="y")
-
-        # Game Thumbnail Banner (Authentic 100x56)
-        thumb = self._get_quest_thumbnail(qid, (100, 56))
-        if thumb:
-            lbl_thumb = tk.Label(left_box, image=thumb, bg=COLOR_CARD_BG, bd=0)
-            lbl_thumb.pack(side="left", padx=(0, 14))
-        else:
-            type_icon = "🎬" if ("VIDEO" in task_type or vid_url) else ("🎮" if "PLAY" in task_type else "⚔️")
-            lbl_icon = ctk.CTkLabel(left_box, text=type_icon, font=ctk.CTkFont(size=24), width=40)
-            lbl_icon.pack(side="left", padx=(0, 14))
-
-        details = ctk.CTkFrame(left_box, fg_color="transparent")
-        details.pack(side="left")
-
-        lbl_qname = ctk.CTkLabel(
-            details, text=f"{game_title}: {qname}",
-            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
-            text_color=COLOR_WHITE
-        )
-        lbl_qname.pack(anchor="w")
-
-        info_line = f"App-ID: {app_id}  |  Aufgabe: {task_type}  |  Belohnung: {rewards_text}"
-        lbl_info = ctk.CTkLabel(
-            details, text=info_line,
-            font=ctk.CTkFont(family="Segoe UI", size=10),
-            text_color=COLOR_TEXT_MUTED
-        )
-        lbl_info.pack(anchor="w")
-
-        # Right Action Area
-        right_box = ctk.CTkFrame(card, fg_color="transparent")
-        right_box.pack(side="right", padx=15, pady=12)
-
-        p_text = f"{curr_sec // 60}/{target_sec // 60} MIN. ({pct:.0f}%)" if target_sec > 60 else f"{curr_sec}/{target_sec}S ({pct:.0f}%)"
-        lbl_progress = ctk.CTkLabel(
-            right_box, text=p_text,
-            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            text_color=COLOR_TEXT_PRIMARY
-        )
-        lbl_progress.pack(anchor="e", pady=(0, 4))
-
-        prog_bar = ctk.CTkProgressBar(right_box, width=170, height=8, progress_color=COLOR_NEON_BLURPLE)
-        prog_bar.set(pct / 100.0)
-        prog_bar.pack(anchor="e", pady=(0, 8))
-
-        btn_row = ctk.CTkFrame(right_box, fg_color="transparent")
-        btn_row.pack(anchor="e")
-
-        # Optional "Video ansehen" button if video asset exists
-        if vid_url:
-            btn_vid = ctk.CTkButton(
-                btn_row, text="▶ VIDEO", width=80, height=28,
-                fg_color=COLOR_DARK_BTN, hover_color=COLOR_DARK_BTN_HOVER,
-                border_width=1, border_color="#7c3aed",
-                text_color="#c084fc", font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-                corner_radius=4, command=lambda u=vid_url: webbrowser.open(u)
-            )
-            btn_vid.pack(side="left", padx=(0, 6))
-
-        btn_action = ctk.CTkButton(
-            btn_row, text="START", width=120, height=28,
-            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-            corner_radius=4
-        )
-        btn_action.pack(side="left")
-
-        if claimed:
-            btn_action.configure(text="✓ EINGELÖST", state="disabled", fg_color="#18281e", text_color=COLOR_EMERALD)
-        elif completed:
-            btn_action.configure(
-                text="🎁 ABHOLEN", fg_color=COLOR_EMERALD, hover_color=COLOR_EMERALD_HOVER, text_color=COLOR_WHITE,
-                command=lambda qid=qid, b=btn_action: self._claim_quest(qid, b)
-            )
-        elif not enrolled:
-            btn_action.configure(
-                text="📥 ANNEHMEN", fg_color=COLOR_INDIGO, hover_color=COLOR_INDIGO_HOVER, text_color=COLOR_WHITE,
-                command=lambda qid=qid, b=btn_action: self._enroll_quest(qid, b)
-            )
-        elif "VIDEO" in task_type:
-            btn_action.configure(
-                text="⚡ VIDEO ABSCHLIESSEN", fg_color=COLOR_GOLD, hover_color=COLOR_GOLD_HOVER, text_color="#000000",
-                command=lambda qid=qid, t=target_sec, b=btn_action: self._fast_video_quest(qid, t, b)
-            )
-        else:
-            btn_action.configure(
-                text="▶ SIMULIEREN", fg_color=COLOR_EMERALD, hover_color=COLOR_EMERALD_HOVER, text_color=COLOR_WHITE,
-                command=lambda aid=app_id, gt=game_title: self._sim_single_quest(aid, gt)
-            )
-
-        self.quest_cards[qid] = {
-            "card": card,
-            "bar": prog_bar,
-            "label": lbl_progress,
-            "target_sec": target_sec,
-            "button": btn_action
-        }
-
     def _enroll_quest(self, qid: str, btn):
-        btn.configure(state="disabled", text="NIMMT AN...")
+        if not self.api:
+            return
+        btn.configure(state="disabled", text="Nimmt an...")
         def _bg():
             ok = self.api.enroll_quest(qid)
             if ok:
-                self.log("Erfolgreich in Quest eingeschrieben!", "SUCCESS")
-                self.after(500, self.refresh_quests)
+                self.after(0, lambda: btn.configure(text="✓ ANGENOMMEN", fg_color="#10281b", text_color=COLOR_EMERALD))
+                self.refresh_quests()
             else:
-                self.log("Fehler bei der Quest-Einschreibung.", "ERROR")
-                self.after(0, lambda: btn.configure(state="normal", text="📥 ANNEHMEN"))
+                self.after(0, lambda: btn.configure(state="normal", text="FEHLER"))
         threading.Thread(target=_bg, daemon=True).start()
 
     def _claim_quest(self, qid: str, btn):
-        btn.configure(state="disabled", text="FORDERT AN...")
+        if not self.api:
+            return
+        btn.configure(state="disabled", text="Löst ein...")
         def _bg():
             res = self.api.claim_reward(qid)
-            if res.get("success"):
-                self.log(f"Belohnung erfolgreich erhalten!", "SUCCESS")
-                self.after(500, self.refresh_quests)
+            if res:
+                self.after(0, lambda: btn.configure(text="✓ EINGELÖST", fg_color="#10281b", text_color=COLOR_EMERALD))
+                self.refresh_quests()
             else:
-                self.log(f"Belohnung konnte nicht geholt werden: {res.get('error')}", "ERROR")
-                self.after(0, lambda: btn.configure(state="normal", text="🎁 ABHOLEN"))
+                self.after(0, lambda: btn.configure(state="normal", text="FEHLER"))
         threading.Thread(target=_bg, daemon=True).start()
 
     def _fast_video_quest(self, qid: str, target_sec: int, btn):
+        if not self.api:
+            return
         if btn:
-            btn.configure(state="disabled", text="LÄUFT...")
+            btn.configure(state="disabled", text="⚡ EXPRESS...")
+        self.log(f"Starte Express-Abschluss für Quest {qid}...", "INFO")
         def _bg():
-            self.log(f"Starte Express-Abschluss für Video-Aufgabe...", "INFO")
-            ok = self.api.complete_video_quest(qid, target_sec)
+            ok = self.api.complete_video_quest(qid, target_seconds=target_sec)
             if ok:
-                self.log(f"Video erfolgreich abgeschlossen! Fordere Belohnung an...", "SUCCESS")
-                time.sleep(1)
-                self.api.claim_reward(qid)
-                self.after(500, self.refresh_quests)
+                self.log(f"Video-Quest {qid} erfolgreich in 5 Sekunden abgeschlossen!", "SUCCESS")
+                self.refresh_quests()
             else:
-                self.log(f"Video-Abschluss fehlgeschlagen.", "ERROR")
+                self.log(f"Express-Abschluss für {qid} fehlgeschlagen.", "ERROR")
                 if btn:
-                    self.after(0, lambda: btn.configure(state="normal", text="⚡ VIDEO ABSCHLIESSEN"))
+                    self.after(0, lambda: btn.configure(state="normal", text="⚡ EXPRESS"))
         threading.Thread(target=_bg, daemon=True).start()
 
     def _sim_single_quest(self, app_id: str, game_title: str):
         """Switches to Simulator Tab and AUTOMATICALLY UPDATES THE PRESET & VALUES as requested!"""
-        self.tabview.set("🎮 SPIELE-SIMULATOR")
+        self._switch_tab("simulator")
 
         # Find matching preset in QUEST_GAMES_DATABASE
         matched_key = None
@@ -1386,40 +1398,41 @@ class AutoQuestApp(ctk.CTk):
         def _bg():
             count = 0
             for q in self.cached_quests:
-                if not q.get("enrolled"):
-                    self.api.enroll_quest(q["id"])
+                if not q.get("enrolled") and not q.get("completed"):
+                    self.api.enroll_quest(q.get("id"))
                     count += 1
-                    time.sleep(0.4)
-            self.log(f"{count} Quests angenommen.", "SUCCESS")
-            self.after(500, self.refresh_quests)
+                    time.sleep(0.5)
+            self.log(f"{count} Quests automatisch angenommen.", "SUCCESS")
+            self.refresh_quests()
         threading.Thread(target=_bg, daemon=True).start()
 
     def toggle_auto_farm(self):
         if not self.farmer:
             return
-        if self.farmer.running:
+        if self.auto_farm_running:
             self.farmer.stop()
-            self.btn_auto_farm.configure(text="⚡ ALLE QUESTS FARMEN", fg_color=COLOR_NEON_BLURPLE)
-            self.live_orbs_frame.pack_forget()
-            self.log("Auto-Farm gestoppt.", "WARNING")
+            self.auto_farm_running = False
+            self.btn_autofarm.configure(text="🚀 AUTO-FARM", fg_color=COLOR_EMERALD)
+            self.log("Auto-Farm gestoppt.", "INFO")
         else:
-            self.btn_auto_farm.configure(text="⏹ FARM STOPPEN", fg_color=COLOR_CRIMSON)
-            self.live_orbs_frame.pack(fill="x", padx=10, pady=(0, 8), before=self.quests_scroll)
-            self.farmer.start_farm_all(self.cached_quests)
+            self.auto_farm_running = True
+            self.btn_autofarm.configure(text="■ STOPPEN", fg_color=COLOR_CRIMSON)
+            self.log("Auto-Farm gestartet! Alle Quests werden nacheinander erledigt.", "SUCCESS")
+            self.farmer.start()
 
     def _on_farm_quest_progress(self, p_info):
-        if isinstance(p_info, dict):
-            qid = p_info.get("quest_id")
-            pct = p_info.get("percent", 0)
-            curr = p_info.get("current_seconds", 0)
-            target = p_info.get("target_seconds", 900)
-            if qid in self.quest_cards:
-                cd = self.quest_cards[qid]
-                self.after(0, lambda: cd["bar"].set(pct / 100.0))
-                p_text = f"{curr // 60}/{target // 60} MIN. ({pct:.0f}%)" if target > 60 else f"{curr}/{target}S ({pct:.0f}%)"
-                self.after(0, lambda: cd["label"].configure(text=p_text))
+        qid = p_info.get("quest_id")
+        current_sec = p_info.get("current_seconds", 0)
+        target_sec = p_info.get("target_seconds", 900)
+        percent = min(100.0, (current_sec / target_sec * 100.0)) if target_sec > 0 else 0.0
 
-    # ================= SIMULATOR CONTROLS =================
+        if qid in self.quest_cards:
+            p_bar = self.quest_cards[qid]["p_bar"]
+            lbl_txt = self.quest_cards[qid]["lbl_txt"]
+            self.after(0, lambda: p_bar.set(percent / 100.0))
+            self.after(0, lambda: lbl_txt.configure(
+                text=f"{current_sec // 60}/{target_sec // 60} MIN. ({int(percent)}%)"
+            ))
 
     def start_manual_simulation(self):
         title = self.entry_sim_title.get().strip()
@@ -1452,84 +1465,63 @@ class AutoQuestApp(ctk.CTk):
         self.btn_start_sim.configure(state="normal")
         self.log("Simulation beendet.", "INFO")
 
-    # ================= ACCOUNT MODAL =================
-
     def _open_account_modal(self):
         modal = ctk.CTkToplevel(self)
-        modal.title("DISCORD ACCOUNT WÄHLEN")
-        modal.geometry("520x460")
-        modal.configure(fg_color=COLOR_BG_DARK)
+        modal.title("Discord Account Auswählen")
+        modal.geometry("460x420")
         modal.resizable(False, False)
+        modal.configure(fg_color=COLOR_BG_DARK)
         modal.transient(self)
         modal.grab_set()
 
         ctk.CTkLabel(
-            modal, text="DISCORD ACCOUNT WÄHLEN",
-            font=ctk.CTkFont(family="Segoe UI", size=16, weight="bold"),
+            modal, text="DISCORD ACCOUNT VERWALTUNG",
+            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
             text_color=COLOR_WHITE
-        ).pack(pady=(25, 10))
+        ).pack(pady=(16, 8))
 
-        acc_frame = ctk.CTkFrame(
-            modal, fg_color=COLOR_CARD_BG, corner_radius=6,
-            border_width=1, border_color=COLOR_CARD_BORDER
-        )
-        acc_frame.pack(fill="x", padx=25, pady=10)
+        scroll = ctk.CTkScrollableFrame(modal, width=410, height=210, fg_color=COLOR_CARD_BG)
+        scroll.pack(padx=20, pady=8, fill="both", expand=True)
 
-        ctk.CTkLabel(
-            acc_frame, text="GEFUNDENE LOKALE KONTEN:",
-            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            text_color=COLOR_TEXT_MUTED
-        ).pack(anchor="w", padx=15, pady=(10, 5))
+        if not self.accounts:
+            self.accounts = find_all_valid_accounts()
 
-        if self.detected_accounts:
-            for acc in self.detected_accounts:
-                btn_txt = f"👤 {acc.get('username').upper()} (ID: {acc.get('id')})"
-                btn = ctk.CTkButton(
-                    acc_frame, text=btn_txt, anchor="w",
-                    fg_color=COLOR_BG_DARK, hover_color=COLOR_DARK_BTN_HOVER,
-                    text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=11),
-                    border_width=1, border_color=COLOR_CARD_BORDER, corner_radius=4,
-                    command=lambda a=acc, m=modal: [self._set_active_account(a), m.destroy()]
-                )
-                btn.pack(fill="x", padx=15, pady=4)
-        else:
-            ctk.CTkLabel(
-                acc_frame, text="Keine lokalen Konten gefunden.",
-                font=ctk.CTkFont(family="Segoe UI", size=11), text_color=COLOR_TEXT_MUTED
-            ).pack(anchor="w", padx=15, pady=8)
+        for acc in self.accounts:
+            row = ctk.CTkFrame(scroll, fg_color="#181926", corner_radius=6)
+            row.pack(fill="x", padx=4, pady=4)
 
-        ctk.CTkLabel(
-            modal, text="ODER TOKEN MANUELL EINGEBEN:",
-            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            text_color=COLOR_TEXT_MUTED
-        ).pack(anchor="w", padx=25, pady=(15, 5))
+            uname = acc.get("username", "Unknown")
+            disc = acc.get("discriminator", "0")
+            lbl_name = f"{uname}#{disc}" if disc != "0" else uname
 
-        token_entry = ctk.CTkEntry(
-            modal, placeholder_text="Discord Token hier einfügen...", show="*",
-            fg_color=COLOR_CARD_BG, border_color=COLOR_CARD_BORDER,
-            font=ctk.CTkFont(family="Segoe UI", size=11)
-        )
-        token_entry.pack(fill="x", padx=25, pady=5)
+            ctk.CTkLabel(row, text=f"👤 {lbl_name}", font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"), text_color=COLOR_WHITE).pack(side="left", padx=10, pady=8)
+
+            ctk.CTkButton(
+                row, text="AUSWÄHLEN", width=90, height=28,
+                fg_color=COLOR_NEON_BLURPLE, hover_color=COLOR_NEON_BLURPLE_HOVER,
+                command=lambda a=acc: [self._set_active_account(a), modal.destroy()]
+            ).pack(side="right", padx=10, pady=8)
+
+        # Manual token input
+        bottom_frame = ctk.CTkFrame(modal, fg_color="transparent")
+        bottom_frame.pack(fill="x", padx=20, pady=(8, 16))
+
+        token_entry = ctk.CTkEntry(bottom_frame, placeholder_text="Oder Discord User-Token manuell eingeben...", height=34)
+        token_entry.pack(fill="x", pady=(0, 8))
 
         def _use_token():
             tok = token_entry.get().strip()
-            if not tok:
-                return
-            prof = get_user_profile(tok)
-            if prof:
-                self._set_active_account(prof)
-                modal.destroy()
-            else:
-                messagebox.showerror("Fehler", "Ungültiger Discord Token!")
+            if tok:
+                prof = get_user_profile(tok)
+                if prof:
+                    self._set_active_account(prof)
+                    modal.destroy()
+                else:
+                    messagebox.showerror("Fehler", "Ungültiger Token.")
 
-        ctk.CTkButton(
-            modal, text="MIT TOKEN ANMELDEN", height=34,
-            fg_color=COLOR_INDIGO, hover_color=COLOR_INDIGO_HOVER,
-            text_color=COLOR_WHITE, font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-            corner_radius=4,
-            command=_use_token
-        ).pack(fill="x", padx=25, pady=15)
+        ctk.CTkButton(bottom_frame, text="MANUELLEN TOKEN LADEN", height=34, fg_color=COLOR_DARK_BTN, hover_color=COLOR_DARK_BTN_HOVER, command=_use_token).pack(fill="x")
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     app = AutoQuestApp()
     app.mainloop()

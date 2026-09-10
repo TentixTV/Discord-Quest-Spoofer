@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import threading
 import time
+import tempfile
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import customtkinter as ctk
@@ -89,8 +90,11 @@ class DQSInstaller(ctk.CTk):
         for c in candidates:
             if os.path.exists(c):
                 try:
+                    temp_ico = os.path.join(tempfile.gettempdir(), "dqs_inst_icon.ico")
                     im = Image.open(c)
-                    self._inst_icon_photo = ImageTk.PhotoImage(im)
+                    im.save(temp_ico, format='ICO', sizes=[(16,16), (24,24), (32,32), (48,48), (64,64), (128,128)])
+                    self.iconbitmap(temp_ico)
+                    self._inst_icon_photo = ImageTk.PhotoImage(im.resize((32, 32)))
                     self.iconphoto(True, self._inst_icon_photo)
                     break
                 except Exception:
@@ -133,7 +137,7 @@ class DQSInstaller(ctk.CTk):
         lbl_title.pack(anchor="w")
 
         lbl_sub = ctk.CTkLabel(
-            title_sub, text="DISCORD QUEST SPOOFER • RELEASE V1",
+            title_sub, text="DISCORD QUEST SPOOFER • RELEASE V2",
             font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
             text_color=COLOR_TEXT_MUTED
         )
@@ -322,6 +326,17 @@ class DQSInstaller(ctk.CTk):
             if bin_src:
                 dest_bin = os.path.join(target_dir, "bin")
                 shutil.copytree(bin_src, dest_bin, dirs_exist_ok=True)
+
+            # Copy ui folder recursively if present
+            ui_src = None
+            for search_base in [bundle, current, os.path.dirname(os.path.abspath(__file__))]:
+                cand = os.path.join(search_base, "ui")
+                if os.path.exists(cand) and os.path.isdir(cand):
+                    ui_src = cand
+                    break
+            if ui_src:
+                dest_ui = os.path.join(target_dir, "ui")
+                shutil.copytree(ui_src, dest_ui, dirs_exist_ok=True)
 
             self._update_progress(0.75, "Erstelle Uninstaller...")
             uninstaller_path = os.path.join(target_dir, "Uninstall.bat")
