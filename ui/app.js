@@ -154,6 +154,8 @@ const DQS = {
         setHtml('ico-btn-refresh', I.refresh);
         setHtml('ico-btn-enroll', I.quest);
         setHtml('ico-btn-autofarm', I.autofarm);
+        setHtml('ico-hero-autofarm', I.autofarm);
+        setHtml('ico-hero-play', I.play);
 
         setHtml('ico-hdr-videos', I.video);
         setHtml('ico-hdr-sim', I.gamepad);
@@ -452,6 +454,14 @@ const DQS = {
         const badge = document.getElementById('quests-badge');
         if (badge) badge.innerText = this.cachedQuests.length;
 
+        // Fetch duration and auto-quest overview
+        try {
+            const overview = await window.pywebview.api.get_auto_quest_overview();
+            this.updateAutoQuestOverviewUI(overview);
+        } catch (e) {
+            console.error("Failed to load auto quest overview:", e);
+        }
+
         container.innerHTML = '';
         if (this.cachedQuests.length === 0) {
             container.innerHTML = '<div style="padding:50px;text-align:center;color:#8e92a4;">Keine aktiven Quests auf diesem Account gefunden!</div>';
@@ -546,6 +556,7 @@ const DQS = {
                 <div class="quest-header-row">
                     <span class="quest-game-title">${gameTitle}</span>
                     <span class="badge-tag task">${taskIcon} ${taskLabel}</span>
+                    <span class="badge-tag duration">${I.clock} DAUER: <strong>${q.duration_text || (isVideo ? '(ca. 30 Sek.)' : '(ca. 15 Min.)')}</strong></span>
                     ${orbCount > 0 ? `<span class="badge-tag orbs"><img src="${orbImgSrc}" class="discord-orb-icon" alt="Orbs"> <span>${orbCount} ORBS</span></span>` : ''}
                 </div>
                 <div class="quest-name-sub">${questName}</div>
@@ -831,21 +842,74 @@ const DQS = {
         };
 
         const btnAutoFarm = document.getElementById('btn-toggle-autofarm');
-        btnAutoFarm.onclick = async () => {
-            const res = await window.pywebview?.api?.toggle_auto_farm();
-            if (res && res.running) {
-                btnAutoFarm.innerHTML = `STOPPEN`;
-                btnAutoFarm.className = 'btn btn-crimson';
-            } else {
-                btnAutoFarm.innerHTML = `${I.autofarm} AUTO-FARM`;
-                btnAutoFarm.className = 'btn btn-emerald';
-            }
-        };
+        if (btnAutoFarm) btnAutoFarm.onclick = () => this.toggleAutoFarm();
+
+        const btnHeroAutoFarm = document.getElementById('btn-hero-autofarm');
+        if (btnHeroAutoFarm) btnHeroAutoFarm.onclick = () => this.toggleAutoFarm();
 
         // Clear Logs
         document.getElementById('btn-clear-logs').onclick = () => {
             document.getElementById('terminal-logs').innerHTML = '';
         };
+    },
+
+    async toggleAutoFarm() {
+        if (!window.pywebview?.api) return;
+        const res = await window.pywebview.api.toggle_auto_farm();
+        if (res) {
+            this.updateAutoQuestOverviewUI(res);
+        }
+    },
+
+    updateAutoQuestOverviewUI(overview) {
+        if (!overview) return;
+        const durText = overview.duration_text || '(0 Min.)';
+
+        const durTag = document.getElementById('btn-autofarm-duration');
+        if (durTag) durTag.innerText = durText;
+
+        const heroDurVal = document.getElementById('hero-duration-val');
+        if (heroDurVal) heroDurVal.innerText = durText;
+
+        const heroBtnDur = document.getElementById('hero-btn-duration');
+        if (heroBtnDur) heroBtnDur.innerText = durText;
+
+        const pill = document.getElementById('autofarm-status-pill');
+        const heroBtn = document.getElementById('btn-hero-autofarm');
+        const toolBtn = document.getElementById('btn-toggle-autofarm');
+        const heroLabel = document.getElementById('hero-btn-label');
+        const toolLabel = document.getElementById('btn-autofarm-label');
+        const tracker = document.getElementById('autofarm-live-tracker');
+
+        if (overview.running) {
+            if (pill) {
+                pill.className = 'autofarm-status-pill running';
+                pill.innerText = 'LÄUFT';
+            }
+            if (heroBtn) {
+                heroBtn.className = 'btn btn-crimson btn-lg btn-hero-autofarm';
+            }
+            if (toolBtn) {
+                toolBtn.className = 'btn btn-crimson btn-glow';
+            }
+            if (heroLabel) heroLabel.innerText = 'AUTO-QUEST STOPPEN';
+            if (toolLabel) toolLabel.innerText = 'STOPPEN';
+            if (tracker) tracker.style.display = 'block';
+        } else {
+            if (pill) {
+                pill.className = 'autofarm-status-pill idle';
+                pill.innerText = (overview.open_count && overview.open_count > 0) ? 'BEREIT' : 'ERFÜLLT';
+            }
+            if (heroBtn) {
+                heroBtn.className = 'btn btn-emerald btn-lg btn-hero-autofarm';
+            }
+            if (toolBtn) {
+                toolBtn.className = 'btn btn-emerald btn-glow';
+            }
+            if (heroLabel) heroLabel.innerText = 'ALLE QUESTS JETZT STARTEN';
+            if (toolLabel) toolLabel.innerText = 'ALLE QUESTS ERLEDIGEN';
+            if (tracker) tracker.style.display = 'none';
+        }
     }
 };
 
@@ -862,11 +926,88 @@ window.appendLog = function(msg, level) {
 };
 
 window.onQuestsUpdated = function() {
-    DQS.refreshQuests();
+    if (window.DQS) DQS.refreshQuests();
+};
+
+window.onAutoQuestProgress = function(pInfo) {
+    if (!pInfo) return;
+    const tracker = document.getElementById('autofarm-live-tracker');
+    if (tracker) tracker.style.display = 'block';
+
+    const curQuest = document.getElementById('live-current-quest');
+    if (curQuest) {
+        curQuest.innerText = `Aktuell: [${pInfo.current_index}/${pInfo.total_count}] ${pInfo.game_title} (${pInfo.progress_percent.toFixed(0)}%)`;
+    }
+
+    const liveRem = document.getElementById('live-rem-val');
+    if (liveRem) {
+        liveRem.innerText = pInfo.overall_duration_text || `(ca. ${Math.ceil(pInfo.remaining_seconds / 60)} Min.)`;
+    }
+
+    const fill = document.getElementById('hero-progress-fill');
+    if (fill && pInfo.total_count > 0) {
+        const overallPct = ((pInfo.current_index - 1 + (pInfo.progress_percent / 100)) / pInfo.total_count * 100);
+        fill.style.width = `${Math.min(100, Math.max(0, overallPct)).toFixed(1)}%`;
+    }
+
+    // Live update countdown in buttons
+    const durTag = document.getElementById('btn-autofarm-duration');
+    if (durTag && pInfo.overall_duration_text) durTag.innerText = pInfo.overall_duration_text;
+
+    const heroBtnDur = document.getElementById('hero-btn-duration');
+    if (heroBtnDur && pInfo.overall_duration_text) heroBtnDur.innerText = pInfo.overall_duration_text;
+
+    const heroDurVal = document.getElementById('hero-duration-val');
+    if (heroDurVal && pInfo.overall_duration_text) heroDurVal.innerText = pInfo.overall_duration_text;
+
+    const pill = document.getElementById('autofarm-status-pill');
+    if (pill) {
+        pill.className = 'autofarm-status-pill running';
+        pill.innerText = `LÄUFT [${pInfo.current_index}/${pInfo.total_count}]`;
+    }
+
+    const heroBtn = document.getElementById('btn-hero-autofarm');
+    if (heroBtn) heroBtn.className = 'btn btn-crimson btn-lg btn-hero-autofarm';
+
+    const toolBtn = document.getElementById('btn-toggle-autofarm');
+    if (toolBtn) toolBtn.className = 'btn btn-crimson btn-glow';
+
+    const heroLabel = document.getElementById('hero-btn-label');
+    if (heroLabel) heroLabel.innerText = 'AUTO-QUEST STOPPEN';
+
+    const toolLabel = document.getElementById('btn-autofarm-label');
+    if (toolLabel) toolLabel.innerText = 'STOPPEN';
+};
+
+window.onAutoQuestFinished = function(totalOrbs) {
+    const pill = document.getElementById('autofarm-status-pill');
+    if (pill) {
+        pill.className = 'autofarm-status-pill idle';
+        pill.innerText = 'ALLE ERLEDIGT!';
+    }
+    const heroLabel = document.getElementById('hero-btn-label');
+    if (heroLabel) heroLabel.innerText = 'ALLE QUESTS ERLEDIGT!';
+    const heroBtn = document.getElementById('btn-hero-autofarm');
+    if (heroBtn) heroBtn.className = 'btn btn-emerald btn-lg btn-hero-autofarm';
+
+    const toolLabel = document.getElementById('btn-autofarm-label');
+    if (toolLabel) toolLabel.innerText = 'ALLE QUESTS ERLEDIGEN';
+    const toolBtn = document.getElementById('btn-toggle-autofarm');
+    if (toolBtn) toolBtn.className = 'btn btn-emerald btn-glow';
+
+    setTimeout(() => {
+        const tracker = document.getElementById('autofarm-live-tracker');
+        if (tracker) tracker.style.display = 'none';
+        if (window.DQS) window.DQS.refreshQuests();
+    }, 3000);
+};
+
+window.onAutoQuestStopped = function() {
+    if (window.DQS) window.DQS.refreshQuests();
 };
 
 window.onFarmProgress = function(pInfo) {
-    if (pInfo && pInfo.quest_id) {
+    if (pInfo && pInfo.quest_id && window.DQS) {
         DQS.refreshQuests();
     }
 };

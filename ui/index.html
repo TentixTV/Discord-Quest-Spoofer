@@ -97,9 +97,47 @@
                     <button class="btn btn-blurple" id="btn-enroll-all">
                         <span id="ico-btn-enroll"></span> ALLE ANNEHMEN
                     </button>
-                    <button class="btn btn-emerald" id="btn-toggle-autofarm">
-                        <span id="ico-btn-autofarm"></span> AUTO-FARM
+                    <button class="btn btn-emerald btn-glow" id="btn-toggle-autofarm">
+                        <span id="ico-btn-autofarm"></span> <span id="btn-autofarm-label">ALLE QUESTS ERLEDIGEN</span> <span class="badge-duration" id="btn-autofarm-duration">(ca. 15 Min.)</span>
                     </button>
+                </div>
+            </div>
+
+            <!-- Master Auto-Quest Completer Hero Card -->
+            <div class="autofarm-hero-card card-3d" id="autofarm-hero-card">
+                <div class="autofarm-hero-content">
+                    <div class="autofarm-left">
+                        <div class="autofarm-icon-orbit">
+                            <span class="autofarm-pulse-ring"></span>
+                            <span class="autofarm-core-icon" id="ico-hero-autofarm"></span>
+                        </div>
+                        <div class="autofarm-text-col">
+                            <div class="autofarm-title-row">
+                                <h3 class="autofarm-title">AUTOMATISCHER QUEST-COMPLETER</h3>
+                                <span class="autofarm-status-pill idle" id="autofarm-status-pill">BEREIT</span>
+                                <span class="autofarm-duration-pill" id="autofarm-duration-pill">GESAMTDAUER: <strong id="hero-duration-val">(ca. 15 Min.)</strong></span>
+                            </div>
+                            <p class="autofarm-subtitle">
+                                Schreibt deinen Account vollautomatisch ein, erledigt alle Videos per Express und simuliert Spiele mit echten Discord-Heartbeats, bis alle Quests abgeschlossen sind.
+                            </p>
+                            
+                            <!-- Live Progress Tracker while active -->
+                            <div class="autofarm-live-tracker" id="autofarm-live-tracker" style="display: none;">
+                                <div class="live-tracker-header">
+                                    <span class="live-current-quest" id="live-current-quest">Aktuell: [1/4] Starte Quest...</span>
+                                    <span class="live-time-rem">Verbleibend: <strong id="live-rem-val">(ca. 15 Min.)</strong></span>
+                                </div>
+                                <div class="progress-track hero-track">
+                                    <div class="progress-fill hero-fill" id="hero-progress-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="autofarm-right">
+                        <button class="btn btn-emerald btn-lg btn-hero-autofarm" id="btn-hero-autofarm">
+                            <span id="ico-hero-play"></span> <span id="hero-btn-label">ALLE QUESTS JETZT STARTEN</span> <span class="hero-btn-duration" id="hero-btn-duration">(ca. 15 Min.)</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 

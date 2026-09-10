@@ -13,6 +13,48 @@ from typing import Callable, Optional, List, Dict, Any
 from .discord_api import DiscordQuestsAPI
 from .game_spoofer import GameSimulator
 
+def format_duration(seconds: int) -> str:
+    """Formats seconds into human-readable duration in parentheses (...)"""
+    if seconds <= 0:
+        return "(0 Min.)"
+    if seconds < 60:
+        return f"(ca. {seconds} Sek.)"
+    if seconds < 3600:
+        m = max(1, round(seconds / 60))
+        return f"(ca. {m} Min.)"
+    h = seconds // 3600
+    m = round((seconds % 3600) / 60)
+    if m > 0:
+        return f"(ca. {h} Std. {m} Min.)"
+    return f"(ca. {h} Std.)"
+
+def calculate_quests_duration(quests: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Calculates total estimated remaining duration for a list of quests."""
+    total_seconds = 0
+    open_count = 0
+    for q in quests:
+        if q.get("claimed"):
+            continue
+        open_count += 1
+        task_type = q.get("task_type", "UNKNOWN")
+        target_sec = q.get("target_seconds", 900)
+        curr_sec = q.get("current_seconds", 0)
+        is_video = task_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE", "PLAY_ACTIVITY") or bool(q.get("has_video"))
+        
+        if q.get("completed"):
+            continue
+        elif is_video:
+            total_seconds += 10  # Express video completion takes ~10 seconds
+        else:
+            rem = max(0, target_sec - curr_sec)
+            total_seconds += rem
+
+    return {
+        "total_seconds": total_seconds,
+        "duration_text": format_duration(total_seconds),
+        "open_count": open_count
+    }
+
 class QuestFarmer:
     def __init__(self, api: DiscordQuestsAPI, simulator: GameSimulator):
         self.api = api
@@ -63,7 +105,19 @@ class QuestFarmer:
             return
 
         total_count = len(eligible)
-        self.log(f"{total_count} offene Quests in der Warteschlange gefunden.", "INFO")
+        def get_queue_remaining(curr_idx, curr_remaining):
+            rem = curr_remaining
+            for nxt in eligible[curr_idx:]:
+                t_type = nxt.get("task_type", "UNKNOWN")
+                is_vid = t_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE", "PLAY_ACTIVITY") or bool(nxt.get("has_video"))
+                if is_vid:
+                    rem += 10
+                else:
+                    rem += max(0, nxt.get("target_seconds", 900) - nxt.get("current_seconds", 0))
+            return rem
+
+        initial_total = get_queue_remaining(0, 0)
+        self.log(f"{total_count} offene Quests in der Warteschlange. Geschätzte Gesamtdauer: {format_duration(initial_total)}", "INFO")
 
         for idx, q in enumerate(eligible, 1):
             if not self.running:
@@ -78,11 +132,12 @@ class QuestFarmer:
             curr_sec = q.get("current_seconds", 0)
             reward_desc = q["rewards_text"]
             orb_amount = q.get("orb_count", 0)
+            is_video_task = task_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE", "PLAY_ACTIVITY") or bool(q.get("has_video"))
+            needed_this_quest = 10 if is_video_task else max(0, target_sec - curr_sec)
 
-            target_min = target_sec // 60
             self.log(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "TIME")
             self.log(f"🎯 [{idx}/{total_count}] Starte Quest: '{qname}' ({game_title})", "INFO")
-            self.log(f"⏱ Dauer: {target_min} Minuten  |  🎁 Belohnung: {reward_desc}", "INFO")
+            self.log(f"⏱ Dauer dieser Quest: {format_duration(needed_this_quest)} | Verbleibende Gesamtdauer: {format_duration(get_queue_remaining(idx, needed_this_quest))}", "INFO")
 
             # 1. Einschreiben falls noch nicht geschehen
             if not q.get("enrolled"):
@@ -109,12 +164,13 @@ class QuestFarmer:
                 continue
 
             # 3. Task ausführen
-            if task_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE", "PLAY_ACTIVITY"):
-                self.log(f"Video/Mobil/Activity-Aufgabe erkannt. Führe Express-Fortschritt aus...", "INFO")
+            if is_video_task:
+                self.log(f"Video/Express-Aufgabe erkannt ({format_duration(10)}). Führe Sofortabschluss aus...", "INFO")
                 def video_cb(c, t):
                     pct = (c / t) * 100.0
                     self.log(f"Video-Fortschritt: {c}/{t}s ({pct:.0f}%)", "INFO")
                     if self.on_progress:
+                        overall_rem = get_queue_remaining(idx, max(0, t - c))
                         self.on_progress({
                             "quest_id": qid,
                             "quest_name": qname,
@@ -124,7 +180,9 @@ class QuestFarmer:
                             "progress_percent": pct,
                             "remaining_seconds": max(0, t - c),
                             "current_index": idx,
-                            "total_count": total_count
+                            "total_count": total_count,
+                            "overall_remaining_seconds": overall_rem,
+                            "overall_duration_text": format_duration(overall_rem)
                         })
 
                 ok = self.api.complete_video_quest(qid, target_sec, video_cb)
@@ -141,10 +199,10 @@ class QuestFarmer:
             else:
                 # Desktop Game Simulation
                 needed_seconds = max(0, target_sec - curr_sec)
-                self.log(f"Starte Spiel-Simulation für '{game_title}'...", "INFO")
+                self.log(f"Starte Spiel-Simulation für '{game_title}' ({format_duration(needed_seconds)})...", "INFO")
                 sim_res = self.simulator.start_simulation(app_id, game_title)
                 self.log(f"🎮 Simulierter Prozess '{sim_res['exe_name']}' läuft aktiv (PID: {sim_res['pid']}).", "SUCCESS")
-                self.log(f"⏳ Verbleibende Spielzeit: {needed_seconds // 60} Minuten...", "INFO")
+                self.log(f"⏳ Verbleibende Spielzeit dieser Quest: {format_duration(needed_seconds)}", "INFO")
 
                 simulated = 0
                 check_interval = 5
@@ -159,6 +217,7 @@ class QuestFarmer:
                     total_done = curr_sec + simulated
                     pct = min(100.0, (total_done / target_sec) * 100.0)
                     remaining = max(0, target_sec - total_done)
+                    overall_rem = get_queue_remaining(idx, remaining)
 
                     if self.on_progress:
                         self.on_progress({
@@ -170,7 +229,9 @@ class QuestFarmer:
                             "progress_percent": pct,
                             "remaining_seconds": remaining,
                             "current_index": idx,
-                            "total_count": total_count
+                            "total_count": total_count,
+                            "overall_remaining_seconds": overall_rem,
+                            "overall_duration_text": format_duration(overall_rem)
                         })
 
                     # Discord API Status-Prüfung alle 45 Sekunden

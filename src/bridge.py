@@ -15,13 +15,13 @@ try:
     from .discord_auth import find_all_valid_accounts, get_user_profile
     from .discord_api import DiscordQuestsAPI
     from .game_spoofer import GameSimulator
-    from .quest_farmer import QuestFarmer, generate_discord_console_snippet
+    from .quest_farmer import QuestFarmer, generate_discord_console_snippet, calculate_quests_duration, format_duration
     from .database import QUEST_GAMES_DATABASE
 except (ImportError, ValueError):
     from discord_auth import find_all_valid_accounts, get_user_profile
     from discord_api import DiscordQuestsAPI
     from game_spoofer import GameSimulator
-    from quest_farmer import QuestFarmer, generate_discord_console_snippet
+    from quest_farmer import QuestFarmer, generate_discord_console_snippet, calculate_quests_duration, format_duration
     from database import QUEST_GAMES_DATABASE
 
 class DQSBridge:
@@ -103,10 +103,33 @@ class DQSBridge:
             return []
         try:
             quests = self.api.get_parsed_quests()
+            for q in quests:
+                task_type = q.get("task_type", "UNKNOWN")
+                is_vid = task_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE", "PLAY_ACTIVITY") or bool(q.get("has_video"))
+                if q.get("claimed"):
+                    q["duration_text"] = "(Abgeholt)"
+                elif q.get("completed"):
+                    q["duration_text"] = "(Erfüllt)"
+                elif is_vid:
+                    q["duration_text"] = "(ca. 30 Sek.)"
+                else:
+                    needed = max(0, q.get("target_seconds", 900) - q.get("current_seconds", 0))
+                    q["duration_text"] = format_duration(needed)
             return quests
         except Exception as e:
             print("Error fetching quests:", e)
             return []
+
+    def get_auto_quest_overview(self):
+        quests = self.get_quests()
+        dur = calculate_quests_duration(quests)
+        return {
+            "running": self.auto_farm_running,
+            "total_seconds": dur["total_seconds"],
+            "duration_text": dur["duration_text"],
+            "open_count": dur["open_count"],
+            "total_count": len(quests)
+        }
 
     def enroll_quest(self, quest_id):
         if not self.api:
@@ -188,18 +211,41 @@ class DQSBridge:
 
     # --- Auto-Farm ---
     def toggle_auto_farm(self):
+        if not self.api and self.current_user:
+            self.api = DiscordQuestsAPI(self.current_user["token"])
+        if not self.api:
+            return {"running": False, "error": "Kein aktiver Discord Account vorhanden"}
+
         if not self.farmer:
-            return {"running": False}
+            self.farmer = QuestFarmer(api=self.api, simulator=self.simulator)
+
         if self.auto_farm_running:
             self.farmer.stop()
             self.auto_farm_running = False
+            if self.window:
+                self.window.evaluate_js("window.onAutoQuestStopped && window.onAutoQuestStopped();")
             return {"running": False}
         else:
+            quests = self.get_quests()
+            eligible = [q for q in quests if not q.get("claimed")]
+            dur = calculate_quests_duration(eligible)
+
+            if not eligible:
+                self._on_farmer_log("Alle Quests sind bereits abgeschlossen und abgeholt!", "SUCCESS")
+                return {"running": False, "duration_text": "(0 Min.)", "open_count": 0}
+
             self.auto_farm_running = True
             self.farmer.on_log = self._on_farmer_log
             self.farmer.on_progress = self._on_farmer_progress
-            self.farmer.start()
-            return {"running": True}
+            self.farmer.on_finished = self._on_farmer_finished
+            self.farmer.start_farm_all(eligible)
+
+            return {
+                "running": True,
+                "total_seconds": dur["total_seconds"],
+                "duration_text": dur["duration_text"],
+                "open_count": dur["open_count"]
+            }
 
     def _on_farmer_log(self, msg, level="INFO"):
         if self.window:
@@ -210,7 +256,14 @@ class DQSBridge:
     def _on_farmer_progress(self, p_info):
         if self.window:
             safe_json = json.dumps(p_info)
+            self.window.evaluate_js(f"window.onAutoQuestProgress && window.onAutoQuestProgress({safe_json});")
             self.window.evaluate_js(f"window.onFarmProgress && window.onFarmProgress({safe_json});")
+
+    def _on_farmer_finished(self, total_orbs):
+        self.auto_farm_running = False
+        if self.window:
+            self.window.evaluate_js(f"window.onAutoQuestFinished && window.onAutoQuestFinished({int(total_orbs)});")
+            self.window.evaluate_js("window.onQuestsUpdated && window.onQuestsUpdated();")
 
     # --- Tools & Utilities ---
     def get_console_script(self):
