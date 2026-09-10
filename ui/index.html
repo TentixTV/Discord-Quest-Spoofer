@@ -5,22 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DQS // Discord Quest Spoofer</title>
     <link rel="stylesheet" href="style.css">
+    <script src="assets_data.js"></script>
+    <script src="icons.js"></script>
 </head>
 <body class="dark-theme">
-    <!-- GPU Accelerated Background Particle Canvas -->
+    <!-- 3D Interactive GPU Canvas -->
     <canvas id="bg-canvas"></canvas>
 
     <!-- Custom Frameless Titlebar -->
     <header id="app-titlebar" class="pywebview-drag-region">
         <div class="titlebar-left">
             <div class="app-brand-logo">
-                <img src="../DQS.png" alt="DQS" class="brand-img">
+                <img src="DQS.png" alt="DQS" class="brand-img" onerror="this.src='../DQS.png'">
                 <div class="logo-glow"></div>
             </div>
             <div class="brand-text">
                 <div class="brand-row1">
                     <span class="brand-title">DQS</span>
-                    <span class="admin-pill"><span class="pulsing-dot"></span>ADMIN AKTIV</span>
+                    <span class="admin-pill"><span class="pulsing-dot"></span><span id="ico-shield"></span>ADMIN AKTIV</span>
                 </div>
                 <div class="brand-subtitle">DISCORD QUEST SPOOFER</div>
             </div>
@@ -30,44 +32,50 @@
             <!-- Sleek Horizontal Navigation Tabs -->
             <nav id="nav-tabs" class="no-drag">
                 <button class="nav-tab active" data-tab="quests">
-                    <span class="tab-icon">⚡</span> QUESTS <span class="tab-badge" id="quests-badge">6</span>
+                    <span class="tab-icon-wrap" id="ico-nav-quests"></span>
+                    <span class="tab-label">QUESTS</span>
+                    <span class="tab-badge" id="quests-badge">6</span>
                 </button>
                 <button class="nav-tab" data-tab="videos">
-                    <span class="tab-icon">🎬</span> VIDEOS & TRAILER
+                    <span class="tab-icon-wrap" id="ico-nav-videos"></span>
+                    <span class="tab-label">VIDEOS & TRAILER</span>
                 </button>
                 <button class="nav-tab" data-tab="simulator">
-                    <span class="tab-icon">🎮</span> SPIELE-SIMULATOR
+                    <span class="tab-icon-wrap" id="ico-nav-simulator"></span>
+                    <span class="tab-label">SPIELE-SIMULATOR</span>
                 </button>
                 <button class="nav-tab" data-tab="console">
-                    <span class="tab-icon">💻</span> DISCORD-CONSOLE
+                    <span class="tab-icon-wrap" id="ico-nav-console"></span>
+                    <span class="tab-label">DISCORD-CONSOLE</span>
                 </button>
                 <button class="nav-tab" data-tab="logs">
-                    <span class="tab-icon">📜</span> LIVE-LOGS
+                    <span class="tab-icon-wrap" id="ico-nav-logs"></span>
+                    <span class="tab-label">LIVE-LOGS</span>
                 </button>
             </nav>
         </div>
 
         <div class="titlebar-right no-drag">
             <!-- User Profile Pill in Header -->
-            <div id="header-user-pill" class="user-pill" title="Profil öffnen">
+            <div id="header-user-pill" class="user-pill" title="Discord-Profil öffnen">
                 <div class="mini-avatar-wrap">
-                    <img src="../assets/tentix_avatar.png" alt="Avatar" class="mini-avatar" id="hdr-avatar">
-                    <span class="status-indicator dnd"></span>
+                    <img src="assets/tentix_avatar.png" alt="Avatar" class="mini-avatar" id="hdr-avatar" onerror="if(window.DQS_EMBEDDED_ASSETS) this.src=window.DQS_EMBEDDED_ASSETS.avatar;">
+                    <span class="status-indicator dnd"><span class="dnd-minus"></span></span>
                 </div>
                 <div class="user-pill-info">
                     <span class="pill-username" id="hdr-username">TΞП†1Ж ツ</span>
-                    <span class="pill-status">🩸 BEHIND EVERY KISS...</span>
+                    <span class="pill-status">BEHIND EVERY KISS...</span>
                 </div>
-                <div class="gear-wrap" id="hdr-gear-wrap">
-                    <img src="../assets/gear/frame_0.png" alt="Settings" class="gear-img" id="hdr-gear">
+                <div class="gear-wrap" id="hdr-gear-wrap" title="Einstellungen">
+                    <span id="ico-hdr-gear"></span>
                 </div>
             </div>
 
             <!-- Window Controls -->
             <div class="window-controls">
-                <button class="win-btn win-min" id="btn-win-min" title="Minimieren">─</button>
-                <button class="win-btn win-max" id="btn-win-max" title="Maximieren">□</button>
-                <button class="win-btn win-close" id="btn-win-close" title="Schließen">✕</button>
+                <button class="win-btn win-min" id="btn-win-min" title="Minimieren"></button>
+                <button class="win-btn win-max" id="btn-win-max" title="Maximieren"></button>
+                <button class="win-btn win-close" id="btn-win-close" title="Schließen"></button>
             </div>
         </div>
     </header>
@@ -78,19 +86,24 @@
         <section id="tab-quests" class="tab-view active">
             <div class="view-toolbar">
                 <div class="toolbar-title">
-                    <h2>⚡ AKTIVE QUESTS & BELOHNUNGEN</h2>
+                    <h2><span id="ico-hdr-quests"></span> AKTIVE QUESTS & BELOHNUNGEN</h2>
                     <span class="toolbar-desc">Wähle ein Spiel zum sofortigen Simulieren oder nutze den Express-Abschluss.</span>
                 </div>
                 <div class="toolbar-actions">
-                    <button class="btn btn-secondary" id="btn-refresh-quests">🔄 AKTUALISIEREN</button>
-                    <button class="btn btn-blurple" id="btn-enroll-all">⚡ ALLE ANNEHMEN</button>
-                    <button class="btn btn-emerald" id="btn-toggle-autofarm">🚀 AUTO-FARM</button>
+                    <button class="btn btn-secondary" id="btn-refresh-quests">
+                        <span id="ico-btn-refresh"></span> AKTUALISIEREN
+                    </button>
+                    <button class="btn btn-blurple" id="btn-enroll-all">
+                        <span id="ico-btn-enroll"></span> ALLE ANNEHMEN
+                    </button>
+                    <button class="btn btn-emerald" id="btn-toggle-autofarm">
+                        <span id="ico-btn-autofarm"></span> AUTO-FARM
+                    </button>
                 </div>
             </div>
 
             <div class="cards-container" id="quests-list">
-                <!-- Dynamically Rendered Quest Cards -->
-                <div class="loading-spinner">Lade Quests von Discord...</div>
+                <div class="loading-spinner">Lade Quests von Discord API...</div>
             </div>
         </section>
 
@@ -98,165 +111,171 @@
         <section id="tab-videos" class="tab-view">
             <div class="view-toolbar">
                 <div class="toolbar-title">
-                    <h2>🎬 ALLE QUEST-VIDEOS & OFFIZIELLE TRAILER (720P HD)</h2>
-                    <span class="toolbar-desc">Schau dir die Trailer in Full HD an oder beende Video-Quests per 5-Sekunden-Express.</span>
+                    <h2><span id="ico-hdr-videos"></span> OFFIZIELLE QUEST-VIDEOS & TRAILER</h2>
+                    <span class="toolbar-desc">720p HD MP4 Discord Streams mit 1-Klick Wiedergabe oder Express-Abschluss.</span>
                 </div>
             </div>
+
             <div class="cards-container" id="videos-list">
-                <!-- Dynamically Rendered Video Cards -->
+                <!-- Dynamically rendered video cards -->
             </div>
         </section>
 
-        <!-- 3. TAB: SIMULATOR -->
+        <!-- 3. TAB: SPIELE-SIMULATOR -->
         <section id="tab-simulator" class="tab-view">
             <div class="view-toolbar">
                 <div class="toolbar-title">
-                    <h2>🎮 NATIVE SPIELE-SIMULATION & DISCORD RPC INJEKTION</h2>
-                    <span class="toolbar-desc">Täusche laufende Windows-Spiele vor und sende authentische Rich-Presence Activity-Updates.</span>
+                    <h2><span id="ico-hdr-sim"></span> HARDWARE-SPRECHENDER SPIELE-SIMULATOR</h2>
+                    <span class="toolbar-desc">Emuliert authentische Win32 Spieleprozesse und meldet Heartbeats an Discord.</span>
                 </div>
-                <div class="sim-status-badge" id="sim-status-badge">● BEREIT</div>
             </div>
 
             <div class="simulator-layout">
-                <div class="simulator-card glass-panel">
-                    <div class="form-group">
-                        <label>SPIELVORLAGE AUSWÄHLEN (PRESET):</label>
-                        <select id="sim-preset-select" class="form-control select-control">
-                            <!-- Populated via JS -->
+                <div class="sim-card card-3d">
+                    <div class="sim-card-header">
+                        <span class="sim-card-title">SPIELVORLAGE & KONFIGURATION</span>
+                        <span class="sim-status-badge" id="sim-status-badge">BEREIT</span>
+                    </div>
+
+                    <div class="sim-form-group">
+                        <label>SPIEL-PRESET WÄHLEN</label>
+                        <select id="sim-preset-select" class="sim-select">
+                            <!-- Injected presets -->
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label>SPIELNAME / FENSTERTITEL:</label>
-                        <input type="text" id="sim-input-title" class="form-control" value="HELLDIVERS™ 2">
+                    <div class="sim-form-row">
+                        <div class="sim-form-group half">
+                            <label>SPIEL-TITEL</label>
+                            <input type="text" id="sim-input-title" class="sim-input" value="Helldivers 2">
+                        </div>
+                        <div class="sim-form-group half">
+                            <label>PROZESSNAME (.EXE)</label>
+                            <input type="text" id="sim-input-exe" class="sim-input" value="helldivers2.exe">
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>EXECUTABLE (PROZESSNAME):</label>
-                        <input type="text" id="sim-input-exe" class="form-control font-mono" value="bin/helldivers2.exe">
+                    <div class="sim-form-group">
+                        <label>DISCORD APPLICATION ID</label>
+                        <input type="text" id="sim-input-appid" class="sim-input" value="1205090671527071784">
                     </div>
 
-                    <div class="form-group">
-                        <label>DISCORD APPLICATION ID:</label>
-                        <input type="text" id="sim-input-appid" class="form-control font-mono" value="1205090671527071784">
-                    </div>
-
-                    <div class="sim-actions">
-                        <button class="btn btn-emerald btn-large" id="btn-start-sim">▶ SIMULATION STARTEN</button>
-                        <button class="btn btn-crimson btn-large" id="btn-stop-sim" disabled>■ BEENDEN</button>
-                    </div>
-
-                    <div class="sim-info-bar" id="sim-info-bar">
-                        Status: Bereit zur Simulation.
+                    <div class="sim-button-row">
+                        <button class="btn btn-emerald btn-lg" id="btn-start-sim">
+                            <span id="ico-btn-start-sim"></span> SIMULATION STARTEN
+                        </button>
+                        <button class="btn btn-crimson btn-lg" id="btn-stop-sim" disabled>
+                            STOPPEN
+                        </button>
                     </div>
                 </div>
 
-                <!-- Simulation Live Activity Preview -->
-                <div class="sim-preview-card glass-panel">
-                    <h3>LIVE DISCORD ACTIVITY MONITOR</h3>
-                    <div class="activity-preview-box">
-                        <div class="act-icon">🎮</div>
-                        <div class="act-details">
-                            <h4 id="act-title">Keine aktive Simulation</h4>
-                            <p id="act-state">Wähle ein Spiel und klicke auf Simulation starten.</p>
-                            <span id="act-timer" class="font-mono">⏱ Zeit: 00:00 Min.</span>
+                <div class="sim-card card-3d">
+                    <div class="sim-card-header">
+                        <span class="sim-card-title">STATUS & RICH PRESENCE</span>
+                    </div>
+                    <div class="sim-monitor-body">
+                        <div class="sim-monitor-art">
+                            <div class="radar-pulse"></div>
+                            <span class="monitor-icon" id="ico-sim-monitor"></span>
+                        </div>
+                        <div class="sim-monitor-text">
+                            <h3 id="sim-active-title">Keine aktive Simulation</h3>
+                            <p id="sim-active-state">Wähle ein Spiel und klicke auf Simulation starten.</p>
+                            <span class="sim-timer-tag" id="sim-active-timer">Zeit: 00:00 Min.</span>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- 4. TAB: CONSOLE -->
+        <!-- 4. TAB: DISCORD-CONSOLE -->
         <section id="tab-console" class="tab-view">
             <div class="view-toolbar">
                 <div class="toolbar-title">
-                    <h2>💻 DISCORD ENTWICKLER-KONSOLE (1-KLICK SKRIPT)</h2>
-                    <span class="toolbar-desc">Bypasst alle Checks direkt in deiner Discord-App über DevTools.</span>
+                    <h2><span id="ico-hdr-console"></span> 1-KLICK DISCORD IN-CLIENT INJECTOR</h2>
+                    <span class="toolbar-desc">Führe diesen Code direkt in der Discord Entwicklerkonsole aus.</span>
                 </div>
             </div>
 
-            <div class="console-card glass-panel">
-                <div class="warning-banner">
-                    <span class="warn-icon">⚠️</span>
-                    <div>
-                        <strong>WICHTIGER SICHERHEITSHINWEIS:</strong>
-                        <p>Führe NIEMALS fremde Skripte aus dem Internet aus! Dieser Spoofer von Sandro (T3X / TNTIX) ist 100% sauber, sicher und loggt keine Token. Wer Skripte von Drittanbietern lädt, ist selber schuld!</p>
-                    </div>
+            <div class="console-box card-3d">
+                <div class="console-warning-banner">
+                    <span id="ico-console-warn"></span>
+                    <span>WICHTIGER HINWEIS: Kopiere den Code und drücke in Discord Strg + Shift + I -> Console -> Strg + V -> Enter!</span>
                 </div>
-
-                <div class="code-box-wrap">
-                    <textarea id="console-code-area" class="code-area font-mono" readonly></textarea>
-                </div>
-
+                <textarea id="console-code-area" readonly spellcheck="false"></textarea>
                 <div class="console-actions">
-                    <button class="btn btn-blurple btn-large" id="btn-copy-console">
-                        📋 1-KLICK SKRIPT IN ZWISCHENABLAGE KOPIEREN
+                    <button class="btn btn-emerald btn-block" id="btn-copy-console">
+                        <span id="ico-btn-copy"></span> 1-KLICK SKRIPT IN ZWISCHENABLAGE KOPIEREN
                     </button>
                 </div>
             </div>
         </section>
 
-        <!-- 5. TAB: LOGS -->
+        <!-- 5. TAB: LIVE-LOGS -->
         <section id="tab-logs" class="tab-view">
             <div class="view-toolbar">
                 <div class="toolbar-title">
-                    <h2>📜 SYSTEM-LOGS & EVENT-MONITOR</h2>
-                    <span class="toolbar-desc">Echtzeit-Ausgabe aller Discord Heartbeats, API-Events und Token-Validierungen.</span>
+                    <h2><span id="ico-hdr-logs"></span> TERMINAL & SYSTEM-LOGS</h2>
+                    <span class="toolbar-desc">Echtzeit-Ausgabe der Discord RPC Pakete, Auto-Farm Schleifen und API-Events.</span>
                 </div>
-                <div class="toolbar-actions">
-                    <button class="btn btn-secondary" id="btn-clear-logs">LEEREN</button>
-                </div>
+                <button class="btn btn-secondary" id="btn-clear-logs">
+                    <span id="ico-btn-clear"></span> LOGS LEEREN
+                </button>
             </div>
 
-            <div class="terminal-card glass-panel font-mono" id="terminal-logs">
-                <div class="log-line info">[SYSTEM] DQS GPU-Accelerated Engine gestartet.</div>
+            <div class="terminal-container card-3d">
+                <div class="terminal-logs" id="terminal-logs">
+                    <div class="log-line info">[DQS] GPU Engine & PyWebView Bridge initialisiert (Release V2)...</div>
+                    <div class="log-line success">[DQS] Authentifizierung bereit. 60 FPS Canvas aktiv.</div>
+                </div>
             </div>
         </section>
     </main>
 
-    <!-- AUTHENTIC DISCORD USER PROFILE DRAWER / POPOUT -->
-    <aside id="discord-profile-popout" class="profile-popout hidden">
-        <div class="profile-popout-inner glass-card">
-            <!-- Animated Banner (60 FPS GIF) -->
-            <div class="popout-banner">
-                <img src="../assets/tentix_banner.gif" alt="Banner" class="banner-gif" id="profile-banner-img">
+    <!-- BACKDROP CLICK OVERLAY FOR POPOUT -->
+    <div id="popout-backdrop" class="popout-backdrop hidden"></div>
+
+    <!-- 100% AUTHENTIC DISCORD 3D PROFILE POPOUT -->
+    <div id="discord-profile-popout" class="discord-popout hidden card-3d">
+        <div class="popout-card-inner">
+            <!-- Animated Banner -->
+            <div class="popout-banner-wrap">
+                <img src="assets/tentix_banner.gif" alt="Banner" class="popout-banner-img" id="pop-banner" onerror="this.src='assets/tentix_banner.png'">
+                <button class="popout-close-btn" id="btn-close-popout" title="Schließen"></button>
             </div>
 
-            <!-- Overlapping Circular Avatar with DND Badge -->
-            <div class="popout-header-row">
-                <div class="avatar-container">
-                    <img src="../assets/tentix_avatar.gif" alt="Avatar" class="avatar-gif" id="profile-avatar-img">
-                    <div class="dnd-status-badge" title="Bitte nicht stören">
+            <!-- Avatar with Border & DND Status -->
+            <div class="popout-avatar-row">
+                <div class="popout-avatar-frame">
+                    <img src="assets/tentix_avatar.gif" alt="Avatar" class="popout-avatar-img" id="pop-avatar" onerror="if(window.DQS_EMBEDDED_ASSETS) this.src=window.DQS_EMBEDDED_ASSETS.avatar;">
+                    <div class="popout-status-badge dnd">
                         <span class="dnd-minus"></span>
                     </div>
                 </div>
             </div>
 
             <div class="popout-body">
-                <!-- Speech Bubble (Zero Cutoff!) -->
+                <!-- Custom Status Speech Bubble -->
                 <div class="status-speech-bubble">
-                    <span class="speech-quote">🩸 Behind every kiss is a claw that can bite</span>
+                    <span class="bubble-indicator"></span>
+                    <span class="speech-quote">Behind every kiss is a claw that can bite</span>
                 </div>
 
-                <!-- Username & Tag -->
+                <!-- Username & Identification -->
                 <div class="user-identification">
                     <h3 class="display-name" id="popout-name">TΞП†1Ж ツ</h3>
                     <span class="handle-name" id="popout-handle">tentix • - ʜᴇᴀʀᴛ/ʟᴇꜱꜱ/ᴡɪᴛʜᴏᴜᴛ/ʏᴏᴜ -</span>
                 </div>
 
                 <!-- Authentic Badges Pill -->
-                <div class="badges-pill">
-                    <img src="../assets/badges/nitro.png" alt="Nitro" class="badge-icon" title="Discord Nitro 3 Jahre">
-                    <img src="../assets/badges/bravery.png" alt="Bravery" class="badge-icon" title="HypeSquad Bravery">
-                    <img src="../assets/badges/booster.png" alt="Booster" class="badge-icon" title="Server Booster Level 9">
-                    <img src="../assets/badges/legacy.png" alt="Legacy" class="badge-icon" title="Ursprünglicher Name: tentix#0001">
-                    <img src="../assets/badges/quest.png" alt="Quest" class="badge-icon" title="Discord Quest Meister">
-                    <img src="../assets/badges/orbs.png" alt="Orbs" class="badge-icon" title="Orbs Sammler">
+                <div class="badges-pill" id="badges-container">
+                    <!-- Populated dynamically via JS from embedded base64 -->
                 </div>
 
                 <div class="profile-divider"></div>
 
-                <!-- About Me (Über mich) -->
+                <!-- About Me -->
                 <div class="profile-section">
                     <h5 class="section-title">ÜBER MICH</h5>
                     <div class="about-me-box font-goth">
@@ -270,54 +289,60 @@
                 <!-- Activity Card -->
                 <div class="profile-section">
                     <h5 class="section-title">AKTIVITÄT</h5>
-                    <div class="discord-activity-card">
-                        <div class="act-card-left">🎮</div>
-                        <div class="act-card-right">
-                            <strong class="act-game-name">HELLDIVERS™ 2</strong>
-                            <span class="act-game-desc">In Mission (Quest läuft)</span>
-                            <span class="act-game-timer font-mono" id="popout-timer">⏱ Zeit: 04:12 Min.</span>
+                    <div class="activity-card">
+                        <div class="activity-game-icon-wrap" id="act-gamepad-icon"></div>
+                        <div class="activity-details">
+                            <h4 class="activity-game-name" id="pop-act-game">HELLDIVERS™ 2</h4>
+                            <p class="activity-state-sub" id="pop-act-state">In Mission (Quest läuft)</p>
+                            <span class="activity-timer" id="pop-act-timer">Zeit: 04:12 Min.</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Profile Actions -->
                 <div class="profile-actions">
-                    <button class="btn btn-blurple btn-block" id="btn-switch-account">👤 ACCOUNT WECHSELN</button>
-                    <button class="btn btn-secondary btn-block" id="btn-copy-id">🆔 NUTZER-ID KOPIEREN</button>
-                    <button class="btn btn-purple-glow btn-block" id="btn-open-github">⭐ OFFIZIELLER GITHUB (V2)</button>
+                    <button class="btn btn-blurple btn-block" id="btn-switch-account">
+                        <span id="ico-btn-user-switch"></span> ACCOUNT WECHSELN
+                    </button>
+                    <button class="btn btn-secondary btn-block" id="btn-copy-id">
+                        <span id="ico-btn-copy-id"></span> NUTZER-ID KOPIEREN
+                    </button>
+                    <button class="btn btn-purple-glow btn-block" id="btn-open-github">
+                        <span id="ico-btn-github"></span> OFFIZIELLER GITHUB (V2)
+                    </button>
                 </div>
 
                 <div class="profile-footer-note">
-                    DQS by Sandro (T3X / TNTIX)<br>
-                    100% sauber wenn von GitHub geladen!<br>
-                    Wer es woanders her hat ist selber schuld.
-                </div>
-            </div>
-
-            <button class="popout-close-btn" id="btn-close-popout">✕</button>
-        </div>
-    </aside>
-
-    <!-- Account Switcher Modal -->
-    <div id="account-modal" class="modal-backdrop hidden">
-        <div class="modal-box glass-panel">
-            <div class="modal-header">
-                <h3>DISCORD ACCOUNT VERWALTUNG</h3>
-                <button class="btn-icon" id="btn-close-account-modal">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="accounts-list" id="modal-accounts-list">
-                    <!-- Populated via JS -->
-                </div>
-                <div class="token-input-row">
-                    <input type="password" id="input-custom-token" class="form-control" placeholder="Oder Discord User-Token manuell eingeben...">
-                    <button class="btn btn-blurple" id="btn-load-custom-token">LADEN</button>
+                    <span>DQS by Sandro (T3X / TNTIX)</span>
+                    <p>100% sauber wenn von GitHub geladen! Wer es woanders her hat ist selber schuld.</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Account Switcher Modal -->
+    <div id="account-modal" class="modal-overlay hidden">
+        <div class="modal-box card-3d">
+            <div class="modal-header">
+                <h3>ACCOUNT WECHSELN</h3>
+                <button class="modal-close" id="btn-close-account-modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-token-input-group">
+                    <label>MANUELLEN DISCORD TOKEN EINGEBEN</label>
+                    <div class="input-row">
+                        <input type="password" id="input-custom-token" placeholder="mfa.xxxx... oder User-Token">
+                        <button class="btn btn-emerald" id="btn-load-custom-token">LADEN</button>
+                    </div>
+                </div>
+                <div class="modal-divider"><span>ODER AUTOMATISCH ERKANNTEN ACCOUNT WÄHLEN</span></div>
+                <div id="modal-accounts-list" class="accounts-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>

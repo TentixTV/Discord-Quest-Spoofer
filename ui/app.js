@@ -1,10 +1,11 @@
 /**
- * DQS // Discord Quest Spoofer - Ultimate GPU Engine
- * JavaScript Client Architecture & PyWebView API Integration
+ * DQS // High-End Discord Quest Spoofer Engine
+ * JavaScript Client Architecture, 3D Physics Tilt, and PyWebView Bridge
+ * 100% Emoji-free, Ultra-crisp High-DPI SVGs
  */
 
-// ================= 1. GPU BACKGROUND PARTICLE CANVAS =================
-(function initParticleCanvas() {
+// ================= 1. 3D INTERACTIVE PARTICLE CANVAS =================
+(function init3DParticleCanvas() {
     const canvas = document.getElementById('bg-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -12,80 +13,196 @@
     let w = canvas.width = window.innerWidth;
     let h = canvas.height = window.innerHeight;
 
+    let mouseX = w / 2;
+    let mouseY = h / 2;
+
     window.addEventListener('resize', () => {
         w = canvas.width = window.innerWidth;
         h = canvas.height = window.innerHeight;
     });
 
-    const particles = [];
-    const count = 50;
-    const colors = ['rgba(88, 101, 242, ', 'rgba(147, 51, 234, ', 'rgba(35, 165, 90, ', 'rgba(254, 231, 92, '];
+    window.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
 
-    for (let i = 0; i < count; i++) {
-        particles.push({
+    const nodeCount = 45;
+    const nodes = [];
+    const colors = [
+        'rgba(88, 101, 242, ', // Blurple
+        'rgba(147, 51, 234, ', // Purple
+        'rgba(35, 165, 90, ',  // Emerald
+        'rgba(254, 231, 92, '  // Gold
+    ];
+
+    for (let i = 0; i < nodeCount; i++) {
+        nodes.push({
             x: Math.random() * w,
             y: Math.random() * h,
-            radius: Math.random() * 2.2 + 0.8,
+            z: Math.random() * 400 + 100, // 3D depth
+            radius: Math.random() * 2 + 1,
             color: colors[Math.floor(Math.random() * colors.length)],
-            alpha: Math.random() * 0.7 + 0.2,
-            speedY: Math.random() * 0.4 + 0.15,
-            speedX: (Math.random() - 0.5) * 0.3,
-            oscillation: Math.random() * Math.PI * 2
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.4
         });
     }
 
-    function renderParticles() {
+    function render() {
         ctx.clearRect(0, 0, w, h);
 
-        for (let i = 0; i < count; i++) {
-            const p = particles[i];
-            p.y -= p.speedY;
-            p.oscillation += 0.02;
-            p.x += Math.sin(p.oscillation) * 0.4 + p.speedX;
+        // Perspective factor
+        const fov = 350;
 
-            if (p.y < -10) {
-                p.y = h + 10;
-                p.x = Math.random() * w;
-            }
+        for (let i = 0; i < nodeCount; i++) {
+            const n = nodes[i];
+
+            // 3D Motion
+            n.x += n.vx;
+            n.y += n.vy;
+
+            // Mouse parallax
+            const dx = (mouseX - w / 2) * 0.02;
+            const dy = (mouseY - h / 2) * 0.02;
+
+            if (n.x < 0) n.x = w;
+            if (n.x > w) n.x = 0;
+            if (n.y < 0) n.y = h;
+            if (n.y > h) n.y = 0;
+
+            const scale = fov / (fov + n.z);
+            const projX = (n.x - w / 2 + dx) * scale + w / 2;
+            const projY = (n.y - h / 2 + dy) * scale + h / 2;
+            const projRadius = n.radius * scale;
 
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fillStyle = p.color + p.alpha + ')';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = p.color + '0.8)';
+            ctx.arc(projX, projY, Math.max(0.5, projRadius), 0, Math.PI * 2);
+            ctx.fillStyle = n.color + '0.7)';
+            ctx.shadowBlur = 8 * scale;
+            ctx.shadowColor = n.color + '0.9)';
             ctx.fill();
+
+            // Connect nearby nodes with 3D depth lines
+            for (let j = i + 1; j < nodeCount; j++) {
+                const n2 = nodes[j];
+                const dist = Math.hypot(n.x - n2.x, n.y - n2.y);
+                if (dist < 110) {
+                    const scale2 = fov / (fov + n2.z);
+                    const projX2 = (n2.x - w / 2 + dx) * scale2 + w / 2;
+                    const projY2 = (n2.y - h / 2 + dy) * scale2 + h / 2;
+
+                    const alpha = (1 - dist / 110) * 0.25;
+                    ctx.beginPath();
+                    ctx.moveTo(projX, projY);
+                    ctx.lineTo(projX2, projY2);
+                    ctx.strokeStyle = `rgba(88, 101, 242, ${alpha})`;
+                    ctx.lineWidth = 0.75 * scale;
+                    ctx.stroke();
+                }
+            }
         }
 
-        requestAnimationFrame(renderParticles);
+        requestAnimationFrame(render);
     }
 
-    renderParticles();
+    render();
 })();
 
-// ================= 2. CORE DQS STATE & CONTROLLER =================
+// ================= 2. DQS APPLICATION CORE =================
 const DQS = {
+    activeTab: 'quests',
     cachedQuests: [],
     presets: [],
-    activeTab: 'quests',
-    autoFarmActive: false,
-    simTimerInterval: null,
-    simSeconds: 0,
+    currentUser: null,
+    autoFarmRunning: false,
 
     async init() {
+        this.injectStaticIcons();
+        this.renderBadges();
         this.setupWindowControls();
         this.setupNavigation();
         this.setupProfileDrawer();
         this.setupSimulator();
         this.setupConsoleTab();
 
-        // Load initial user and presets
+        // Load data from bridge
         await this.loadCurrentUser();
         await this.loadPresets();
         await this.refreshQuests();
 
-        // Check simulator status
+        // Simulator status polling
         this.pollSimStatus();
         setInterval(() => this.pollSimStatus(), 2000);
+    },
+
+    // --- Inject Vector SVGs (100% Emoji-free) ---
+    injectStaticIcons() {
+        const I = window.DQS_ICONS || {};
+        const setHtml = (id, html) => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = html;
+        };
+
+        setHtml('ico-shield', I.shield);
+        setHtml('ico-nav-quests', I.quest);
+        setHtml('ico-nav-videos', I.video);
+        setHtml('ico-nav-simulator', I.gamepad);
+        setHtml('ico-nav-console', I.console);
+        setHtml('ico-nav-logs', I.logs);
+
+        setHtml('ico-hdr-gear', I.gear);
+        setHtml('btn-win-min', I.min);
+        setHtml('btn-win-max', I.max);
+        setHtml('btn-win-close', I.close);
+
+        setHtml('ico-hdr-quests', I.quest);
+        setHtml('ico-btn-refresh', I.refresh);
+        setHtml('ico-btn-enroll', I.quest);
+        setHtml('ico-btn-autofarm', I.autofarm);
+
+        setHtml('ico-hdr-videos', I.video);
+        setHtml('ico-hdr-sim', I.gamepad);
+        setHtml('ico-btn-start-sim', I.play);
+        setHtml('ico-sim-monitor', I.gamepad);
+
+        setHtml('ico-hdr-console', I.console);
+        setHtml('ico-console-warn', I.shield);
+        setHtml('ico-btn-copy', I.copy);
+
+        setHtml('ico-hdr-logs', I.logs);
+        setHtml('ico-btn-clear', I.clear);
+
+        setHtml('btn-close-popout', I.close);
+        setHtml('act-gamepad-icon', I.gamepad);
+        setHtml('ico-btn-user-switch', I.users);
+        setHtml('ico-btn-copy-id', I.copy);
+        setHtml('ico-btn-github', I.github);
+        setHtml('btn-close-account-modal', I.close);
+    },
+
+    // --- Render Discord Badges (Base64 Guaranteed) ---
+    renderBadges() {
+        const container = document.getElementById('badges-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const badges = [
+            { key: 'nitro', title: 'Discord Nitro 3 Jahre' },
+            { key: 'bravery', title: 'HypeSquad Bravery' },
+            { key: 'booster', title: 'Server Booster Level 9' },
+            { key: 'legacy', title: 'Ursprünglicher Name: tentix#0001' },
+            { key: 'quest', title: 'Discord Quest Meister' },
+            { key: 'orbs', title: 'Orbs Sammler' }
+        ];
+
+        badges.forEach(b => {
+            const img = document.createElement('img');
+            img.className = 'badge-icon';
+            img.title = b.title;
+            img.alt = b.key;
+            const b64 = window.DQS_EMBEDDED_ASSETS?.[b.key];
+            img.src = b64 || `assets/badges/${b.key}.png`;
+            container.appendChild(img);
+        });
     },
 
     // --- Window Controls ---
@@ -106,8 +223,8 @@ const DQS = {
         const tabs = document.querySelectorAll('.nav-tab');
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
-                const targetTab = tab.getAttribute('data-tab');
-                this.switchTab(targetTab);
+                const target = tab.getAttribute('data-tab');
+                this.switchTab(target);
             });
         });
     },
@@ -131,28 +248,53 @@ const DQS = {
         });
     },
 
-    // --- User Profile & Popout Drawer ---
+    // --- 3D Profile Popout ---
     setupProfileDrawer() {
         const pill = document.getElementById('header-user-pill');
         const popout = document.getElementById('discord-profile-popout');
+        const backdrop = document.getElementById('popout-backdrop');
         const closeBtn = document.getElementById('btn-close-popout');
 
-        pill.addEventListener('click', () => {
-            popout.classList.toggle('hidden');
+        const openPopout = () => {
+            popout.classList.remove('hidden');
+            backdrop.classList.remove('hidden');
+        };
+
+        const closePopout = () => {
+            popout.classList.add('hidden');
+            backdrop.classList.add('hidden');
+        };
+
+        pill.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (popout.classList.contains('hidden')) {
+                openPopout();
+            } else {
+                closePopout();
+            }
         });
 
-        closeBtn.addEventListener('click', () => {
-            popout.classList.add('hidden');
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closePopout();
         });
+
+        backdrop.addEventListener('click', () => {
+            closePopout();
+        });
+
+        // 3D Card tilt on popout
+        this.attach3DTilt(popout);
 
         // Copy ID
         const btnCopyId = document.getElementById('btn-copy-id');
         btnCopyId.addEventListener('click', async () => {
-            const user = await window.pywebview?.api?.get_current_user();
-            const uid = user ? user.id : '405441217766359051';
+            const uid = this.currentUser ? this.currentUser.id : '405441217766359051';
             await window.pywebview?.api?.copy_to_clipboard(uid);
-            btnCopyId.innerText = '✓ ID KOPIERT!';
-            setTimeout(() => { btnCopyId.innerText = '🆔 NUTZER-ID KOPIEREN'; }, 2000);
+            btnCopyId.innerHTML = `${window.DQS_ICONS.check} ID KOPIERT!`;
+            setTimeout(() => {
+                btnCopyId.innerHTML = `${window.DQS_ICONS.copy} NUTZER-ID KOPIEREN`;
+            }, 2000);
         });
 
         // GitHub Link
@@ -174,14 +316,38 @@ const DQS = {
         });
     },
 
+    // --- 3D Physics Tilt Helper ---
+    attach3DTilt(el) {
+        if (!el) return;
+        el.addEventListener('mousemove', (e) => {
+            const rect = el.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = ((y - centerY) / centerY) * -6;
+            const rotateY = ((x - centerX) / centerX) * 6;
+
+            el.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(8px)`;
+            el.style.setProperty('--glare-x', `${(x / rect.width) * 100}%`);
+            el.style.setProperty('--glare-y', `${(y / rect.height) * 100}%`);
+        });
+
+        el.addEventListener('mouseleave', () => {
+            el.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+        });
+    },
+
     async loadCurrentUser() {
         if (!window.pywebview?.api) return;
         const user = await window.pywebview.api.get_current_user();
         if (user) {
+            this.currentUser = user;
             const displayName = user.global_name || user.username || 'TΞП†1Ж ツ';
             document.getElementById('hdr-username').innerText = displayName;
             document.getElementById('popout-name').innerText = displayName;
             document.getElementById('popout-handle').innerText = `${user.username || 'tentix'} • - ʜᴇᴀʀᴛ/ʟᴇꜱꜱ/ᴡɪᴛʜᴏᴜᴛ/ʏᴏᴜ -`;
+
             if (user.avatar && user.id) {
                 const ext = user.avatar.startsWith('a_') ? 'gif' : 'png';
                 const avUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}?size=128`;
@@ -213,7 +379,7 @@ const DQS = {
             const name = acc.global_name || acc.username;
             row.innerHTML = `
                 <div class="account-row-left">
-                    <span>👤</span>
+                    <span>${window.DQS_ICONS.users}</span>
                     <span>${name}</span>
                 </div>
                 <button class="btn btn-blurple btn-small">AUSWÄHLEN</button>
@@ -253,7 +419,6 @@ const DQS = {
         const quests = await window.pywebview.api.get_quests();
         this.cachedQuests = quests || [];
 
-        // Update Nav Badge
         const badge = document.getElementById('quests-badge');
         if (badge) badge.innerText = this.cachedQuests.length;
 
@@ -264,14 +429,16 @@ const DQS = {
         }
 
         this.cachedQuests.forEach(q => {
-            container.appendChild(this.createQuestCard(q));
+            const card = this.createQuestCard(q);
+            container.appendChild(card);
+            this.attach3DTilt(card);
         });
 
-        // Also render videos tab
         this.renderVideosTab(this.cachedQuests);
     },
 
     createQuestCard(q) {
+        const I = window.DQS_ICONS;
         const card = document.createElement('div');
         card.className = 'quest-card';
 
@@ -289,8 +456,13 @@ const DQS = {
         const appId = q.app_id || '';
         const videoUrl = q.video_url;
 
-        const tileSrc = `../assets/quests/tiles/${qid}.png`;
-        const taskLabel = videoUrl || taskType.includes('VIDEO') ? '🎬 Video-Quest' : `🎮 ${Math.round(targetSeconds / 60)} Min. Spielzeit`;
+        // Tile source: Base64 first, fallback to HTTP/file
+        const b64Tile = window.DQS_EMBEDDED_ASSETS?.tiles?.[qid];
+        const tileSrc = b64Tile || `assets/quests/tiles/${qid}.png`;
+
+        const isVideo = videoUrl || taskType.includes('VIDEO');
+        const taskIcon = isVideo ? I.video : I.gamepad;
+        const taskLabel = isVideo ? 'Video-Quest' : `${Math.round(targetSeconds / 60)} Min. Spielzeit`;
 
         const curMin = Math.floor(currentSeconds / 60);
         const tgtMin = Math.round(targetSeconds / 60);
@@ -299,13 +471,13 @@ const DQS = {
 
         card.innerHTML = `
             <div class="quest-tile-wrap">
-                <img src="${tileSrc}" alt="${gameTitle}" class="quest-tile-img" onerror="this.src='../DQS.png'">
+                <img src="${tileSrc}" alt="${gameTitle}" class="quest-tile-img" onerror="if(window.DQS_EMBEDDED_ASSETS?.tiles?.['${qid}']) this.src=window.DQS_EMBEDDED_ASSETS.tiles['${qid}']; else this.src='DQS.png';">
             </div>
             <div class="quest-info-wrap">
                 <div class="quest-header-row">
                     <span class="quest-game-title">${gameTitle}</span>
-                    <span class="badge-tag task">${taskLabel}</span>
-                    ${orbCount > 0 ? `<span class="badge-tag orbs">🔮 ${orbCount} ORBS</span>` : ''}
+                    <span class="badge-tag task">${taskIcon} ${taskLabel}</span>
+                    ${orbCount > 0 ? `<span class="badge-tag orbs">${I.orbs} ${orbCount} ORBS</span>` : ''}
                 </div>
                 <div class="quest-name-sub">${questName}</div>
                 <div class="quest-progress-row">
@@ -315,53 +487,51 @@ const DQS = {
                     <span class="progress-text ${completed || claimed ? 'completed' : ''}">${progressTxt}</span>
                 </div>
             </div>
-            <div class="quest-actions-wrap" id="act-box-${qid}">
-                <!-- Injected Buttons -->
-            </div>
+            <div class="quest-actions-wrap" id="act-box-${qid}"></div>
         `;
 
         const actBox = card.querySelector(`#act-box-${qid}`);
 
         if (claimed) {
-            actBox.innerHTML = `<button class="btn btn-claimed" disabled>✓ EINGELÖST</button>`;
+            actBox.innerHTML = `<button class="btn btn-claimed" disabled>${I.check} EINGELÖST</button>`;
         } else if (completed) {
             const btnClaim = document.createElement('button');
             btnClaim.className = 'btn btn-emerald';
-            btnClaim.innerText = '🎁 BELOHNUNG ABHOLEN';
+            btnClaim.innerHTML = `${I.gift} BELOHNUNG ABHOLEN`;
             btnClaim.onclick = async () => {
-                btnClaim.innerText = 'Löst ein...';
+                btnClaim.innerHTML = `Löst ein...`;
                 await window.pywebview.api.claim_quest(qid);
                 this.refreshQuests();
             };
             actBox.appendChild(btnClaim);
         } else {
-            // 1. Simulate Button (Emerald, auto-presets and starts)
+            // Simulate button
             const btnSim = document.createElement('button');
             btnSim.className = 'btn btn-emerald';
-            btnSim.innerHTML = '▶ SIMULIEREN';
+            btnSim.innerHTML = `${I.play} SIMULIEREN`;
             btnSim.onclick = () => {
                 this.simulateQuest(appId, gameTitle);
             };
             actBox.appendChild(btnSim);
 
-            // 2. Video button if available
+            // Video button
             if (videoUrl) {
                 const btnVid = document.createElement('button');
                 btnVid.className = 'btn btn-secondary';
-                btnVid.innerHTML = '🎬 VIDEO';
+                btnVid.innerHTML = `${I.video} VIDEO`;
                 btnVid.onclick = () => {
                     window.pywebview.api.open_url(videoUrl);
                 };
                 actBox.appendChild(btnVid);
             }
 
-            // 3. Enroll button if not yet enrolled
+            // Enroll button if not yet enrolled
             if (!enrolled) {
                 const btnEnroll = document.createElement('button');
                 btnEnroll.className = 'btn btn-blurple';
-                btnEnroll.innerText = 'ANNEHMEN';
+                btnEnroll.innerHTML = `${I.quest} ANNEHMEN`;
                 btnEnroll.onclick = async () => {
-                    btnEnroll.innerText = 'Nimmt an...';
+                    btnEnroll.innerHTML = `Nimmt an...`;
                     await window.pywebview.api.enroll_quest(qid);
                     this.refreshQuests();
                 };
@@ -372,8 +542,9 @@ const DQS = {
         return card;
     },
 
-    // --- Videos & Trailer Gallery ---
+    // --- Videos Tab ---
     renderVideosTab(quests) {
+        const I = window.DQS_ICONS;
         const container = document.getElementById('videos-list');
         container.innerHTML = '';
 
@@ -385,7 +556,9 @@ const DQS = {
             const questName = q.quest_name;
             const videoUrl = q.video_url;
             const targetSec = q.target_seconds || 30;
-            const tileSrc = `../assets/quests/tiles/${qid}.png`;
+
+            const b64Tile = window.DQS_EMBEDDED_ASSETS?.tiles?.[qid];
+            const tileSrc = b64Tile || `assets/quests/tiles/${qid}.png`;
 
             const formatDesc = videoUrl 
                 ? 'Format: 720p HD MP4 (Offizieller Discord Stream) | Dauer: ~30 Sek.' 
@@ -393,7 +566,7 @@ const DQS = {
 
             card.innerHTML = `
                 <div class="quest-tile-wrap">
-                    <img src="${tileSrc}" alt="${gameTitle}" class="quest-tile-img" onerror="this.src='../DQS.png'">
+                    <img src="${tileSrc}" alt="${gameTitle}" class="quest-tile-img" onerror="if(window.DQS_EMBEDDED_ASSETS?.tiles?.['${qid}']) this.src=window.DQS_EMBEDDED_ASSETS.tiles['${qid}']; else this.src='DQS.png';">
                 </div>
                 <div class="quest-info-wrap">
                     <div class="quest-header-row">
@@ -404,17 +577,17 @@ const DQS = {
                 <div class="quest-actions-wrap">
                     ${videoUrl ? `
                         <button class="btn btn-secondary" onclick="window.pywebview.api.open_url('${videoUrl}')">
-                            ▶ 720P HD VIDEO ABSPIELEN
+                            ${I.play} 720P HD VIDEO ABSPIELEN
                         </button>
                         <button class="btn btn-emerald" id="exp-btn-${qid}">
-                            ⚡ EXPRESS-ABSCHLUSS (5s)
+                            ${I.autofarm} EXPRESS-ABSCHLUSS (5s)
                         </button>
                     ` : `
                         <button class="btn btn-secondary" onclick="window.pywebview.api.open_url('https://www.youtube.com/results?search_query=${encodeURIComponent(gameTitle + ' official trailer')}')">
-                            ▶ TRAILER ANSEHEN
+                            ${I.play} TRAILER ANSEHEN
                         </button>
                         <button class="btn btn-emerald" onclick="DQS.simulateQuest('${q.app_id}', '${gameTitle}')">
-                            🎮 IM SIMULATOR STARTEN
+                            ${I.gamepad} IM SIMULATOR STARTEN
                         </button>
                     `}
                 </div>
@@ -424,14 +597,15 @@ const DQS = {
                 const expBtn = card.querySelector(`#exp-btn-${qid}`);
                 if (expBtn) {
                     expBtn.onclick = async () => {
-                        expBtn.innerText = '⚡ EXPRESS LÄUFT...';
+                        expBtn.innerHTML = `${I.autofarm} EXPRESS LÄUFT...`;
                         await window.pywebview.api.complete_video_quest(qid, targetSec);
-                        this.refreshQuests();
+                        setTimeout(() => { this.refreshQuests(); }, 4500);
                     };
                 }
             }
 
             container.appendChild(card);
+            this.attach3DTilt(card);
         });
     },
 
@@ -512,27 +686,34 @@ const DQS = {
         const badge = document.getElementById('sim-status-badge');
         const startBtn = document.getElementById('btn-start-sim');
         const stopBtn = document.getElementById('btn-stop-sim');
-        const actTitle = document.getElementById('act-title');
-        const actState = document.getElementById('act-state');
-        const actTimer = document.getElementById('act-timer');
-        const popTimer = document.getElementById('popout-timer');
+        const actTitle = document.getElementById('sim-active-title');
+        const actState = document.getElementById('sim-active-state');
+        const actTimer = document.getElementById('sim-active-timer');
+
+        const popGame = document.getElementById('pop-act-game');
+        const popState = document.getElementById('pop-act-state');
+        const popTimer = document.getElementById('pop-act-timer');
 
         if (running) {
-            badge.innerText = `● AKTIV: ${gameName}`;
+            badge.innerText = 'SIMULATION LÄUFT';
             badge.style.color = 'var(--emerald)';
             badge.style.borderColor = 'var(--emerald)';
             startBtn.disabled = true;
             stopBtn.disabled = false;
 
-            actTitle.innerText = gameName;
-            actState.innerText = 'In Mission (Quest-Simulation läuft...)';
+            const gName = (gameName || 'Spiel').toUpperCase();
+            actTitle.innerText = gName;
+            actState.innerText = 'Rich Presence Heartbeats an Discord aktiv.';
+
+            if (popGame) popGame.innerText = gName;
+            if (popState) popState.innerText = 'In Mission (Quest läuft)';
 
             const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
             const s = String(elapsedSec % 60).padStart(2, '0');
-            actTimer.innerText = `⏱ Zeit: ${m}:${s} Min.`;
-            if (popTimer) popTimer.innerText = `⏱ Zeit: ${m}:${s} Min.`;
+            actTimer.innerText = `Zeit: ${m}:${s} Min.`;
+            if (popTimer) popTimer.innerText = `Zeit: ${m}:${s} Min.`;
         } else {
-            badge.innerText = '● BEREIT';
+            badge.innerText = 'BEREIT';
             badge.style.color = 'var(--text-muted)';
             badge.style.borderColor = 'var(--card-border)';
             startBtn.disabled = false;
@@ -540,12 +721,13 @@ const DQS = {
 
             actTitle.innerText = 'Keine aktive Simulation';
             actState.innerText = 'Wähle ein Spiel und klicke auf Simulation starten.';
-            actTimer.innerText = '⏱ Zeit: 00:00 Min.';
+            actTimer.innerText = 'Zeit: 00:00 Min.';
         }
     },
 
     // --- Console Tab ---
     async setupConsoleTab() {
+        const I = window.DQS_ICONS;
         const codeArea = document.getElementById('console-code-area');
         const copyBtn = document.getElementById('btn-copy-console');
 
@@ -556,9 +738,9 @@ const DQS = {
 
         copyBtn.addEventListener('click', async () => {
             await window.pywebview?.api?.copy_to_clipboard(codeArea.value);
-            copyBtn.innerText = '✓ IN ZWISCHENABLAGE KOPIERT! Jetzt in Discord Strg+Shift+I -> Console -> Enter';
+            copyBtn.innerHTML = `${I.check} IN ZWISCHENABLAGE KOPIERT! Jetzt in Discord Strg+Shift+I -> Console -> Enter`;
             setTimeout(() => {
-                copyBtn.innerText = '📋 1-KLICK SKRIPT IN ZWISCHENABLAGE KOPIEREN';
+                copyBtn.innerHTML = `${I.copy} 1-KLICK SKRIPT IN ZWISCHENABLAGE KOPIEREN`;
             }, 3500);
         });
 
@@ -573,10 +755,10 @@ const DQS = {
         btnAutoFarm.onclick = async () => {
             const res = await window.pywebview?.api?.toggle_auto_farm();
             if (res && res.running) {
-                btnAutoFarm.innerText = '■ STOPPEN';
+                btnAutoFarm.innerHTML = `STOPPEN`;
                 btnAutoFarm.className = 'btn btn-crimson';
             } else {
-                btnAutoFarm.innerText = '🚀 AUTO-FARM';
+                btnAutoFarm.innerHTML = `${I.autofarm} AUTO-FARM`;
                 btnAutoFarm.className = 'btn btn-emerald';
             }
         };
@@ -605,7 +787,6 @@ window.onQuestsUpdated = function() {
 };
 
 window.onFarmProgress = function(pInfo) {
-    // Live update progress bar
     if (pInfo && pInfo.quest_id) {
         DQS.refreshQuests();
     }
@@ -619,4 +800,3 @@ if (window.pywebview && window.pywebview.api) {
         DQS.init();
     });
 }
-

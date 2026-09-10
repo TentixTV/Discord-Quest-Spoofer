@@ -1,11 +1,14 @@
 """
 DQS // Discord Quest Spoofer
-Main Application Entry Point (Edge Chromium / WebView2 GPU Edition)
+Main Application Entry Point (Edge Chromium / WebView2 GPU Edition with Local Server)
 """
 
 import sys
 import os
 import ctypes
+import http.server
+import functools
+import threading
 
 def is_admin():
     """Checks if the current process has administrator privileges."""
@@ -46,6 +49,18 @@ base_dir = get_base_dir()
 if base_dir not in sys.path:
     sys.path.insert(0, base_dir)
 
+class QuietHTTPHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass
+
+def start_local_server(directory):
+    handler = functools.partial(QuietHTTPHandler, directory=directory)
+    server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler)
+    port = server.server_address[1]
+    srv_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    srv_thread.start()
+    return f"http://127.0.0.1:{port}"
+
 import webview
 from src.bridge import DQSBridge
 
@@ -53,17 +68,15 @@ def main():
     elevate_if_needed()
 
     bridge = DQSBridge()
-    html_file = os.path.abspath(os.path.join(base_dir, "ui", "index.html"))
-
-    if not os.path.exists(html_file):
-        raise FileNotFoundError(f"UI HTML not found at: {html_file}")
+    server_base = start_local_server(base_dir)
+    app_url = f"{server_base}/ui/index.html"
 
     window = webview.create_window(
         title="DQS // Discord Quest Spoofer",
-        url=html_file,
+        url=app_url,
         js_api=bridge,
-        width=1160,
-        height=760,
+        width=1180,
+        height=780,
         min_size=(980, 640),
         frameless=True,
         easy_drag=False,
@@ -75,3 +88,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
