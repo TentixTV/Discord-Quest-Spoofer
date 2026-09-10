@@ -68,7 +68,7 @@ from src.bridge import DQSBridge
 def set_app_user_model_id():
     """Explicitly sets AppUserModelID so Windows taskbar registers the custom DQS icon."""
     try:
-        app_id = "TentixTV.DiscordQuestSpoofer.App.V3"
+        app_id = "TentixTV.DiscordQuestSpoofer.App.V5"
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
     except Exception:
         pass

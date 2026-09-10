@@ -9,8 +9,33 @@
     <script src="icons.js"></script>
 </head>
 <body class="dark-theme">
+    <!-- High-Tech Startup Splash Screen Overlay -->
+    <div id="dqs-startup-splash" class="startup-splash-overlay">
+        <div class="splash-center-stage">
+            <div class="splash-logo-container">
+                <div class="splash-energy-ring"></div>
+                <div class="splash-energy-ring-inner"></div>
+                <img src="DQS.png" alt="DQS" class="splash-app-icon" onerror="this.src='../DQS.png'">
+                <div class="splash-glow-core"></div>
+            </div>
+            <div class="splash-branding">
+                <h1 class="splash-title">DQS <span class="splash-badge">V5</span></h1>
+                <div class="splash-subtitle">DISCORD QUEST SPOOFER</div>
+            </div>
+            <div class="splash-status-wrapper">
+                <div class="splash-progress-track">
+                    <div class="splash-progress-bar" id="splash-progress-bar"></div>
+                </div>
+                <div class="splash-status-label" id="splash-status-text">INITIALISIERE KERN-SYSTEME...</div>
+            </div>
+        </div>
+    </div>
+
     <!-- 3D Interactive GPU Canvas -->
     <canvas id="bg-canvas"></canvas>
+
+    <!-- Main Application Wrapper (Pops In after Splash) -->
+    <div id="app-root" class="app-root-container">
 
     <!-- Custom Frameless Titlebar (Spacious & Clean) -->
     <header id="app-titlebar" class="pywebview-drag-region">
@@ -278,18 +303,19 @@
 
             <div class="terminal-container card-3d">
                 <div class="terminal-logs" id="terminal-logs">
-                    <div class="log-line info">[DQS] GPU Engine & PyWebView Bridge initialisiert (Release V3)...</div>
+                    <div class="log-line info">[DQS] GPU Engine & PyWebView Bridge initialisiert (Release V5)...</div>
                     <div class="log-line success">[DQS] Authentifizierung bereit. 60 FPS Canvas aktiv.</div>
                 </div>
             </div>
         </section>
     </main>
+    </div><!-- #app-root -->
 
     <!-- BACKDROP CLICK OVERLAY FOR POPOUT -->
     <div id="popout-backdrop" class="popout-backdrop hidden"></div>
 
-    <!-- 100% AUTHENTIC DISCORD 3D PROFILE POPOUT -->
-    <div id="discord-profile-popout" class="discord-popout hidden card-3d">
+    <!-- 100% AUTHENTIC DISCORD PROFILE POPOUT (STATIC & SOLID) -->
+    <div id="discord-profile-popout" class="discord-popout hidden">
         <div class="popout-card-inner">
             <!-- Animated Banner -->
             <div class="popout-banner-wrap">
@@ -338,15 +364,15 @@
                     </div>
                 </div>
 
-                <!-- Activity Card -->
+                <!-- Activity Card (Dynamic Live Activity) -->
                 <div class="profile-section">
                     <h5 class="section-title">AKTIVITÄT</h5>
-                    <div class="activity-card">
+                    <div class="activity-card activity-idle" id="profile-activity-card">
                         <div class="activity-game-icon-wrap" id="act-gamepad-icon"></div>
                         <div class="activity-details">
-                            <h4 class="activity-game-name" id="pop-act-game">HELLDIVERS™ 2</h4>
-                            <p class="activity-state-sub" id="pop-act-state">In Mission (Quest läuft)</p>
-                            <span class="activity-timer" id="pop-act-timer">Zeit: 04:12 Min.</span>
+                            <h4 class="activity-game-name" id="pop-act-game">DQS // Quest Engine (V5)</h4>
+                            <p class="activity-state-sub" id="pop-act-state">Bereit für Quest-Simulation</p>
+                            <span class="activity-timer" id="pop-act-timer">Status: Standby • Keine aktive Simulation</span>
                         </div>
                     </div>
                 </div>
@@ -360,7 +386,7 @@
                         <span id="ico-btn-copy-id"></span> NUTZER-ID KOPIEREN
                     </button>
                     <button class="btn btn-purple-glow btn-block" id="btn-open-github">
-                        <span id="ico-btn-github"></span> OFFIZIELLER GITHUB (V3)
+                        <span id="ico-btn-github"></span> OFFIZIELLER GITHUB (V5)
                     </button>
                 </div>
 
@@ -415,7 +441,7 @@
                         <span id="video-modal-status-text">DISCORD CDN 720P STREAM AKTIV</span>
                     </div>
                     <button class="btn btn-cyan btn-lg" id="btn-modal-express-finish">
-                        <span id="ico-modal-express"></span> ⚡ EXPRESS-ABSCHLUSS (5s)
+                        <span id="ico-modal-express"></span> EXPRESS-ABSCHLUSS (5s)
                     </button>
                 </div>
             </div>

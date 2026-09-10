@@ -111,6 +111,7 @@ const DQS = {
     autoFarmRunning: false,
 
     async init() {
+        this.runStartupSplash();
         this.injectStaticIcons();
         this.renderBadges();
         this.setupWindowControls();
@@ -128,6 +129,40 @@ const DQS = {
         // Simulator status polling
         this.pollSimStatus();
         setInterval(() => this.pollSimStatus(), 2000);
+    },
+
+    // --- Startup Splash Screen Animation ---
+    runStartupSplash() {
+        const splash = document.getElementById('dqs-startup-splash');
+        const bar = document.getElementById('splash-progress-bar');
+        const status = document.getElementById('splash-status-text');
+        const root = document.getElementById('app-root');
+        if (!splash || !bar || !status) return;
+
+        const phases = [
+            { pct: 25, text: 'INITIALISIERE KERN-SYSTEME...', delay: 150 },
+            { pct: 55, text: 'LADE DISCORD QUEST ENGINE (V5)...', delay: 450 },
+            { pct: 85, text: 'SYNCHRONISIERE DISCORD API & PROFIL...', delay: 800 },
+            { pct: 100, text: 'SYSTEM BEREIT - POPPING UP...', delay: 1150 }
+        ];
+
+        phases.forEach(p => {
+            setTimeout(() => {
+                if (bar) bar.style.width = `${p.pct}%`;
+                if (status) status.innerText = p.text;
+            }, p.delay);
+        });
+
+        // Trigger Pop Up transition
+        setTimeout(() => {
+            if (splash) splash.classList.add('splash-pop-exit');
+            if (root) root.classList.add('app-pop-enter');
+            setTimeout(() => {
+                if (splash && splash.parentNode) {
+                    splash.parentNode.removeChild(splash);
+                }
+            }, 600);
+        }, 1400);
     },
 
     // --- Inject Vector SVGs (100% Emoji-free) ---
@@ -259,6 +294,7 @@ const DQS = {
         const closeBtn = document.getElementById('btn-close-popout');
 
         const openPopout = () => {
+            this.pollSimStatus();
             popout.classList.remove('hidden');
             backdrop.classList.remove('hidden');
         };
@@ -286,8 +322,7 @@ const DQS = {
             closePopout();
         });
 
-        // 3D Card tilt on popout
-        this.attach3DTilt(popout);
+        // Discord profile card is strictly static (no tilt / wobble)
 
         // Copy ID
         const btnCopyId = document.getElementById('btn-copy-id');
@@ -637,6 +672,9 @@ const DQS = {
     // --- Interactive Moving Express Quest Completer ---
     startExpressQuest(qid, targetSeconds = 30, gameTitle = '') {
         const I = window.DQS_ICONS;
+        this.activeExpressVideoTitle = gameTitle ? `Video: ${gameTitle}` : 'Express Video Stream';
+        this.updateProfileActivity(false, null, 0);
+
         const fillQuest = document.getElementById(`fill-quest-${qid}`);
         const valQuest = document.getElementById(`val-quest-${qid}`);
         const trackQuest = document.getElementById(`track-quest-${qid}`);
@@ -699,6 +737,9 @@ const DQS = {
                     btnExp.innerHTML = `${I.check} ERFOLGREICH!`;
                     btnExp.className = 'btn btn-claimed';
                 }
+
+                this.activeExpressVideoTitle = null;
+                this.pollSimStatus();
 
                 // Play notification
                 window.pywebview?.api?.play_success_sound();
@@ -911,10 +952,6 @@ const DQS = {
         const actState = document.getElementById('sim-active-state');
         const actTimer = document.getElementById('sim-active-timer');
 
-        const popGame = document.getElementById('pop-act-game');
-        const popState = document.getElementById('pop-act-state');
-        const popTimer = document.getElementById('pop-act-timer');
-
         if (running) {
             badge.innerText = 'SIMULATION LÄUFT';
             badge.style.color = 'var(--emerald)';
@@ -926,13 +963,9 @@ const DQS = {
             actTitle.innerText = gName;
             actState.innerText = 'Rich Presence Heartbeats an Discord aktiv.';
 
-            if (popGame) popGame.innerText = gName;
-            if (popState) popState.innerText = 'In Mission (Quest läuft)';
-
             const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
             const s = String(elapsedSec % 60).padStart(2, '0');
             actTimer.innerText = `Zeit: ${m}:${s} Min.`;
-            if (popTimer) popTimer.innerText = `Zeit: ${m}:${s} Min.`;
         } else {
             badge.innerText = 'BEREIT';
             badge.style.color = 'var(--text-muted)';
@@ -943,6 +976,54 @@ const DQS = {
             actTitle.innerText = 'Keine aktive Simulation';
             actState.innerText = 'Wähle ein Spiel und klicke auf Simulation starten.';
             actTimer.innerText = 'Zeit: 00:00 Min.';
+        }
+
+        // Live update Discord Profile Popout activity
+        this.updateProfileActivity(running, gameName, elapsedSec);
+    },
+
+    updateProfileActivity(simRunning, gameName, elapsedSec = 0) {
+        const card = document.getElementById('profile-activity-card');
+        const popGame = document.getElementById('pop-act-game');
+        const popState = document.getElementById('pop-act-state');
+        const popTimer = document.getElementById('pop-act-timer');
+        if (!popGame || !popState || !popTimer) return;
+
+        if (simRunning) {
+            if (card) {
+                card.classList.remove('activity-idle');
+                card.classList.add('activity-active');
+            }
+            const gName = (gameName || 'Spiel').toUpperCase();
+            popGame.innerText = gName;
+            popState.innerText = 'In Mission (Quest läuft • RP aktiv)';
+            const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+            const s = String(elapsedSec % 60).padStart(2, '0');
+            popTimer.innerText = `Laufzeit: ${m}:${s} Min.`;
+        } else if (this.autoFarmRunning) {
+            if (card) {
+                card.classList.remove('activity-idle');
+                card.classList.add('activity-active');
+            }
+            popGame.innerText = this.currentFarmQuestName || 'AUTO-QUEST COMPLETER';
+            popState.innerText = 'Automatische Quest-Bearbeitung aktiv';
+            popTimer.innerText = this.currentFarmDurationText ? `Dauer: ${this.currentFarmDurationText}` : 'In Bearbeitung...';
+        } else if (this.activeExpressVideoTitle) {
+            if (card) {
+                card.classList.remove('activity-idle');
+                card.classList.add('activity-active');
+            }
+            popGame.innerText = this.activeExpressVideoTitle;
+            popState.innerText = 'Express-Abschluss läuft...';
+            popTimer.innerText = 'Status: Live CDN Synchronisation';
+        } else {
+            if (card) {
+                card.classList.remove('activity-active');
+                card.classList.add('activity-idle');
+            }
+            popGame.innerText = 'DQS // Quest Engine (V5)';
+            popState.innerText = 'Bereit für Quest-Simulation';
+            popTimer.innerText = 'Status: Standby • Keine aktive Simulation';
         }
     },
 
@@ -1108,9 +1189,22 @@ window.onAutoQuestProgress = function(pInfo) {
 
     const toolLabel = document.getElementById('btn-autofarm-label');
     if (toolLabel) toolLabel.innerText = 'STOPPEN';
+
+    if (window.DQS) {
+        DQS.autoFarmRunning = true;
+        DQS.currentFarmQuestName = pInfo.game_title ? `Auto: ${pInfo.game_title}` : 'Auto-Quest';
+        DQS.currentFarmDurationText = pInfo.overall_duration_text || '';
+        DQS.updateProfileActivity(false, null, 0);
+    }
 };
 
 window.onAutoQuestFinished = function(totalOrbs) {
+    if (window.DQS) {
+        DQS.autoFarmRunning = false;
+        DQS.currentFarmQuestName = null;
+        DQS.currentFarmDurationText = null;
+        DQS.updateProfileActivity(false, null, 0);
+    }
     const pill = document.getElementById('autofarm-status-pill');
     if (pill) {
         pill.className = 'autofarm-status-pill idle';
@@ -1134,7 +1228,13 @@ window.onAutoQuestFinished = function(totalOrbs) {
 };
 
 window.onAutoQuestStopped = function() {
-    if (window.DQS) window.DQS.refreshQuests();
+    if (window.DQS) {
+        DQS.autoFarmRunning = false;
+        DQS.currentFarmQuestName = null;
+        DQS.currentFarmDurationText = null;
+        DQS.updateProfileActivity(false, null, 0);
+        window.DQS.refreshQuests();
+    }
 };
 
 window.onFarmProgress = function(pInfo) {
