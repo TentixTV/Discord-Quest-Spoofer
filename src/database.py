@@ -35,11 +35,84 @@ QUEST_GAMES_DATABASE = {
         "title": "Roblox",
         "category": "Roblox"
     },
+    # Capcom TGS Deals Quest Games (Multi-Game Bundle)
     "1456485028350656512": {
-        "name": "CAPCOM TGS Deals",
-        "exe": "capcom.exe",
-        "title": "CAPCOM TGS Deals",
-        "category": "Capcom Video"
+        "name": "Resident Evil Requiem",
+        "exe": "re_requiem.exe",
+        "title": "Resident Evil Requiem",
+        "category": "Capcom / Survival Horror"
+    },
+    "1448369915462549616": {
+        "name": "PRAGMATA",
+        "exe": "pragmata.exe",
+        "title": "PRAGMATA",
+        "category": "Capcom / Sci-Fi Action"
+    },
+    "1344912009807794256": {
+        "name": "Monster Hunter Wilds",
+        "exe": "MonsterHunterWilds.exe",
+        "title": "Monster Hunter Wilds",
+        "category": "Capcom / Action RPG"
+    },
+    "1129504307851567196": {
+        "name": "Street Fighter 6",
+        "exe": "StreetFighter6.exe",
+        "title": "Street Fighter 6",
+        "category": "Capcom / Fighting"
+    },
+    "1469211090205544458": {
+        "name": "Monster Hunter Stories 3: Twisted Reflection",
+        "exe": "mh_stories3.exe",
+        "title": "Monster Hunter Stories 3",
+        "category": "Capcom / Turn-based RPG"
+    },
+    "1129504209226711190": {
+        "name": "Resident Evil 4",
+        "exe": "re4.exe",
+        "title": "Resident Evil 4",
+        "category": "Capcom / Survival Horror"
+    },
+    "1025084469306200064": {
+        "name": "MONSTER HUNTER RISE: SUNBREAK DEMO",
+        "exe": "MonsterHunterRise.exe",
+        "title": "Monster Hunter Rise",
+        "category": "Capcom / Action RPG"
+    },
+    "1129504165727584307": {
+        "name": "Resident Evil 2",
+        "exe": "re2.exe",
+        "title": "Resident Evil 2",
+        "category": "Capcom / Survival Horror"
+    },
+    "1162153766859059241": {
+        "name": "Resident Evil Village",
+        "exe": "re8.exe",
+        "title": "Resident Evil Village",
+        "category": "Capcom / Survival Horror"
+    },
+    "1283713756605452308": {
+        "name": "MARVEL vs. CAPCOM Fighting Collection: Arcade Classics",
+        "exe": "MVCCollection.exe",
+        "title": "MARVEL vs. CAPCOM",
+        "category": "Capcom / Arcade Fighting"
+    },
+    "1220537550809337856": {
+        "name": "Dragon's Dogma 2",
+        "exe": "DD2.exe",
+        "title": "Dragon's Dogma 2",
+        "category": "Capcom / Action RPG"
+    },
+    "1539812812854132867": {
+        "name": "Black Myth: Wukong",
+        "exe": "b1.exe",
+        "title": "Black Myth: Wukong",
+        "category": "Action RPG"
+    },
+    "762434991303950386": {
+        "name": "Genshin Impact",
+        "exe": "GenshinImpact.exe",
+        "title": "Genshin Impact",
+        "category": "Action RPG"
     },
     # Backwards compatibility fallback IDs
     "1539692903037796422": {

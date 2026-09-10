@@ -129,6 +129,10 @@ const DQS = {
         // Simulator status polling
         this.pollSimStatus();
         setInterval(() => this.pollSimStatus(), 2000);
+
+        // Auto-refresh quests periodically and on window focus
+        setInterval(() => this.refreshQuests(true), 45000);
+        window.addEventListener('focus', () => this.refreshQuests(true));
     },
 
     // --- Startup Splash Screen Animation ---
@@ -449,43 +453,45 @@ const DQS = {
     },
 
     // --- Quests & Cards Rendering ---
-    async refreshQuests() {
+    async refreshQuests(silent = false) {
         const I = window.DQS_ICONS;
         const container = document.getElementById('quests-list');
 
-        // Futuristic Cyber Loading Screen with Skeleton Cards
-        container.innerHTML = `
-            <div class="api-loading-card card-3d">
-                <div class="loading-cyber-core">
-                    <div class="loading-ring outer"></div>
-                    <div class="loading-ring inner"></div>
-                    <span class="loading-center-icon">${I.quest}</span>
-                </div>
-                <div class="loading-text-content">
-                    <h3 class="loading-headline">SYNCHRONISIERE MIT DISCORD API</h3>
-                    <p class="loading-subtitle">Lade aktive Quests, Belohnungs-Orbs und Heartbeat-Verbindungen...</p>
-                    <div class="loading-bar-track">
-                        <div class="loading-bar-sweep"></div>
+        if (!silent) {
+            // Futuristic Cyber Loading Screen with Skeleton Cards
+            container.innerHTML = `
+                <div class="api-loading-card card-3d">
+                    <div class="loading-cyber-core">
+                        <div class="loading-ring outer"></div>
+                        <div class="loading-ring inner"></div>
+                        <span class="loading-center-icon">${I.quest}</span>
+                    </div>
+                    <div class="loading-text-content">
+                        <h3 class="loading-headline">SYNCHRONISIERE MIT DISCORD API</h3>
+                        <p class="loading-subtitle">Lade aktive Quests, Belohnungs-Orbs und Heartbeat-Verbindungen...</p>
+                        <div class="loading-bar-track">
+                            <div class="loading-bar-sweep"></div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="skeleton-card">
-                <div class="skeleton-tile"></div>
-                <div class="skeleton-info">
-                    <div class="skeleton-bar title"></div>
-                    <div class="skeleton-bar sub"></div>
-                    <div class="skeleton-bar progress"></div>
+                <div class="skeleton-card">
+                    <div class="skeleton-tile"></div>
+                    <div class="skeleton-info">
+                        <div class="skeleton-bar title"></div>
+                        <div class="skeleton-bar sub"></div>
+                        <div class="skeleton-bar progress"></div>
+                    </div>
                 </div>
-            </div>
-            <div class="skeleton-card">
-                <div class="skeleton-tile"></div>
-                <div class="skeleton-info">
-                    <div class="skeleton-bar title"></div>
-                    <div class="skeleton-bar sub"></div>
-                    <div class="skeleton-bar progress"></div>
+                <div class="skeleton-card">
+                    <div class="skeleton-tile"></div>
+                    <div class="skeleton-info">
+                        <div class="skeleton-bar title"></div>
+                        <div class="skeleton-bar sub"></div>
+                        <div class="skeleton-bar progress"></div>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
 
         if (!window.pywebview?.api) return;
         const quests = await window.pywebview.api.get_quests();
@@ -536,6 +542,7 @@ const DQS = {
         const appId = q.app_id || '';
         const videoUrl = q.video_url;
         const isVideo = videoUrl || taskType.includes('VIDEO') || q.has_video;
+        const isMultiGame = Boolean(q.is_multi_game && q.supported_applications && q.supported_applications.length > 1);
 
         // Tile source: Base64 first, fallback to HTTP/file
         const b64Tile = window.DQS_EMBEDDED_ASSETS?.tiles?.[qid];
@@ -551,6 +558,29 @@ const DQS = {
         const tgtMin = Math.round(targetSeconds / 60);
         let progressTxt = `${curMin}/${tgtMin} MIN. (${percent}%)`;
         if (completed || claimed) progressTxt += ' - QUEST ERFÜLLT!';
+
+        // Multi-Game Selector HTML
+        let multiGameHtml = '';
+        if (isMultiGame) {
+            const options = q.supported_applications.map(app => {
+                const isSel = (q.selected_app && q.selected_app.id === app.id) ? 'selected' : '';
+                return `<option value="${app.id}" ${isSel}>${app.name}</option>`;
+            }).join('');
+
+            multiGameHtml = `
+                <div class="multi-game-wrapper">
+                    <div class="multi-game-badge">
+                        ${I.gamepad} <span>AUSWÄHLBARE SPIELE (${q.supported_applications.length})</span>
+                    </div>
+                    <div class="multi-game-select-row">
+                        <span class="multi-game-label">AKTIVES SPIEL:</span>
+                        <select class="multi-game-select" id="multi-sel-${qid}">
+                            ${options}
+                        </select>
+                    </div>
+                </div>
+            `;
+        }
 
         // Build Progress Bars (2 Bars if Video, 1 Bar if Desktop)
         let progressHtml = '';
@@ -596,14 +626,31 @@ const DQS = {
                 <div class="quest-header-row">
                     <span class="quest-game-title">${gameTitle}</span>
                     <span class="badge-tag task">${taskIcon} ${taskLabel}</span>
+                    ${isMultiGame ? `<span class="badge-tag multi">${I.gamepad} MULTI-GAME (${q.supported_applications.length})</span>` : ''}
                     <span class="badge-tag duration">${I.clock} DAUER: <strong>${q.duration_text || (isVideo ? '(ca. 30 Sek.)' : '(ca. 15 Min.)')}</strong></span>
                     ${orbCount > 0 ? `<span class="badge-tag orbs"><img src="${orbImgSrc}" class="discord-orb-icon" alt="Orbs"> <span>${orbCount} ORBS</span></span>` : ''}
                 </div>
                 <div class="quest-name-sub">${questName}</div>
+                ${multiGameHtml}
                 ${progressHtml}
             </div>
             <div class="quest-actions-wrap" id="act-box-${qid}"></div>
         `;
+
+        if (isMultiGame) {
+            const multiSel = card.querySelector(`#multi-sel-${qid}`);
+            if (multiSel) {
+                multiSel.addEventListener('change', (e) => {
+                    const chosenId = e.target.value;
+                    const found = q.supported_applications.find(a => a.id === chosenId);
+                    if (found) {
+                        q.selected_app = found;
+                        q.app_id = found.id;
+                        q.sim_game_title = found.name;
+                    }
+                });
+            }
+        }
 
         const actBox = card.querySelector(`#act-box-${qid}`);
 
@@ -625,7 +672,9 @@ const DQS = {
             btnSim.className = 'btn btn-emerald';
             btnSim.innerHTML = `${I.play} SIMULIEREN`;
             btnSim.onclick = () => {
-                this.simulateQuest(appId, gameTitle);
+                const targetAppId = q.selected_app?.id || appId;
+                const targetTitle = q.selected_app?.name || q.sim_game_title || gameTitle;
+                this.simulateQuest(targetAppId, targetTitle);
             };
             actBox.appendChild(btnSim);
 

@@ -132,8 +132,18 @@ class QuestFarmer:
 
             qid = q["id"]
             qname = q["quest_name"]
-            game_title = q["game_title"]
-            app_id = q["app_id"]
+            
+            # If multi-game, pick one of the valid allowed games
+            supported_apps = q.get("supported_applications") or []
+            if q.get("is_multi_game") and supported_apps:
+                selected_app = q.get("selected_app") or supported_apps[0]
+                app_id = selected_app["id"]
+                game_title = selected_app["name"]
+                self.log(f"[MULTI-GAME] '{qname}' bietet {len(supported_apps)} auswaehlbare Spiele. Waehle automatisch '{game_title}' (App-ID: {app_id})...", "INFO")
+            else:
+                game_title = q.get("sim_game_title") or q.get("game_title", "Unbekanntes Spiel")
+                app_id = q.get("app_id", "")
+
             task_type = q["task_type"]
             target_sec = q.get("target_seconds", 900)
             curr_sec = q.get("current_seconds", 0)

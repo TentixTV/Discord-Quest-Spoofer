@@ -1174,6 +1174,79 @@ body {
     box-shadow: 0 0 10px rgba(254, 231, 92, 0.2);
 }
 
+.badge-tag.multi {
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    color: #c084fc;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+}
+
+.multi-game-wrapper {
+    margin: 8px 0 10px 0;
+    padding: 8px 12px;
+    background: rgba(168, 85, 247, 0.07);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.multi-game-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #d8b4fe;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.multi-game-badge .svg-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.multi-game-select-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.multi-game-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.multi-game-select {
+    flex: 1;
+    background: rgba(15, 17, 26, 0.85);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 10px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.multi-game-select:focus,
+.multi-game-select:hover {
+    border-color: #a855f7;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
+}
+
+.multi-game-select option {
+    background: #141724;
+    color: #ffffff;
+    padding: 8px;
+}
+
 .discord-orb-icon {
     width: 20px;
     height: 20px;
