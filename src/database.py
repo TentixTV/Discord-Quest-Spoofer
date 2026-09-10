@@ -35,66 +35,66 @@ QUEST_GAMES_DATABASE = {
         "title": "Roblox",
         "category": "Roblox"
     },
-    # Capcom TGS Deals Quest Games (Multi-Game Bundle)
-    "1456485028350656512": {
-        "name": "Resident Evil Requiem",
-        "exe": "re_requiem.exe",
-        "title": "Resident Evil Requiem",
-        "category": "Capcom / Survival Horror"
-    },
-    "1448369915462549616": {
-        "name": "PRAGMATA",
-        "exe": "pragmata.exe",
-        "title": "PRAGMATA",
-        "category": "Capcom / Sci-Fi Action"
-    },
-    "1344912009807794256": {
-        "name": "Monster Hunter Wilds",
-        "exe": "MonsterHunterWilds.exe",
-        "title": "Monster Hunter Wilds",
-        "category": "Capcom / Action RPG"
-    },
+    # Capcom TGS Deals Quest Games (Multi-Game Bundle - Verified with Discord Detectable Database)
     "1129504307851567196": {
         "name": "Street Fighter 6",
-        "exe": "StreetFighter6.exe",
+        "exe": "street fighter 6/streetfighter6.exe",
         "title": "Street Fighter 6",
         "category": "Capcom / Fighting"
     },
-    "1469211090205544458": {
-        "name": "Monster Hunter Stories 3: Twisted Reflection",
-        "exe": "mh_stories3.exe",
-        "title": "Monster Hunter Stories 3",
-        "category": "Capcom / Turn-based RPG"
-    },
     "1129504209226711190": {
         "name": "Resident Evil 4",
-        "exe": "re4.exe",
+        "exe": "resident evil 4  biohazard re4/re4.exe",
         "title": "Resident Evil 4",
         "category": "Capcom / Survival Horror"
     },
-    "1025084469306200064": {
-        "name": "MONSTER HUNTER RISE: SUNBREAK DEMO",
-        "exe": "MonsterHunterRise.exe",
-        "title": "Monster Hunter Rise",
+    "1344912009807794256": {
+        "name": "Monster Hunter Wilds",
+        "exe": "monsterhunterwilds/monsterhunterwilds.exe",
+        "title": "Monster Hunter Wilds",
         "category": "Capcom / Action RPG"
     },
     "1129504165727584307": {
         "name": "Resident Evil 2",
-        "exe": "re2.exe",
+        "exe": "resident evil 2  biohazard re2/re2.exe",
         "title": "Resident Evil 2",
         "category": "Capcom / Survival Horror"
     },
     "1162153766859059241": {
         "name": "Resident Evil Village",
-        "exe": "re8.exe",
+        "exe": "resident evil village biohazard village/re8.exe",
         "title": "Resident Evil Village",
         "category": "Capcom / Survival Horror"
     },
+    "1025084469306200064": {
+        "name": "MONSTER HUNTER RISE: SUNBREAK DEMO",
+        "exe": "monster hunter rise sunbreak demo/mhrisesunbreakdemo.exe",
+        "title": "Monster Hunter Rise: Sunbreak",
+        "category": "Capcom / Action RPG"
+    },
     "1283713756605452308": {
         "name": "MARVEL vs. CAPCOM Fighting Collection: Arcade Classics",
-        "exe": "MVCCollection.exe",
-        "title": "MARVEL vs. CAPCOM",
-        "category": "Capcom / Arcade Fighting"
+        "exe": "marvel vs. capcom fighting collection/marvelvscapcomfightingcollection.exe",
+        "title": "MARVEL vs. CAPCOM Fighting Collection",
+        "category": "Capcom / Fighting"
+    },
+    "1448369915462549616": {
+        "name": "PRAGMATA",
+        "exe": "pragmata_sketchbook.exe",
+        "title": "PRAGMATA",
+        "category": "Capcom / Sci-Fi Action"
+    },
+    "1469211090205544458": {
+        "name": "Monster Hunter Stories 3: Twisted Reflection",
+        "exe": "monster_hunter_stories_3_twisted_reflection_trial/monster_hunter_stories_3_twisted_reflection_trial.exe",
+        "title": "Monster Hunter Stories 3",
+        "category": "Capcom / Turn-based RPG"
+    },
+    "1456485028350656512": {
+        "name": "Resident Evil Requiem",
+        "exe": "re_requiem.exe",
+        "title": "Resident Evil Requiem",
+        "category": "Capcom / Survival Horror"
     },
     "1220537550809337856": {
         "name": "Dragon's Dogma 2",
@@ -221,6 +221,22 @@ def resolve_game_info(app_id: str, fallback_name: str = "") -> dict:
         exe = "where winds meet.exe"
     elif "onimusha" in clean_name:
         exe = "onimushawots_demo.exe"
+    elif "street fighter" in clean_name or "sf6" in clean_name:
+        exe = "street fighter 6/streetfighter6.exe"
+    elif "resident evil 4" in clean_name or "re4" in clean_name:
+        exe = "resident evil 4  biohazard re4/re4.exe"
+    elif "resident evil 2" in clean_name or "re2" in clean_name:
+        exe = "resident evil 2  biohazard re2/re2.exe"
+    elif "resident evil village" in clean_name or "re8" in clean_name:
+        exe = "resident evil village biohazard village/re8.exe"
+    elif "monster hunter wilds" in clean_name:
+        exe = "monsterhunterwilds/monsterhunterwilds.exe"
+    elif "monster hunter rise" in clean_name:
+        exe = "monster hunter rise sunbreak demo/mhrisesunbreakdemo.exe"
+    elif "dragons dogma" in clean_name:
+        exe = "dragons dogma 2/dd2.exe"
+    elif "marvel vs. capcom" in clean_name or "marvel vs capcom" in clean_name:
+        exe = "marvel vs. capcom fighting collection/marvelvscapcomfightingcollection.exe"
     else:
         # Create a plausible executable name from title
         sanitized = "".join(c for c in fallback_name if c.isalnum() or c in ("_", "-"))

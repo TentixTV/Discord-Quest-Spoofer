@@ -125,6 +125,7 @@ class DQSBridge:
                 else:
                     needed = max(0, q.get("target_seconds", 900) - q.get("current_seconds", 0))
                     q["duration_text"] = format_duration(needed)
+            self._cached_quests = quests
             return quests
         except Exception as e:
             print("Error fetching quests:", e)
@@ -228,12 +229,37 @@ class DQSBridge:
 
     def get_sim_status(self):
         is_running = self._simulator.is_running()
+        elapsed = int(time.time() - self._simulator.start_time) if is_running and self._simulator.start_time else 0
+        app_id = self._simulator.current_app_id if is_running else None
+        
+        target_seconds = 900
+        current_seconds = elapsed
+        quest_id = None
+        
+        if is_running and app_id:
+            # Check cached or active quests
+            if hasattr(self, "_cached_quests") and self._cached_quests:
+                for q in self._cached_quests:
+                    supported_ids = [str(a.get("id")) for a in q.get("supported_applications", [])]
+                    if str(q.get("app_id")) == str(app_id) or str(app_id) in supported_ids:
+                        quest_id = q.get("id")
+                        target_seconds = q.get("target_seconds", 900)
+                        base_sec = q.get("current_seconds", 0)
+                        current_seconds = min(target_seconds, base_sec + elapsed)
+                        break
+
+        pct = min(100.0, round((current_seconds / target_seconds) * 100.0, 1)) if target_seconds > 0 else 0.0
+
         return {
             "running": is_running,
             "game_name": self._simulator.current_game_name if is_running else None,
             "exe_name": self._simulator.current_exe_name if is_running else None,
-            "app_id": self._simulator.current_app_id if is_running else None,
-            "elapsed_seconds": int(time.time() - self._simulator.start_time) if is_running and self._simulator.start_time else 0
+            "app_id": app_id,
+            "quest_id": quest_id,
+            "elapsed_seconds": elapsed,
+            "current_seconds": current_seconds,
+            "target_seconds": target_seconds,
+            "progress_percent": pct
         }
 
     # --- Auto-Farm ---

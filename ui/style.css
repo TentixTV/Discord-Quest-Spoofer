@@ -1654,6 +1654,133 @@ body {
     border-radius: 12px;
 }
 
+/* Simulator Live Sync Progress Bar */
+.sim-status-sync-tag {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(0, 240, 255, 0.1);
+    border: 1px solid rgba(0, 240, 255, 0.35);
+    color: #38bdf8;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.sim-live-progress-container {
+    margin-top: 15px;
+    padding: 14px 16px;
+    background: rgba(10, 12, 20, 0.75);
+    border: 1px solid rgba(88, 101, 242, 0.3);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sim-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sim-progress-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #e2e8f0;
+    letter-spacing: 0.4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sim-sync-pill {
+    font-size: 9px;
+    font-weight: 900;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: #00f0ff;
+    color: #090a0f;
+    letter-spacing: 0.5px;
+}
+
+.sim-progress-val {
+    font-size: 12px;
+    font-weight: 800;
+    color: #38bdf8;
+    font-variant-numeric: tabular-nums;
+}
+
+.sim-progress-val.completed {
+    color: #4ade80;
+    text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+}
+
+.sim-progress-track {
+    height: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sim-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #5865f2 0%, #00f0ff 100%);
+    border-radius: 5px;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 14px rgba(0, 240, 255, 0.45);
+    position: relative;
+}
+
+.sim-progress-fill.active-glow::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    animation: progressShine 2s infinite linear;
+}
+
+.sim-progress-fill.completed {
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+    box-shadow: 0 0 15px rgba(52, 211, 153, 0.5);
+}
+
+.sim-progress-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.sim-footer-status {
+    color: #94a3b8;
+}
+
+.sim-footer-detail {
+    color: #64748b;
+}
+
+/* Quest Card Live Synced Glowing Animation */
+.quest-card.live-synced-active {
+    border-color: rgba(0, 240, 255, 0.6) !important;
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.2), inset 0 0 15px rgba(0, 240, 255, 0.05) !important;
+}
+
+.quest-progress-row .progress-text.live-sync {
+    color: #38bdf8;
+    font-weight: 800;
+    text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
 /* ================= CONSOLE TAB ================= */
 .console-box {
     display: flex;

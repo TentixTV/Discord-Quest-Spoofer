@@ -49,7 +49,7 @@ def main():
     header_box.pack(pady=(12, 4))
 
     lbl_lock = tk.Label(
-        header_box, text="🔓", font=("Segoe UI Emoji", 16),
+        header_box, text="[LIVE]", font=("Segoe UI", 9, "bold"),
         fg="#00A8FC", bg="#11131a"
     )
     lbl_lock.pack(side="left", padx=(0, 6))

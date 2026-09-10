@@ -250,6 +250,7 @@
                 <div class="sim-card card-3d">
                     <div class="sim-card-header">
                         <span class="sim-card-title">STATUS & RICH PRESENCE</span>
+                        <span class="sim-status-sync-tag" id="sim-status-sync-tag"><span class="pulse-dot"></span> LIVE-SYNC MIT DISCORD</span>
                     </div>
                     <div class="sim-monitor-body">
                         <div class="sim-monitor-art">
@@ -260,6 +261,23 @@
                             <h3 id="sim-active-title">Keine aktive Simulation</h3>
                             <p id="sim-active-state">Wähle ein Spiel und klicke auf Simulation starten.</p>
                             <span class="sim-timer-tag" id="sim-active-timer">Zeit: 00:00 Min.</span>
+                        </div>
+                    </div>
+
+                    <!-- Live Sync Quest Progress Bar in Simulator -->
+                    <div class="sim-live-progress-container" id="sim-live-progress-container">
+                        <div class="sim-progress-header">
+                            <span class="sim-progress-label">
+                                <span class="sim-sync-pill">LIVE</span> QUEST-FORTSCHRITT (ECHTZEIT-SYNC)
+                            </span>
+                            <span class="sim-progress-val" id="sim-progress-val">00:00 / 15:00 MIN. (0%)</span>
+                        </div>
+                        <div class="progress-track sim-progress-track">
+                            <div class="progress-fill sim-progress-fill" id="sim-progress-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="sim-progress-footer">
+                            <span class="sim-footer-status" id="sim-footer-status">STATUS: STANDBY • WARTET AUF SPIEL-START</span>
+                            <span class="sim-footer-detail" id="sim-footer-detail">DISCORD PROCESS & RPC DETECTOR</span>
                         </div>
                     </div>
                 </div>

@@ -126,16 +126,16 @@ const DQS = {
         await this.loadPresets();
         await this.refreshQuests();
 
-        // Simulator status polling
+        // Simulator status polling (1-second heartbeat live sync)
         this.pollSimStatus();
-        setInterval(() => this.pollSimStatus(), 2000);
+        setInterval(() => this.pollSimStatus(), 1000);
 
         // Auto-refresh quests periodically and on window focus
         setInterval(() => this.refreshQuests(true), 45000);
         window.addEventListener('focus', () => this.refreshQuests(true));
     },
 
-    // --- Startup Splash Screen Animation ---
+    // --- Startup Splash Screen Animation (Random 4 - 12 Seconds) ---
     runStartupSplash() {
         const splash = document.getElementById('dqs-startup-splash');
         const bar = document.getElementById('splash-progress-bar');
@@ -143,30 +143,47 @@ const DQS = {
         const root = document.getElementById('app-root');
         if (!splash || !bar || !status) return;
 
-        const phases = [
-            { pct: 25, text: 'INITIALISIERE KERN-SYSTEME...', delay: 150 },
-            { pct: 55, text: 'LADE DISCORD QUEST ENGINE (V5)...', delay: 450 },
-            { pct: 85, text: 'SYNCHRONISIERE DISCORD API & PROFIL...', delay: 800 },
-            { pct: 100, text: 'SYSTEM BEREIT - POPPING UP...', delay: 1150 }
-        ];
+        // Random duration between 4000ms and 12000ms (4 - 12 Sekunden immer unterschiedlich)
+        const totalDuration = Math.floor(Math.random() * (12000 - 4000 + 1)) + 4000;
+        let elapsed = 0;
+        const intervalMs = 60;
 
-        phases.forEach(p => {
-            setTimeout(() => {
-                if (bar) bar.style.width = `${p.pct}%`;
-                if (status) status.innerText = p.text;
-            }, p.delay);
-        });
+        const getStatusText = (pct) => {
+            if (pct < 16) return 'INITIALISIERE QUANTUM KERN-SYSTEME...';
+            if (pct < 34) return 'LADE DISCORD QUEST ENGINE (V5)...';
+            if (pct < 52) return 'LOKALISIERE DETECTABLE GAMES & PROZESSE...';
+            if (pct < 70) return 'SYNCHRONISIERE DISCORD RPC & HEARTBEATS...';
+            if (pct < 86) return 'VERIFIZIERE SICHERHEITS-SCHUTZ & LOKALE TOKEN...';
+            if (pct < 98) return 'FINALE KALIBRIERUNG DES CLIENTS...';
+            return 'SYSTEM BEREIT - POPPING UP...';
+        };
 
-        // Trigger Pop Up transition
-        setTimeout(() => {
-            if (splash) splash.classList.add('splash-pop-exit');
-            if (root) root.classList.add('app-pop-enter');
-            setTimeout(() => {
-                if (splash && splash.parentNode) {
-                    splash.parentNode.removeChild(splash);
-                }
-            }, 600);
-        }, 1400);
+        const timer = setInterval(() => {
+            elapsed += intervalMs;
+            const progressRatio = Math.min(1.0, elapsed / totalDuration);
+            // Ease-out cubic curve for natural, organic high-tech loading feel
+            const easedRatio = 1 - Math.pow(1 - progressRatio, 3);
+            const currentPct = Math.min(100, Math.round(easedRatio * 100));
+
+            if (bar) bar.style.width = `${currentPct}%`;
+            if (status) status.innerText = getStatusText(currentPct);
+
+            if (elapsed >= totalDuration) {
+                clearInterval(timer);
+                if (bar) bar.style.width = '100%';
+                if (status) status.innerText = 'SYSTEM BEREIT - POPPING UP...';
+
+                setTimeout(() => {
+                    if (splash) splash.classList.add('splash-pop-exit');
+                    if (root) root.classList.add('app-pop-enter');
+                    setTimeout(() => {
+                        if (splash && splash.parentNode) {
+                            splash.parentNode.removeChild(splash);
+                        }
+                    }, 600);
+                }, 300);
+            }
+        }, intervalMs);
     },
 
     // --- Inject Vector SVGs (100% Emoji-free) ---
@@ -968,7 +985,21 @@ const DQS = {
         this.switchTab('simulator');
 
         // Match preset
-        let matched = this.presets.find(p => p.app_id === appId || p.name.toLowerCase().includes(gameTitle.toLowerCase()) || gameTitle.toLowerCase().includes(p.name.toLowerCase()));
+        let matched = this.presets.find(p => String(p.app_id) === String(appId) || p.name.toLowerCase().includes(gameTitle.toLowerCase()) || gameTitle.toLowerCase().includes(p.name.toLowerCase()));
+        if (!matched) {
+            for (const q of (this.cachedQuests || [])) {
+                const found = (q.supported_applications || []).find(a => String(a.id) === String(appId));
+                if (found && found.exe) {
+                    matched = {
+                        app_id: found.id,
+                        title: found.title || found.name,
+                        exe: found.exe
+                    };
+                    break;
+                }
+            }
+        }
+
         if (matched) {
             document.getElementById('sim-preset-select').value = matched.app_id;
             document.getElementById('sim-input-title').value = matched.title;
@@ -989,17 +1020,26 @@ const DQS = {
         if (!window.pywebview?.api) return;
         const st = await window.pywebview.api.get_sim_status();
         if (st) {
-            this.updateSimUI(st.running, st.game_name, st.elapsed_seconds);
+            this.updateSimUI(st.running, st.game_name, st.elapsed_seconds, st);
         }
     },
 
-    updateSimUI(running, gameName, elapsedSec = 0) {
+    updateSimUI(running, gameName, elapsedSec = 0, st = null) {
         const badge = document.getElementById('sim-status-badge');
         const startBtn = document.getElementById('btn-start-sim');
         const stopBtn = document.getElementById('btn-stop-sim');
         const actTitle = document.getElementById('sim-active-title');
         const actState = document.getElementById('sim-active-state');
         const actTimer = document.getElementById('sim-active-timer');
+
+        const simFill = document.getElementById('sim-progress-fill');
+        const simVal = document.getElementById('sim-progress-val');
+        const simStatus = document.getElementById('sim-footer-status');
+        const simSyncTag = document.getElementById('sim-status-sync-tag');
+
+        const tgtSec = st?.target_seconds || 900;
+        const curSec = st?.current_seconds ?? elapsedSec;
+        const pct = Math.min(100, Math.max(0, st?.progress_percent ?? Math.round((curSec / tgtSec) * 100)));
 
         if (running) {
             badge.innerText = 'SIMULATION LÄUFT';
@@ -1010,11 +1050,45 @@ const DQS = {
 
             const gName = (gameName || 'Spiel').toUpperCase();
             actTitle.innerText = gName;
-            actState.innerText = 'Rich Presence Heartbeats an Discord aktiv.';
+            actState.innerText = 'Win32 Prozess & Rich Presence Heartbeats an Discord aktiv.';
 
             const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
             const s = String(elapsedSec % 60).padStart(2, '0');
             actTimer.innerText = `Zeit: ${m}:${s} Min.`;
+
+            // Simulator Live Sync Progress Bar
+            if (simSyncTag) {
+                simSyncTag.innerHTML = '<span class="pulse-dot"></span> LIVE-SYNC MIT DISCORD AKTIV';
+                simSyncTag.style.borderColor = 'rgba(0, 240, 255, 0.6)';
+                simSyncTag.style.color = '#38bdf8';
+            }
+            if (simFill) {
+                simFill.style.width = `${pct}%`;
+                simFill.classList.add('active-glow');
+                if (pct >= 100) simFill.classList.add('completed');
+                else simFill.classList.remove('completed');
+            }
+            if (simVal) {
+                const cm = String(Math.floor(curSec / 60)).padStart(2, '0');
+                const cs = String(curSec % 60).padStart(2, '0');
+                const tm = String(Math.floor(tgtSec / 60)).padStart(2, '0');
+                if (pct >= 100) {
+                    simVal.innerText = '100% - QUEST ERFÜLLT! (BELOHNUNG IN DISCORD BEREIT)';
+                    simVal.classList.add('completed');
+                } else {
+                    simVal.innerText = `${cm}:${cs} / ${tm}:00 MIN. (${Math.round(pct)}%)`;
+                    simVal.classList.remove('completed');
+                }
+            }
+            if (simStatus) {
+                if (pct >= 100) {
+                    simStatus.innerText = 'STATUS: 100% ERREICHT • BELOHNUNG IM DISCORD QUESTS-TAB ABHOLBAR';
+                    simStatus.style.color = 'var(--emerald)';
+                } else {
+                    simStatus.innerText = `STATUS: LIVE-SYNC AKTIV • DISCORD DETEKTION BESTÄTIGT (${elapsedSec}s)`;
+                    simStatus.style.color = '#38bdf8';
+                }
+            }
         } else {
             badge.innerText = 'BEREIT';
             badge.style.color = 'var(--text-muted)';
@@ -1025,6 +1099,68 @@ const DQS = {
             actTitle.innerText = 'Keine aktive Simulation';
             actState.innerText = 'Wähle ein Spiel und klicke auf Simulation starten.';
             actTimer.innerText = 'Zeit: 00:00 Min.';
+
+            if (simSyncTag) {
+                simSyncTag.innerHTML = '<span class="pulse-dot"></span> LIVE-SYNC STANDBY';
+                simSyncTag.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                simSyncTag.style.color = '#94a3b8';
+            }
+            if (simFill) {
+                simFill.style.width = '0%';
+                simFill.classList.remove('active-glow', 'completed');
+            }
+            if (simVal) {
+                simVal.innerText = '00:00 / 15:00 MIN. (0%)';
+                simVal.classList.remove('completed');
+            }
+            if (simStatus) {
+                simStatus.innerText = 'STATUS: STANDBY • WARTET AUF SPIEL-START';
+                simStatus.style.color = '#64748b';
+            }
+        }
+
+        // Live Sync Quest Cards in Quests Tab
+        if (this.cachedQuests && this.cachedQuests.length > 0) {
+            this.cachedQuests.forEach(q => {
+                const qid = q.id;
+                const actBox = document.getElementById(`act-box-${qid}`);
+                const card = actBox ? actBox.closest('.quest-card') : null;
+                const fill = document.getElementById(`fill-quest-${qid}`);
+                const val = document.getElementById(`val-quest-${qid}`);
+
+                const isThisActive = running && (
+                    (st?.quest_id && st.quest_id === qid) ||
+                    (st?.app_id && (String(q.app_id) === String(st.app_id) || q.supported_applications?.some(a => String(a.id) === String(st.app_id))))
+                );
+
+                if (isThisActive) {
+                    if (card) card.classList.add('live-synced-active');
+                    const qTgt = q.target_seconds || 900;
+                    const qCur = Math.min(qTgt, (q.current_seconds || 0) + elapsedSec);
+                    const qPct = Math.min(100, Math.max(0, Math.round((qCur / qTgt) * 100)));
+
+                    if (fill) {
+                        fill.style.width = `${qPct}%`;
+                        fill.classList.add('express-animating');
+                        if (qPct >= 100) fill.classList.add('completed');
+                    }
+                    if (val) {
+                        const curM = Math.floor(qCur / 60);
+                        const tgtM = Math.round(qTgt / 60);
+                        if (qPct >= 100 || q.completed || q.claimed) {
+                            val.innerText = `${curM}/${tgtM} MIN. (100%) - QUEST ERFÜLLT!`;
+                            val.classList.add('completed');
+                        } else {
+                            val.innerText = `${curM}/${tgtM} MIN. (${qPct}%) - LIVE GESYNCT`;
+                            val.classList.add('live-sync');
+                        }
+                    }
+                } else {
+                    if (card) card.classList.remove('live-synced-active');
+                    if (val) val.classList.remove('live-sync');
+                    if (fill && !fill.classList.contains('buffer')) fill.classList.remove('express-animating');
+                }
+            });
         }
 
         // Live update Discord Profile Popout activity

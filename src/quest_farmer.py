@@ -135,14 +135,17 @@ class QuestFarmer:
             
             # If multi-game, pick one of the valid allowed games
             supported_apps = q.get("supported_applications") or []
+            selected_exe = ""
             if q.get("is_multi_game") and supported_apps:
                 selected_app = q.get("selected_app") or supported_apps[0]
                 app_id = selected_app["id"]
                 game_title = selected_app["name"]
+                selected_exe = selected_app.get("exe", "")
                 self.log(f"[MULTI-GAME] '{qname}' bietet {len(supported_apps)} auswaehlbare Spiele. Waehle automatisch '{game_title}' (App-ID: {app_id})...", "INFO")
             else:
                 game_title = q.get("sim_game_title") or q.get("game_title", "Unbekanntes Spiel")
                 app_id = q.get("app_id", "")
+                selected_exe = q.get("selected_app", {}).get("exe", "")
 
             task_type = q["task_type"]
             target_sec = q.get("target_seconds", 900)
@@ -215,7 +218,7 @@ class QuestFarmer:
                 # Desktop Game Simulation
                 needed_seconds = max(0, target_sec - curr_sec)
                 self.log(f"Starte Spiel-Simulation für '{game_title}' ({format_duration(needed_seconds)})...", "INFO")
-                sim_res = self.simulator.start_simulation(app_id, game_title)
+                sim_res = self.simulator.start_simulation(app_id, game_title, custom_exe=selected_exe)
                 self.log(f"Simulierter Prozess '{sim_res['exe_name']}' laeuft aktiv (PID: {sim_res['pid']}).", "SUCCESS")
                 self.log(f"Verbleibende Spielzeit dieser Quest: {format_duration(needed_seconds)}", "INFO")
 

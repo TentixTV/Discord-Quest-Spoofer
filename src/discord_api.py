@@ -30,7 +30,10 @@ def resolve_application_metadata(app_id: str, token: str = "") -> Dict[str, str]
     
     app_id_str = str(app_id)
     try:
-        from database import QUEST_GAMES_DATABASE
+        try:
+            from .database import QUEST_GAMES_DATABASE
+        except ImportError:
+            from database import QUEST_GAMES_DATABASE
         if app_id_str in QUEST_GAMES_DATABASE:
             info = QUEST_GAMES_DATABASE[app_id_str]
             return {
@@ -162,18 +165,29 @@ class DiscordQuestsAPI:
 
             is_multi_game = len(supported_applications) > 1
 
-            # Pick a valid application for simulation (always select one of the allowed games)
+            # Pick a valid application for simulation (prioritize games verified in Discord detectable DB)
             selected_app = None
             if supported_applications:
                 try:
-                    from database import QUEST_GAMES_DATABASE
-                    for a in supported_applications:
-                        if a["id"] in QUEST_GAMES_DATABASE:
-                            selected_app = a
-                            break
-                except Exception:
-                    pass
-                if not selected_app:
+                    try:
+                        from .database import QUEST_GAMES_DATABASE
+                    except ImportError:
+                        from database import QUEST_GAMES_DATABASE
+
+                    def app_priority(a):
+                        aid = str(a.get("id"))
+                        if aid in QUEST_GAMES_DATABASE:
+                            exe = QUEST_GAMES_DATABASE[aid].get("exe", "").lower()
+                            if "requiem" in exe or not exe:
+                                return 99
+                            if "street fighter" in exe or "re4" in exe or "monsterhunter" in exe or "re2" in exe or "re8" in exe:
+                                return 1
+                            return 10
+                        return 50
+
+                    supported_applications.sort(key=app_priority)
+                    selected_app = supported_applications[0]
+                except Exception as e:
                     selected_app = supported_applications[0]
 
             if selected_app:
