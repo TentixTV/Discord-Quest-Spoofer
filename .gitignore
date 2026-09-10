@@ -9,3 +9,6 @@ dist/
 # Large compiled binaries (hosted via GitHub Releases)
 DQS.exe
 DQS_Installer.exe
+*.bug.log
+.pyarmor/
+obf_build/
