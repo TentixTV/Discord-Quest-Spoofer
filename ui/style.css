@@ -170,34 +170,47 @@ body {
 .admin-pill {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 10px;
+    gap: 4px;
+    font-size: 8px;
     font-weight: 800;
-    letter-spacing: 0.8px;
-    color: var(--emerald);
-    background: rgba(35, 165, 90, 0.14);
-    border: 1px solid rgba(35, 165, 90, 0.4);
-    padding: 3.5px 10px;
-    border-radius: 14px;
-    box-shadow: 0 0 10px rgba(35, 165, 90, 0.25);
+    letter-spacing: 0.6px;
+    color: #4ade80;
+    background: rgba(35, 165, 90, 0.12);
+    border: 1px solid rgba(35, 165, 90, 0.35);
+    padding: 2px 7px;
+    border-radius: 9px;
+    box-shadow: 0 0 8px rgba(35, 165, 90, 0.18);
+    height: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.admin-pill #ico-shield {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .admin-pill .svg-icon {
-    width: 12px;
-    height: 12px;
+    width: 9.5px;
+    height: 9.5px;
+    display: block;
 }
 
 .pulsing-dot {
-    width: 6px;
-    height: 6px;
-    background: var(--emerald);
+    width: 4.5px;
+    height: 4.5px;
+    background: #4ade80;
     border-radius: 50%;
     animation: pulseGlow 1.8s infinite;
+    flex-shrink: 0;
 }
 
 @keyframes pulseGlow {
     0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(35, 165, 90, 0.7); }
-    70% { transform: scale(1.2); box-shadow: 0 0 0 6px rgba(35, 165, 90, 0); }
+    70% { transform: scale(1.2); box-shadow: 0 0 0 5px rgba(35, 165, 90, 0); }
     100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(35, 165, 90, 0); }
 }
 
@@ -319,6 +332,156 @@ body {
     100% { transform: translateY(-24px) scale(0.2); opacity: 0; }
 }
 
+/* 2. Videos & Trailer Tab (Cinema Neon Cyan Wave) */
+.nav-tab.videos-tab.active {
+    background: linear-gradient(135deg, #06b6d4 0%, #0284c7 55%, #2563eb 100%);
+    box-shadow: 0 0 22px rgba(6, 182, 212, 0.7), inset 0 0 10px rgba(165, 243, 252, 0.5);
+    border: 1px solid rgba(103, 232, 249, 0.7);
+    animation: videoCyanPulse 2.3s infinite alternate ease-in-out;
+}
+@keyframes videoCyanPulse {
+    0% { box-shadow: 0 0 14px rgba(6, 182, 212, 0.5), inset 0 0 6px rgba(165, 243, 252, 0.3); border-color: rgba(103, 232, 249, 0.5); }
+    100% { box-shadow: 0 0 28px rgba(6, 182, 212, 0.85), inset 0 0 14px rgba(165, 243, 252, 0.7); border-color: #a5f3fc; }
+}
+.tab-video-stream-wave {
+    position: absolute;
+    inset: -4px;
+    pointer-events: none;
+    border-radius: 20px;
+    overflow: hidden;
+}
+.nav-tab.videos-tab.active .tab-video-stream-wave::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+    animation: streamLightSweep 2.2s infinite ease-in-out;
+}
+.nav-tab.videos-tab.active .tab-video-stream-wave::after {
+    content: '';
+    position: absolute;
+    width: 3.5px;
+    height: 3.5px;
+    background: #a5f3fc;
+    border-radius: 50%;
+    right: 20%;
+    bottom: 3px;
+    box-shadow: 0 0 8px #06b6d4, 0 0 14px #38bdf8;
+    animation: sparkFlyUp 2s infinite ease-out;
+}
+@keyframes streamLightSweep {
+    0% { left: -80%; }
+    50%, 100% { left: 140%; }
+}
+
+/* 3. Spiele-Simulator Tab (Cyber Matrix Emerald Pulse) */
+.nav-tab.simulator-tab.active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 60%, #047857 100%);
+    box-shadow: 0 0 22px rgba(16, 185, 129, 0.7), inset 0 0 10px rgba(167, 243, 208, 0.5);
+    border: 1px solid rgba(110, 231, 183, 0.7);
+    animation: simMatrixPulse 2s infinite alternate ease-in-out;
+}
+@keyframes simMatrixPulse {
+    0% { box-shadow: 0 0 14px rgba(16, 185, 129, 0.45); border-color: rgba(110, 231, 183, 0.5); }
+    100% { box-shadow: 0 0 28px rgba(16, 185, 129, 0.9); border-color: #a7f3d0; }
+}
+.tab-sim-matrix-glow {
+    position: absolute;
+    inset: -4px;
+    pointer-events: none;
+    border-radius: 20px;
+    overflow: hidden;
+}
+.nav-tab.simulator-tab.active .tab-sim-matrix-glow::before,
+.nav-tab.simulator-tab.active .tab-sim-matrix-glow::after {
+    content: '';
+    position: absolute;
+    width: 3.5px;
+    height: 3.5px;
+    background: #ecfdf5;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #34d399, 0 0 14px #10b981;
+    animation: sparkFlyUp 1.7s infinite ease-out;
+}
+.nav-tab.simulator-tab.active .tab-sim-matrix-glow::before { left: 28%; bottom: 2px; animation-delay: 0.2s; }
+.nav-tab.simulator-tab.active .tab-sim-matrix-glow::after { left: 72%; bottom: 3px; animation-delay: 1.0s; }
+
+/* 4. Discord-Console Tab (Hacker Terminal Amber / Gold) */
+.nav-tab.console-tab.active {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 60%, #b45309 100%);
+    box-shadow: 0 0 22px rgba(245, 158, 11, 0.7), inset 0 0 10px rgba(254, 243, 199, 0.5);
+    border: 1px solid rgba(252, 211, 77, 0.7);
+    animation: consoleAmberPulse 2.3s infinite alternate ease-in-out;
+}
+@keyframes consoleAmberPulse {
+    0% { box-shadow: 0 0 14px rgba(245, 158, 11, 0.45); border-color: rgba(252, 211, 77, 0.5); }
+    100% { box-shadow: 0 0 28px rgba(245, 158, 11, 0.9); border-color: #fde68a; }
+}
+.tab-console-hacker-scan {
+    position: absolute;
+    inset: -4px;
+    pointer-events: none;
+    border-radius: 20px;
+    overflow: hidden;
+}
+.nav-tab.console-tab.active .tab-console-hacker-scan::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    animation: streamLightSweep 2.2s infinite ease-in-out;
+}
+.nav-tab.console-tab.active .tab-console-hacker-scan::after {
+    content: '';
+    position: absolute;
+    width: 3.5px;
+    height: 3.5px;
+    background: #fffbeb;
+    border-radius: 50%;
+    right: 25%;
+    bottom: 2px;
+    box-shadow: 0 0 8px #f59e0b, 0 0 12px #fbbf24;
+    animation: sparkFlyUp 1.9s infinite ease-out;
+}
+
+/* 5. Live-Logs Tab (Quantum Purple Warp Glow) */
+.nav-tab.logs-tab.active {
+    background: linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #c026d3 100%);
+    box-shadow: 0 0 22px rgba(168, 85, 247, 0.7), inset 0 0 10px rgba(243, 232, 255, 0.5);
+    border: 1px solid rgba(216, 180, 254, 0.7);
+    animation: logsPurplePulse 2.1s infinite alternate ease-in-out;
+}
+@keyframes logsPurplePulse {
+    0% { box-shadow: 0 0 14px rgba(168, 85, 247, 0.45); border-color: rgba(216, 180, 254, 0.5); }
+    100% { box-shadow: 0 0 28px rgba(168, 85, 247, 0.9); border-color: #f0abfc; }
+}
+.tab-logs-quantum-warp {
+    position: absolute;
+    inset: -4px;
+    pointer-events: none;
+    border-radius: 20px;
+    overflow: hidden;
+}
+.nav-tab.logs-tab.active .tab-logs-quantum-warp::before,
+.nav-tab.logs-tab.active .tab-logs-quantum-warp::after {
+    content: '';
+    position: absolute;
+    width: 3.5px;
+    height: 3.5px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #d8b4fe, 0 0 14px #a855f7;
+    animation: sparkFlyUp 1.8s infinite ease-out;
+}
+.nav-tab.logs-tab.active .tab-logs-quantum-warp::before { left: 20%; bottom: 2px; animation-delay: 0.2s; }
+.nav-tab.logs-tab.active .tab-logs-quantum-warp::after { left: 80%; bottom: 3px; animation-delay: 1.0s; }
+
 /* User Pill in Header */
 .titlebar-right {
     display: flex;
@@ -327,31 +490,36 @@ body {
 }
 
 .user-pill {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
-    background: rgba(22, 24, 35, 0.85);
-    border: 1px solid rgba(88, 101, 242, 0.25);
-    padding: 6px 14px 6px 8px;
-    border-radius: 22px;
+    gap: 7px;
+    background: rgba(18, 20, 30, 0.85);
+    border: 1px solid rgba(88, 101, 242, 0.22);
+    padding: 3px 9px 3px 5px;
+    border-radius: 18px;
     cursor: pointer;
     transition: all 0.25s ease;
+    height: 36px;
+    max-height: 36px;
+    box-sizing: border-box;
+    flex-shrink: 0;
 }
 .user-pill:hover {
     border-color: var(--neon-blurple);
-    box-shadow: 0 0 14px var(--neon-blurple-glow);
-    background: rgba(30, 33, 48, 0.95);
+    box-shadow: 0 0 12px var(--neon-blurple-glow);
+    background: rgba(28, 30, 44, 0.95);
 }
 
 .mini-avatar-wrap {
     position: relative;
-    width: 34px;
-    height: 34px;
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
 }
 
 .mini-avatar {
-    width: 34px;
-    height: 34px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     object-fit: cover;
 }
@@ -360,10 +528,10 @@ body {
     position: absolute;
     bottom: -1px;
     right: -1px;
-    width: 12px;
-    height: 12px;
+    width: 9.5px;
+    height: 9.5px;
     border-radius: 50%;
-    border: 2px solid #111218;
+    border: 1.5px solid #111218;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -372,8 +540,8 @@ body {
     background: var(--crimson);
 }
 .dnd-minus {
-    width: 6px;
-    height: 2px;
+    width: 5px;
+    height: 1.5px;
     background: #ffffff;
     border-radius: 1px;
 }
@@ -381,32 +549,47 @@ body {
 .user-pill-info {
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    max-width: 105px;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .pill-username {
-    font-size: 12.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 800;
     color: #ffffff;
-    line-height: 15px;
+    line-height: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
 }
 
 .pill-status {
-    font-size: 9px;
+    font-size: 8.5px;
     font-weight: 700;
     color: #f87171;
     letter-spacing: 0.3px;
+    line-height: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 100px;
 }
 
 .gear-wrap {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 4px;
+    margin-left: 2px;
     color: var(--text-muted);
+    flex-shrink: 0;
 }
 .gear-svg {
-    width: 19px;
-    height: 19px;
+    width: 15px;
+    height: 15px;
     transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s ease;
 }
 .user-pill:hover .gear-svg {
@@ -1831,4 +2014,88 @@ body {
     font-size: 12px;
     font-weight: 700;
     color: #ffffff;
+}
+
+/* ================= 720P HD VIDEO PLAYER & STREAM MODAL ================= */
+.video-modal-box {
+    width: 780px;
+    max-width: 94vw;
+    background: linear-gradient(135deg, rgba(16, 18, 28, 0.98) 0%, rgba(10, 12, 18, 0.98) 100%);
+    border: 1px solid rgba(6, 182, 212, 0.4);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(6, 182, 212, 0.25);
+}
+.modal-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.modal-title-wrap .svg-icon {
+    width: 20px;
+    height: 20px;
+    color: #38bdf8;
+}
+.video-modal-body {
+    padding: 16px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.video-frame-container {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000000;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(45, 48, 65, 0.8);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+#discord-video-player {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background: #000000;
+}
+.video-modal-bottom-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: rgba(14, 16, 24, 0.85);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    padding: 10px 16px;
+    border-radius: 10px;
+}
+.video-live-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #67e8f9;
+    letter-spacing: 0.5px;
+}
+.pulsing-dot-cyan {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #06b6d4;
+    box-shadow: 0 0 10px #06b6d4;
+    animation: pulseCyan 1.5s infinite;
+}
+@keyframes pulseCyan {
+    0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7); }
+    70% { transform: scale(1.2); box-shadow: 0 0 0 6px rgba(6, 182, 212, 0); }
+    100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+}
+
+/* Express Progress Animation Glowing Effects */
+.progress-fill.express-animating {
+    background: linear-gradient(90deg, #06b6d4 0%, #22c55e 100%) !important;
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.9), 0 0 24px rgba(34, 197, 94, 0.7) !important;
+    transition: width 0.3s ease-out !important;
+}
+.progress-track.express-active {
+    border-color: rgba(6, 182, 212, 0.6) !important;
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.3) !important;
 }

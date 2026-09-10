@@ -118,6 +118,7 @@ const DQS = {
         this.setupProfileDrawer();
         this.setupSimulator();
         this.setupConsoleTab();
+        this.setupVideoModal();
 
         // Load data from bridge
         await this.loadCurrentUser();
@@ -175,6 +176,10 @@ const DQS = {
         setHtml('ico-btn-copy-id', I.copy);
         setHtml('ico-btn-github', I.github);
         setHtml('btn-close-account-modal', I.close);
+
+        setHtml('ico-modal-video', I.video);
+        setHtml('btn-close-video-modal', I.close);
+        setHtml('ico-modal-express', I.autofarm);
     },
 
     // --- Render Discord Badges (Base64 Guaranteed) ---
@@ -516,23 +521,23 @@ const DQS = {
         let progressHtml = '';
         if (isVideo) {
             progressHtml = `
-                <div class="dual-progress-container">
+                <div class="dual-progress-container" id="dual-progress-${qid}">
                     <div class="progress-bar-block">
                         <div class="progress-bar-header">
                             <span class="progress-bar-label">${I.video} STREAM BUFFER & HEARTBEAT</span>
-                            <span class="progress-bar-value">${completed || claimed ? 'SYNCHRONISIERT (100%)' : 'STREAM BEREIT (100%)'}</span>
+                            <span class="progress-bar-value" id="val-buffer-${qid}">${completed || claimed ? 'SYNCHRONISIERT (100%)' : 'STREAM BEREIT (100%)'}</span>
                         </div>
-                        <div class="progress-track buffer">
-                            <div class="progress-fill buffer" style="width: 100%"></div>
+                        <div class="progress-track buffer" id="track-buffer-${qid}">
+                            <div class="progress-fill buffer" id="fill-buffer-${qid}" style="width: 100%"></div>
                         </div>
                     </div>
                     <div class="progress-bar-block">
                         <div class="progress-bar-header">
                             <span class="progress-bar-label">${I.quest} QUEST-FORTSCHRITT</span>
-                            <span class="progress-bar-value ${completed || claimed ? 'completed' : ''}">${progressTxt}</span>
+                            <span class="progress-bar-value ${completed || claimed ? 'completed' : ''}" id="val-quest-${qid}">${progressTxt}</span>
                         </div>
-                        <div class="progress-track">
-                            <div class="progress-fill ${completed || claimed ? 'completed' : ''}" style="width: ${percent}%"></div>
+                        <div class="progress-track" id="track-quest-${qid}">
+                            <div class="progress-fill ${completed || claimed ? 'completed' : ''}" id="fill-quest-${qid}" style="width: ${percent}%"></div>
                         </div>
                     </div>
                 </div>
@@ -540,10 +545,10 @@ const DQS = {
         } else {
             progressHtml = `
                 <div class="quest-progress-row">
-                    <div class="progress-track">
-                        <div class="progress-fill ${completed || claimed ? 'completed' : ''}" style="width: ${percent}%"></div>
+                    <div class="progress-track" id="track-quest-${qid}">
+                        <div class="progress-fill ${completed || claimed ? 'completed' : ''}" id="fill-quest-${qid}" style="width: ${percent}%"></div>
                     </div>
-                    <span class="progress-text ${completed || claimed ? 'completed' : ''}">${progressTxt}</span>
+                    <span class="progress-text ${completed || claimed ? 'completed' : ''}" id="val-quest-${qid}">${progressTxt}</span>
                 </div>
             `;
         }
@@ -593,9 +598,9 @@ const DQS = {
             if (videoUrl) {
                 const btnVid = document.createElement('button');
                 btnVid.className = 'btn btn-secondary';
-                btnVid.innerHTML = `${I.video} VIDEO`;
+                btnVid.innerHTML = `${I.video} VIDEO ANSCHAUEN`;
                 btnVid.onclick = () => {
-                    window.pywebview.api.open_url(videoUrl);
+                    this.openVideoModal(qid, gameTitle, questName, videoUrl, targetSeconds);
                 };
                 actBox.appendChild(btnVid);
             }
@@ -603,13 +608,11 @@ const DQS = {
             // 3. Express button for video quests
             if (isVideo) {
                 const btnExp = document.createElement('button');
+                btnExp.id = `btn-exp-${qid}`;
                 btnExp.className = 'btn btn-cyan';
                 btnExp.innerHTML = `${I.autofarm} EXPRESS (5s)`;
-                btnExp.onclick = async () => {
-                    btnExp.innerHTML = `${I.autofarm} LÄUFT...`;
-                    await window.pywebview.api.complete_video_quest(qid, targetSeconds || 30);
-                    btnExp.innerHTML = `${I.check} ERFÜLLT!`;
-                    setTimeout(() => { this.refreshQuests(); }, 2500);
+                btnExp.onclick = () => {
+                    this.startExpressQuest(qid, targetSeconds || 30, gameTitle);
                 };
                 actBox.appendChild(btnExp);
             }
@@ -629,6 +632,131 @@ const DQS = {
         }
 
         return card;
+    },
+
+    // --- Interactive Moving Express Quest Completer ---
+    startExpressQuest(qid, targetSeconds = 30, gameTitle = '') {
+        const I = window.DQS_ICONS;
+        const fillQuest = document.getElementById(`fill-quest-${qid}`);
+        const valQuest = document.getElementById(`val-quest-${qid}`);
+        const trackQuest = document.getElementById(`track-quest-${qid}`);
+        const fillBuffer = document.getElementById(`fill-buffer-${qid}`);
+        const valBuffer = document.getElementById(`val-buffer-${qid}`);
+        const btnExp = document.getElementById(`btn-exp-${qid}`) || document.getElementById(`exp-btn-${qid}`);
+
+        if (btnExp && btnExp.disabled) return;
+        if (btnExp) {
+            btnExp.disabled = true;
+            btnExp.classList.add('btn-glow');
+        }
+
+        if (fillQuest) fillQuest.classList.add('express-animating');
+        if (trackQuest) trackQuest.classList.add('express-active');
+        if (fillBuffer) fillBuffer.classList.add('express-animating');
+
+        // Call backend completion asynchronously
+        window.pywebview?.api?.complete_video_quest(qid, targetSeconds);
+
+        let elapsed = 0;
+        const totalDuration = 4500; // 4.5 seconds for complete visual cycle
+        const intervalMs = 150;
+        const startPercent = fillQuest ? parseFloat(fillQuest.style.width) || 0 : 0;
+
+        const timer = setInterval(() => {
+            elapsed += intervalMs;
+            const progressRatio = Math.min(1.0, elapsed / totalDuration);
+            // Ease-out cubic curve
+            const easedRatio = 1 - Math.pow(1 - progressRatio, 3);
+            const currentPct = Math.min(100, Math.round(startPercent + (100 - startPercent) * easedRatio));
+            const remSec = Math.max(1, Math.ceil((totalDuration - elapsed) / 1000));
+
+            if (fillQuest) fillQuest.style.width = `${currentPct}%`;
+            if (valQuest) {
+                valQuest.innerText = `FORTSCHRITT: ${currentPct}% (ca. ${remSec}s)...`;
+            }
+            if (valBuffer) {
+                valBuffer.innerText = `BUFFER: SYNCHRONISIERT (${currentPct}%)`;
+            }
+            if (btnExp) {
+                btnExp.innerHTML = `${I.autofarm} EXPRESS LÄUFT... (${remSec}s)`;
+            }
+
+            if (elapsed >= totalDuration) {
+                clearInterval(timer);
+                if (fillQuest) {
+                    fillQuest.style.width = '100%';
+                    fillQuest.classList.remove('express-animating');
+                    fillQuest.classList.add('completed');
+                }
+                if (valQuest) {
+                    valQuest.innerText = `100% - QUEST ERFÜLLT!`;
+                    valQuest.classList.add('completed');
+                }
+                if (valBuffer) {
+                    valBuffer.innerText = `SYNCHRONISIERT (100%)`;
+                }
+                if (btnExp) {
+                    btnExp.innerHTML = `${I.check} ERFOLGREICH!`;
+                    btnExp.className = 'btn btn-claimed';
+                }
+
+                // Play notification
+                window.pywebview?.api?.play_success_sound();
+
+                setTimeout(() => {
+                    this.refreshQuests();
+                }, 1200);
+            }
+        }, intervalMs);
+    },
+
+    // --- 720p HD Video Player Modal ---
+    setupVideoModal() {
+        const modal = document.getElementById('video-modal');
+        const closeBtn = document.getElementById('btn-close-video-modal');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.closeVideoModal();
+            });
+        }
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    this.closeVideoModal();
+                }
+            });
+        }
+    },
+
+    openVideoModal(qid, gameTitle, questName, videoUrl, targetSec) {
+        const modal = document.getElementById('video-modal');
+        const titleEl = document.getElementById('video-modal-title');
+        const videoEl = document.getElementById('discord-video-player');
+        const btnExp = document.getElementById('btn-modal-express-finish');
+
+        if (!modal || !videoEl) return;
+
+        titleEl.innerText = `${gameTitle} - ${questName} (720p HD Stream)`;
+        videoEl.src = videoUrl;
+        videoEl.currentTime = 0;
+        videoEl.play().catch(() => {});
+
+        btnExp.onclick = () => {
+            this.closeVideoModal();
+            this.startExpressQuest(qid, targetSec || 30, gameTitle);
+        };
+
+        modal.classList.remove('hidden');
+    },
+
+    closeVideoModal() {
+        const modal = document.getElementById('video-modal');
+        const videoEl = document.getElementById('discord-video-player');
+        if (videoEl) {
+            videoEl.pause();
+            videoEl.src = '';
+        }
+        if (modal) modal.classList.add('hidden');
     },
 
     // --- Videos Tab ---
@@ -665,8 +793,8 @@ const DQS = {
                 </div>
                 <div class="quest-actions-wrap">
                     ${videoUrl ? `
-                        <button class="btn btn-secondary" onclick="window.pywebview.api.open_url('${videoUrl}')">
-                            ${I.play} 720P HD VIDEO ABSPIELEN
+                        <button class="btn btn-secondary" id="vid-play-${qid}">
+                            ${I.play} 720P HD VIDEO ANSCHAUEN
                         </button>
                         <button class="btn btn-cyan" id="exp-btn-${qid}">
                             ${I.autofarm} EXPRESS-ABSCHLUSS (5s)
@@ -683,13 +811,16 @@ const DQS = {
             `;
 
             if (videoUrl) {
+                const vidBtn = card.querySelector(`#vid-play-${qid}`);
+                if (vidBtn) {
+                    vidBtn.onclick = () => {
+                        this.openVideoModal(qid, gameTitle, questName, videoUrl, targetSec);
+                    };
+                }
                 const expBtn = card.querySelector(`#exp-btn-${qid}`);
                 if (expBtn) {
-                    expBtn.onclick = async () => {
-                        expBtn.innerHTML = `${I.autofarm} EXPRESS LÄUFT...`;
-                        await window.pywebview.api.complete_video_quest(qid, targetSec);
-                        expBtn.innerHTML = `${I.check} ERFÜLLT!`;
-                        setTimeout(() => { this.refreshQuests(); }, 2500);
+                    expBtn.onclick = () => {
+                        this.startExpressQuest(qid, targetSec, gameTitle);
                     };
                 }
             }

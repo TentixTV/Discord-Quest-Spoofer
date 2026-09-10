@@ -29,7 +29,7 @@
         </div>
 
         <div class="titlebar-center">
-            <!-- Sleek Horizontal Navigation Tabs -->
+            <!-- Sleek Horizontal Navigation Tabs with Individual Themed Auras -->
             <nav id="nav-tabs" class="no-drag">
                 <button class="nav-tab active quests-tab" data-tab="quests" id="nav-tab-quests">
                     <span class="tab-icon-wrap" id="ico-nav-quests"></span>
@@ -37,21 +37,25 @@
                     <span class="tab-badge" id="quests-badge">6</span>
                     <div class="tab-electric-sparks"></div>
                 </button>
-                <button class="nav-tab" data-tab="videos">
+                <button class="nav-tab videos-tab" data-tab="videos" id="nav-tab-videos">
                     <span class="tab-icon-wrap" id="ico-nav-videos"></span>
                     <span class="tab-label">VIDEOS & TRAILER</span>
+                    <div class="tab-video-stream-wave"></div>
                 </button>
-                <button class="nav-tab" data-tab="simulator">
+                <button class="nav-tab simulator-tab" data-tab="simulator" id="nav-tab-simulator">
                     <span class="tab-icon-wrap" id="ico-nav-simulator"></span>
                     <span class="tab-label">SPIELE-SIMULATOR</span>
+                    <div class="tab-sim-matrix-glow"></div>
                 </button>
-                <button class="nav-tab" data-tab="console">
+                <button class="nav-tab console-tab" data-tab="console" id="nav-tab-console">
                     <span class="tab-icon-wrap" id="ico-nav-console"></span>
                     <span class="tab-label">DISCORD-CONSOLE</span>
+                    <div class="tab-console-hacker-scan"></div>
                 </button>
-                <button class="nav-tab" data-tab="logs">
+                <button class="nav-tab logs-tab" data-tab="logs" id="nav-tab-logs">
                     <span class="tab-icon-wrap" id="ico-nav-logs"></span>
                     <span class="tab-label">LIVE-LOGS</span>
+                    <div class="tab-logs-quantum-warp"></div>
                 </button>
             </nav>
         </div>
@@ -386,6 +390,33 @@
                 <div class="modal-divider"><span>ODER AUTOMATISCH ERKANNTEN ACCOUNT WÄHLEN</span></div>
                 <div id="modal-accounts-list" class="accounts-list">
                     <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 720p HD Video Player & Express Modal -->
+    <div id="video-modal" class="modal-overlay hidden">
+        <div class="modal-box card-3d video-modal-box">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span id="ico-modal-video"></span>
+                    <h3 id="video-modal-title">OFFIZIELLER DISCORD 720P HD STREAM</h3>
+                </div>
+                <button class="modal-close" id="btn-close-video-modal"></button>
+            </div>
+            <div class="modal-body video-modal-body">
+                <div class="video-frame-container">
+                    <video id="discord-video-player" controls autoplay playsinline></video>
+                </div>
+                <div class="video-modal-bottom-bar">
+                    <div class="video-live-pill">
+                        <span class="pulsing-dot-cyan"></span>
+                        <span id="video-modal-status-text">DISCORD CDN 720P STREAM AKTIV</span>
+                    </div>
+                    <button class="btn btn-cyan btn-lg" id="btn-modal-express-finish">
+                        <span id="ico-modal-express"></span> ⚡ EXPRESS-ABSCHLUSS (5s)
+                    </button>
                 </div>
             </div>
         </div>

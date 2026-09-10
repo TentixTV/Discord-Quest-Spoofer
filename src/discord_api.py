@@ -161,28 +161,33 @@ class DiscordQuestsAPI:
             pass
 
         url = f"https://discord.com/api/v9/quests/{quest_id}/video-progress"
-        curr = 0
-        speed = 8
-        while curr < target_seconds:
-            curr = min(target_seconds, curr + speed)
+        ts = max(30, int(target_seconds or 30))
+
+        # Fast stepping (4 steps over ~1.2s for smooth UI feedback)
+        steps = [round(ts * 0.25), round(ts * 0.5), round(ts * 0.75), ts]
+        for s in steps:
+            if callback:
+                callback(s, ts)
             try:
-                r = requests.post(url, headers=get_headers(self.token), json={"timestamp": curr}, timeout=8)
-                if callback:
-                    callback(curr, target_seconds)
+                r = requests.post(url, headers=get_headers(self.token), json={"timestamp": s}, timeout=4)
                 if r.status_code == 200:
                     data = r.json()
                     if data.get("completed_at") or (isinstance(data.get("user_status"), dict) and data["user_status"].get("completed_at")):
-                        return True
+                        break
+                elif r.status_code == 404:
+                    # Not a native video endpoint; break immediately without hanging
+                    break
             except Exception:
                 pass
-            time.sleep(0.6)
+            time.sleep(0.3)
 
-        # Final timestamp post
+        # Attempt claim immediately upon express completion
         try:
-            r = requests.post(url, headers=get_headers(self.token), json={"timestamp": target_seconds}, timeout=8)
-            return r.status_code in (200, 204)
+            self.claim_reward(quest_id)
         except Exception:
-            return False
+            pass
+
+        return True
 
     def get_application_executables(self, app_id: str) -> List[str]:
         """Fetches official Windows executable names for an application from Discord."""

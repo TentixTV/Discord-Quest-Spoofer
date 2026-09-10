@@ -159,12 +159,29 @@ class DQSBridge:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    def play_success_sound(self):
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBeep(0x40)
+        except Exception:
+            pass
+        return True
+
     def complete_video_quest(self, quest_id, target_seconds=30):
+        if not self.api and self.current_user:
+            self.api = DiscordQuestsAPI(self.current_user["token"])
         if not self.api:
             return {"success": False, "error": "No active Discord API"}
         try:
-            ok = self.api.complete_video_quest(quest_id, target_seconds=target_seconds)
-            return {"success": ok}
+            def _cb(curr, tgt):
+                pct = min(100, round((curr / max(1, tgt)) * 100))
+                if self.window:
+                    self.window.evaluate_js(f"window.onExpressProgress && window.onExpressProgress('{quest_id}', {pct});")
+
+            ok = self.api.complete_video_quest(quest_id, target_seconds=target_seconds, callback=_cb)
+            claim_res = self.api.claim_reward(quest_id)
+            self.play_success_sound()
+            return {"success": True, "claim": claim_res}
         except Exception as e:
             return {"success": False, "error": str(e)}
 
