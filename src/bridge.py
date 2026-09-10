@@ -17,12 +17,22 @@ try:
     from .game_spoofer import GameSimulator
     from .quest_farmer import QuestFarmer, generate_discord_console_snippet, calculate_quests_duration, format_duration
     from .database import QUEST_GAMES_DATABASE
-except (ImportError, ValueError):
-    from discord_auth import find_all_valid_accounts, get_user_profile
-    from discord_api import DiscordQuestsAPI
-    from game_spoofer import GameSimulator
-    from quest_farmer import QuestFarmer, generate_discord_console_snippet, calculate_quests_duration, format_duration
-    from database import QUEST_GAMES_DATABASE
+except (ImportError, ValueError) as _init_err:
+    try:
+        from src.discord_auth import find_all_valid_accounts, get_user_profile
+        from src.discord_api import DiscordQuestsAPI
+        from src.game_spoofer import GameSimulator
+        from src.quest_farmer import QuestFarmer, generate_discord_console_snippet, calculate_quests_duration, format_duration
+        from src.database import QUEST_GAMES_DATABASE
+    except (ImportError, ValueError):
+        try:
+            from discord_auth import find_all_valid_accounts, get_user_profile
+            from discord_api import DiscordQuestsAPI
+            from game_spoofer import GameSimulator
+            from quest_farmer import QuestFarmer, generate_discord_console_snippet, calculate_quests_duration, format_duration
+            from database import QUEST_GAMES_DATABASE
+        except Exception:
+            raise _init_err
 
 class DQSBridge:
     def __init__(self):

@@ -8,10 +8,17 @@ import os
 import sys
 import time
 import threading
-import winsound
+import ctypes
 from typing import Callable, Optional, List, Dict, Any
 from .discord_api import DiscordQuestsAPI
 from .game_spoofer import GameSimulator
+
+def play_beep(beep_type: int = 0):
+    """Play notification sound safely via Windows user32 MessageBeep without external dependencies."""
+    try:
+        ctypes.windll.user32.MessageBeep(beep_type)
+    except Exception:
+        pass
 
 def format_duration(seconds: int) -> str:
     """Formats seconds into human-readable duration in parentheses (...)"""
@@ -92,13 +99,13 @@ class QuestFarmer:
         self.log("Auto-Farming wurde abgebrochen.", "WARN")
 
     def _run_farm(self, quests: List[Dict[str, Any]]):
-        self.log("🚀 Starte intelligenten Quest-Ablauf...", "INFO")
+        self.log("[START] Starte intelligenten Quest-Ablauf...", "INFO")
         total_orbs_gained = 0
 
         # Filter out already claimed quests
         eligible = [q for q in quests if not q.get("claimed")]
         if not eligible:
-            self.log("Alle verfügbaren Quests sind bereits abgeschlossen und abgeholt!", "SUCCESS")
+            self.log("Alle verfuegbaren Quests sind bereits abgeschlossen und abgeholt!", "SUCCESS")
             self.running = False
             if self.on_finished:
                 self.on_finished(0)
@@ -117,7 +124,7 @@ class QuestFarmer:
             return rem
 
         initial_total = get_queue_remaining(0, 0)
-        self.log(f"{total_count} offene Quests in der Warteschlange. Geschätzte Gesamtdauer: {format_duration(initial_total)}", "INFO")
+        self.log(f"{total_count} offene Quests in der Warteschlange. Geschaetzte Gesamtdauer: {format_duration(initial_total)}", "INFO")
 
         for idx, q in enumerate(eligible, 1):
             if not self.running:
@@ -135,9 +142,9 @@ class QuestFarmer:
             is_video_task = task_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE", "PLAY_ACTIVITY") or bool(q.get("has_video"))
             needed_this_quest = 10 if is_video_task else max(0, target_sec - curr_sec)
 
-            self.log(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "TIME")
-            self.log(f"🎯 [{idx}/{total_count}] Starte Quest: '{qname}' ({game_title})", "INFO")
-            self.log(f"⏱ Dauer dieser Quest: {format_duration(needed_this_quest)} | Verbleibende Gesamtdauer: {format_duration(get_queue_remaining(idx, needed_this_quest))}", "INFO")
+            self.log(f"--------------------------------------------------", "TIME")
+            self.log(f"[{idx}/{total_count}] Starte Quest: '{qname}' ({game_title})", "INFO")
+            self.log(f"Dauer dieser Quest: {format_duration(needed_this_quest)} | Verbleibende Gesamtdauer: {format_duration(get_queue_remaining(idx, needed_this_quest))}", "INFO")
 
             # 1. Einschreiben falls noch nicht geschehen
             if not q.get("enrolled"):
@@ -151,16 +158,13 @@ class QuestFarmer:
 
             # 2. Prüfen ob bereits 100% fertig, aber noch nicht geclaimt
             if q.get("completed") and not q.get("claimed"):
-                self.log(f"Quest bereits erfüllt! Hole Belohnung ab...", "SUCCESS")
+                self.log(f"Quest bereits erfuellt! Hole Belohnung ab...", "SUCCESS")
                 res = self.api.claim_reward(qid)
                 if res.get("success"):
-                    self.log(f"🎉 Belohnung '{reward_desc}' erfolgreich erhalten!", "SUCCESS")
+                    self.log(f"[ERFOLG] Belohnung '{reward_desc}' erfolgreich erhalten!", "SUCCESS")
                     total_orbs_gained += orb_amount
                     q["claimed"] = True
-                    try:
-                        winsound.MessageBeep(winsound.MB_OK)
-                    except Exception:
-                        pass
+                    play_beep(0)
                 continue
 
             # 3. Task ausführen
@@ -191,8 +195,9 @@ class QuestFarmer:
                     time.sleep(2)
                     res = self.api.claim_reward(qid)
                     if res.get("success"):
-                        self.log(f"🎉 Belohnung '{reward_desc}' abgeholt!", "SUCCESS")
+                        self.log(f"[ERFOLG] Belohnung '{reward_desc}' abgeholt!", "SUCCESS")
                         total_orbs_gained += orb_amount
+                        play_beep(0)
                 else:
                     self.log(f"Video-Abschluss fehlgeschlagen.", "ERROR")
 
@@ -201,8 +206,8 @@ class QuestFarmer:
                 needed_seconds = max(0, target_sec - curr_sec)
                 self.log(f"Starte Spiel-Simulation für '{game_title}' ({format_duration(needed_seconds)})...", "INFO")
                 sim_res = self.simulator.start_simulation(app_id, game_title)
-                self.log(f"🎮 Simulierter Prozess '{sim_res['exe_name']}' läuft aktiv (PID: {sim_res['pid']}).", "SUCCESS")
-                self.log(f"⏳ Verbleibende Spielzeit dieser Quest: {format_duration(needed_seconds)}", "INFO")
+                self.log(f"Simulierter Prozess '{sim_res['exe_name']}' laeuft aktiv (PID: {sim_res['pid']}).", "SUCCESS")
+                self.log(f"Verbleibende Spielzeit dieser Quest: {format_duration(needed_seconds)}", "INFO")
 
                 simulated = 0
                 check_interval = 5
@@ -262,32 +267,26 @@ class QuestFarmer:
                 self.log(f"Spiel-Simulation für '{game_title}' planmäßig beendet.", "INFO")
 
                 if self.running and simulated >= needed_seconds:
-                    self.log(f"Laufzeit für '{qname}' abgeschlossen! Hole Belohnung ab...", "INFO")
+                    self.log(f"Laufzeit fuer '{qname}' abgeschlossen! Hole Belohnung ab...", "INFO")
                     time.sleep(3)
                     claim_res = self.api.claim_reward(qid)
                     if claim_res.get("success"):
-                        self.log(f"🎉 Belohnung '{reward_desc}' erhalten!", "SUCCESS")
+                        self.log(f"[ERFOLG] Belohnung '{reward_desc}' erhalten!", "SUCCESS")
                         total_orbs_gained += orb_amount
-                        try:
-                            winsound.MessageBeep(winsound.MB_OK)
-                        except Exception:
-                            pass
+                        play_beep(0)
                     else:
                         self.log(f"Belohnung noch nicht sofort freigeschaltet (Status: {claim_res.get('error', '')}).", "WARN")
 
-            # Automatisch mit nächster Quest fortfahren
+            # Automatisch mit naechster Quest fortfahren
             if self.running and idx < total_count:
                 next_quest = eligible[idx]
-                self.log(f"✅ Quest {idx}/{total_count} abgeschlossen! Wechsle in 5 Sekunden zu nächster Quest: '{next_quest['quest_name']}'...", "SUCCESS")
+                self.log(f"[ABGESCHLOSSEN] Quest {idx}/{total_count} beendet! Wechsle in 5 Sekunden zu naechster Quest: '{next_quest['quest_name']}'...", "SUCCESS")
                 time.sleep(5)
 
         self.running = False
-        self.log(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "TIME")
-        self.log(f"✨ GESCHAFFT: Alle Quests wurden durchlaufen! Insgesamt {total_orbs_gained} Orbs eingefarmt.", "SUCCESS")
-        try:
-            winsound.MessageBeep(winsound.MB_ICONASTERISK)
-        except Exception:
-            pass
+        self.log(f"--------------------------------------------------", "TIME")
+        self.log(f"[ERLEDIGT] Alle Quests wurden durchlaufen! Insgesamt {total_orbs_gained} Orbs eingefarmt.", "SUCCESS")
+        play_beep(0x40)
 
         if self.on_finished:
             self.on_finished(total_orbs_gained)
