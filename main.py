@@ -62,9 +62,34 @@ def start_local_server(directory):
     return f"http://127.0.0.1:{port}"
 
 import webview
+import time
 from src.bridge import DQSBridge
 
+def set_app_user_model_id():
+    """Explicitly sets AppUserModelID so Windows taskbar registers the custom DQS icon."""
+    try:
+        app_id = "TentixTV.DiscordQuestSpoofer.App.V3"
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+    except Exception:
+        pass
+
+def attach_window_icon():
+    """Forces Windows to apply the high-res DQS icon directly to the taskbar and window."""
+    try:
+        time.sleep(0.6)
+        hwnd = ctypes.windll.user32.FindWindowW(None, "DQS // Discord Quest Spoofer")
+        if hwnd:
+            h_inst = ctypes.windll.kernel32.GetModuleHandleW(None)
+            hicon = ctypes.windll.shell32.ExtractIconW(h_inst, sys.executable, 0)
+            if hicon and hicon != 0:
+                WM_SETICON = 0x0080
+                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, 0, hicon)  # ICON_SMALL
+                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, 1, hicon)  # ICON_BIG
+    except Exception:
+        pass
+
 def main():
+    set_app_user_model_id()
     elevate_if_needed()
 
     bridge = DQSBridge()
@@ -84,6 +109,7 @@ def main():
     )
     bridge.set_window(window)
 
+    threading.Thread(target=attach_window_icon, daemon=True).start()
     webview.start(gui="edgechromium", debug=False)
 
 if __name__ == "__main__":
