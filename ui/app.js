@@ -170,22 +170,22 @@ const DQS = {
         try {
             if (window.DQS_EMBEDDED_ASSETS?.startup_ambient) {
                 const aud = new Audio(window.DQS_EMBEDDED_ASSETS.startup_ambient);
-                aud.volume = 0.35; // Comfortable, rich atmospheric drone
+                aud.volume = 0.20; // 20% volume requested by user
                 aud.play().catch(() => {});
                 this._ambientAudio = aud;
                 return;
             }
         } catch (e) {}
 
-        // Web Audio API procedural synthesis fallback
+        // Web Audio API procedural synthesis fallback (20% volume)
         try {
             const ctx = this.getAudioCtx();
             if (!ctx) return;
             const now = ctx.currentTime;
             const masterGain = ctx.createGain();
             masterGain.gain.setValueAtTime(0.001, now);
-            masterGain.gain.exponentialRampToValueAtTime(0.18, now + 1.2);
-            masterGain.gain.setValueAtTime(0.18, now + Math.max(0.5, duration - 0.8));
+            masterGain.gain.exponentialRampToValueAtTime(0.10, now + 1.2);
+            masterGain.gain.setValueAtTime(0.10, now + Math.max(0.5, duration - 0.8));
             masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
             masterGain.connect(ctx.destination);
 
@@ -203,7 +203,7 @@ const DQS = {
                 osc.frequency.setValueAtTime(f, now);
                 osc.frequency.linearRampToValueAtTime(f * 1.05, now + duration);
                 const g = ctx.createGain();
-                g.gain.value = 0.10 / (idx + 1);
+                g.gain.value = 0.05 / (idx + 1);
                 osc.connect(g);
                 g.connect(masterGain);
                 osc.start(now);
@@ -220,62 +220,38 @@ const DQS = {
             } catch (e) {}
         }
 
-        // 1. Try embedded warm/stumpf transition snap & mechanical lock
+        // 1. Try embedded high-end UI aerodynamic swoosh sound
         try {
             if (window.DQS_EMBEDDED_ASSETS?.transition_click) {
                 const click = new Audio(window.DQS_EMBEDDED_ASSETS.transition_click);
-                click.volume = 0.88;
+                click.volume = 0.82;
                 click.play().catch(() => {});
                 return;
             }
         } catch (e) {}
 
-        // 2. Procedural Warm/Stumpf Transition Thud & Lock Fallback (~380ms)
+        // 2. Procedural Aerodynamic UI Swoosh Fallback (~400ms)
         try {
             const ctx = this.getAudioCtx();
             if (!ctx) return;
             const now = ctx.currentTime;
 
-            // Damped mechanical click (rounded, stumpf)
-            const osc1 = ctx.createOscillator();
-            osc1.type = 'triangle';
-            osc1.frequency.setValueAtTime(650, now);
-            osc1.frequency.exponentialRampToValueAtTime(160, now + 0.04);
-            const g1 = ctx.createGain();
-            g1.gain.setValueAtTime(0.70, now);
-            g1.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
-            osc1.connect(g1);
-            g1.connect(ctx.destination);
-            osc1.start(now);
-            osc1.stop(now + 0.05);
+            // Warm body sweep glide
+            const osc = ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(130, now);
+            osc.frequency.exponentialRampToValueAtTime(280, now + 0.14);
+            osc.frequency.exponentialRampToValueAtTime(140, now + 0.38);
 
-            // Warm low-mid latch thud
-            const t2 = now + 0.012;
-            const osc2 = ctx.createOscillator();
-            osc2.type = 'sine';
-            osc2.frequency.setValueAtTime(280, t2);
-            osc2.frequency.exponentialRampToValueAtTime(110, t2 + 0.06);
-            const g2 = ctx.createGain();
-            g2.gain.setValueAtTime(0.75, t2);
-            g2.gain.exponentialRampToValueAtTime(0.001, t2 + 0.08);
-            osc2.connect(g2);
-            g2.connect(ctx.destination);
-            osc2.start(t2);
-            osc2.stop(t2 + 0.09);
+            const g = ctx.createGain();
+            g.gain.setValueAtTime(0.001, now);
+            g.gain.exponentialRampToValueAtTime(0.45, now + 0.12);
+            g.gain.exponentialRampToValueAtTime(0.0001, now + 0.40);
 
-            // Ambient matching harmonic body (165Hz & 220Hz)
-            [164.81, 220.0].forEach((f, idx) => {
-                const oscR = ctx.createOscillator();
-                oscR.type = 'sine';
-                oscR.frequency.setValueAtTime(f, now + 0.008);
-                const gr = ctx.createGain();
-                gr.gain.setValueAtTime(0.40 / (idx + 1), now + 0.008);
-                gr.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
-                oscR.connect(gr);
-                gr.connect(ctx.destination);
-                oscR.start(now + 0.008);
-                oscR.stop(now + 0.40);
-            });
+            osc.connect(g);
+            g.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.42);
         } catch (e) {}
     },
 
@@ -366,7 +342,7 @@ const DQS = {
         setHtml('ico-hdr-videos', I.video);
         setHtml('ico-hdr-sim', I.gamepad);
         setHtml('ico-btn-start-sim', I.play);
-        setHtml('ico-sim-monitor', I.gamepad);
+        setHtml('ico-sim-monitor', I.monitor || I.gamepad);
 
         setHtml('ico-hdr-console', I.console);
         setHtml('ico-console-warn', I.shield);
@@ -1732,11 +1708,15 @@ const DQS = {
         const simStatus = document.getElementById('sim-footer-status');
         const simSyncTag = document.getElementById('sim-status-sync-tag');
 
-        const tgtSec = st?.target_seconds || 900;
-        const curSec = st?.current_seconds ?? elapsedSec;
-        const pct = Math.min(100, Math.max(0, st?.progress_percent ?? Math.round((curSec / tgtSec) * 100)));
+        const tgtSec = (st && st.target_seconds) ? st.target_seconds : 900;
+        // Keep active simulation time and live quest progress in 100% exact sync:
+        const curSec = (st && typeof st.current_seconds === 'number' && st.current_seconds > 0)
+            ? st.current_seconds
+            : elapsedSec;
+        const pct = Math.min(100, Math.max(0, (curSec / tgtSec) * 100));
 
         if (running) {
+            this._standaloneSimRunning = true;
             badge.innerText = 'SIMULATION LÄUFT';
             badge.style.color = 'var(--emerald)';
             badge.style.borderColor = 'var(--emerald)';
@@ -1751,27 +1731,28 @@ const DQS = {
             const s = String(elapsedSec % 60).padStart(2, '0');
             actTimer.innerText = `Zeit: ${m}:${s} Min.`;
 
-            // Simulator Live Sync Progress Bar
+            // Simulator Live Sync Progress Bar - synchronized 1:1 with running time
             if (simSyncTag) {
                 simSyncTag.innerHTML = '<span class="pulse-dot"></span> LIVE-SYNC MIT DISCORD AKTIV';
                 simSyncTag.style.borderColor = 'rgba(0, 240, 255, 0.6)';
                 simSyncTag.style.color = '#38bdf8';
             }
             if (simFill) {
-                simFill.style.width = `${pct}%`;
+                simFill.style.width = `${pct.toFixed(1)}%`;
                 simFill.classList.add('active-glow');
                 if (pct >= 100) simFill.classList.add('completed');
                 else simFill.classList.remove('completed');
             }
+            const cm = String(Math.floor(curSec / 60)).padStart(2, '0');
+            const cs = String(curSec % 60).padStart(2, '0');
+            const tm = String(Math.floor(tgtSec / 60)).padStart(2, '0');
+
             if (simVal) {
-                const cm = String(Math.floor(curSec / 60)).padStart(2, '0');
-                const cs = String(curSec % 60).padStart(2, '0');
-                const tm = String(Math.floor(tgtSec / 60)).padStart(2, '0');
                 if (pct >= 100) {
                     simVal.innerText = '100% - QUEST ERFÜLLT! (BELOHNUNG IN DISCORD BEREIT)';
                     simVal.classList.add('completed');
                 } else {
-                    simVal.innerText = `${cm}:${cs} / ${tm}:00 MIN. (${Math.round(pct)}%)`;
+                    simVal.innerText = `${cm}:${cs} / ${tm}:00 MIN. (${pct.toFixed(0)}%)`;
                     simVal.classList.remove('completed');
                 }
             }
@@ -1780,7 +1761,7 @@ const DQS = {
                     simStatus.innerText = 'STATUS: 100% ERREICHT • BELOHNUNG IM DISCORD QUESTS-TAB ABHOLBAR';
                     simStatus.style.color = 'var(--emerald)';
                 } else {
-                    simStatus.innerText = `STATUS: LIVE-SYNC AKTIV • DISCORD DETEKTION BESTÄTIGT (${elapsedSec}s)`;
+                    simStatus.innerText = `STATUS: LIVE-SYNC AKTIV • FORTSCHRITT: ${cm}:${cs} / ${tm}:00 MIN. (${pct.toFixed(0)}%)`;
                     simStatus.style.color = '#38bdf8';
                 }
             }
