@@ -170,32 +170,40 @@ const DQS = {
         try {
             if (window.DQS_EMBEDDED_ASSETS?.startup_ambient) {
                 const aud = new Audio(window.DQS_EMBEDDED_ASSETS.startup_ambient);
-                aud.volume = 0.26; // Subtly quieter, warm, atmospheric, non-intrusive
+                aud.volume = 0.35; // Comfortable, rich atmospheric drone
                 aud.play().catch(() => {});
                 this._ambientAudio = aud;
                 return;
             }
         } catch (e) {}
 
-        // Web Audio API procedural synthesis fallback - Warm atmospheric pad (NOT sci-fi futuristic)
+        // Web Audio API procedural synthesis fallback
         try {
             const ctx = this.getAudioCtx();
             if (!ctx) return;
             const now = ctx.currentTime;
             const masterGain = ctx.createGain();
             masterGain.gain.setValueAtTime(0.001, now);
-            masterGain.gain.exponentialRampToValueAtTime(0.12, now + 1.8);
-            masterGain.gain.setValueAtTime(0.12, now + Math.max(0.5, duration - 1.8));
+            masterGain.gain.exponentialRampToValueAtTime(0.18, now + 1.2);
+            masterGain.gain.setValueAtTime(0.18, now + Math.max(0.5, duration - 0.8));
             masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
             masterGain.connect(ctx.destination);
 
-            // Warm Major 9th chord (C, G, E, B, D)
-            [130.81, 196.00, 329.63, 493.88, 587.33].forEach((f, idx) => {
+            const sub = ctx.createOscillator();
+            sub.type = 'sine';
+            sub.frequency.setValueAtTime(55, now);
+            sub.frequency.exponentialRampToValueAtTime(65, now + duration);
+            sub.connect(masterGain);
+            sub.start(now);
+            sub.stop(now + duration);
+
+            [110, 164.81, 220].forEach((f, idx) => {
                 const osc = ctx.createOscillator();
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(f, now);
+                osc.frequency.linearRampToValueAtTime(f * 1.05, now + duration);
                 const g = ctx.createGain();
-                g.gain.value = 0.08 / (idx + 1);
+                g.gain.value = 0.10 / (idx + 1);
                 osc.connect(g);
                 g.connect(masterGain);
                 osc.start(now);
@@ -212,47 +220,61 @@ const DQS = {
             } catch (e) {}
         }
 
-        // 1. Try embedded high-end transition snap & resonant bell chime
+        // 1. Try embedded warm/stumpf transition snap & mechanical lock
         try {
             if (window.DQS_EMBEDDED_ASSETS?.transition_click) {
                 const click = new Audio(window.DQS_EMBEDDED_ASSETS.transition_click);
-                click.volume = 0.85;
+                click.volume = 0.88;
                 click.play().catch(() => {});
                 return;
             }
         } catch (e) {}
 
-        // 2. Procedural Console Snap + Glass Chime Fallback (~450ms)
+        // 2. Procedural Warm/Stumpf Transition Thud & Lock Fallback (~380ms)
         try {
             const ctx = this.getAudioCtx();
             if (!ctx) return;
             const now = ctx.currentTime;
 
-            // Transient 1: Tactile latch click
+            // Damped mechanical click (rounded, stumpf)
             const osc1 = ctx.createOscillator();
             osc1.type = 'triangle';
-            osc1.frequency.setValueAtTime(2200, now);
-            osc1.frequency.exponentialRampToValueAtTime(400, now + 0.035);
+            osc1.frequency.setValueAtTime(650, now);
+            osc1.frequency.exponentialRampToValueAtTime(160, now + 0.04);
             const g1 = ctx.createGain();
-            g1.gain.setValueAtTime(0.65, now);
-            g1.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+            g1.gain.setValueAtTime(0.70, now);
+            g1.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
             osc1.connect(g1);
             g1.connect(ctx.destination);
             osc1.start(now);
-            osc1.stop(now + 0.045);
+            osc1.stop(now + 0.05);
 
-            // Resonant Harmonic Chime Tail (450ms)
-            [1318.5, 1975.5, 659.25].forEach((f, idx) => {
+            // Warm low-mid latch thud
+            const t2 = now + 0.012;
+            const osc2 = ctx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(280, t2);
+            osc2.frequency.exponentialRampToValueAtTime(110, t2 + 0.06);
+            const g2 = ctx.createGain();
+            g2.gain.setValueAtTime(0.75, t2);
+            g2.gain.exponentialRampToValueAtTime(0.001, t2 + 0.08);
+            osc2.connect(g2);
+            g2.connect(ctx.destination);
+            osc2.start(t2);
+            osc2.stop(t2 + 0.09);
+
+            // Ambient matching harmonic body (165Hz & 220Hz)
+            [164.81, 220.0].forEach((f, idx) => {
                 const oscR = ctx.createOscillator();
                 oscR.type = 'sine';
-                oscR.frequency.setValueAtTime(f, now + 0.01);
+                oscR.frequency.setValueAtTime(f, now + 0.008);
                 const gr = ctx.createGain();
-                gr.gain.setValueAtTime(0.35 / (idx + 1), now + 0.01);
-                gr.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+                gr.gain.setValueAtTime(0.40 / (idx + 1), now + 0.008);
+                gr.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
                 oscR.connect(gr);
                 gr.connect(ctx.destination);
-                oscR.start(now + 0.01);
-                oscR.stop(now + 0.48);
+                oscR.start(now + 0.008);
+                oscR.stop(now + 0.40);
             });
         } catch (e) {}
     },
