@@ -98,11 +98,14 @@
                 </div>
             </div>
 
-            <!-- Tutorial & Help Trigger Button (Top Right) -->
-            <button id="btn-open-tutorial" class="titlebar-tutorial-btn" title="DQS Schritt-für-Schritt Anleitung & Hilfe öffnen">
-                <span id="ico-tutorial-hdr"></span>
-                <span class="tutorial-btn-text">ANLEITUNG & HILFE</span>
-            </button>
+            <!-- Tutorial & Help Trigger Button (Compact with animated hat & tooltip) -->
+            <div class="tutorial-btn-wrapper">
+                <button id="btn-open-tutorial" class="titlebar-tutorial-icon-btn" aria-label="Hilfe & Anleitung">
+                    <span id="ico-tutorial-hdr"></span>
+                    <span class="tut-hat-pulse-dot"></span>
+                </button>
+                <div class="tutorial-tooltip">Hilfe & Anleitung</div>
+            </div>
 
             <!-- Window Controls -->
             <div class="window-controls">
@@ -918,6 +921,13 @@ copies or substantial portions of the Software.</pre>
                                 <p class="friend-subtext">
                                     Klicke auf den Button unten, um mir mit deinem aktuell in DQS ausgewählten Account direkt eine Freundschaftsanfrage auf Discord zu schicken:
                                 </p>
+                                
+                                <div class="friend-feedback-callout">
+                                    <span class="callout-icon">💬</span>
+                                    <div class="callout-text">
+                                        <strong>Direktes Feedback willkommen:</strong> Falls das automatische Senden aus irgendeinem Grund nicht klappt (z.B. wegen Discord-Captcha oder Privatsphäre-Filter), adde mich einfach manuell in Discord unter <code>tentix</code>. Ich nehme jedes Feedback & jeden Bugreport extrem gerne entgegen!
+                                    </div>
+                                </div>
                                 
                                 <button class="btn btn-emerald btn-lg friend-request-btn" id="btn-add-tentix">
                                     <span id="ico-btn-friend-req"></span> SANDRO (TENTIX) AUF DISCORD ADDEN
