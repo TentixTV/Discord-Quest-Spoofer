@@ -364,6 +364,14 @@ const DQS = {
         setHtml('btn-close-account-modal', I.close);
         setHtml('btn-close-changelog-modal', I.close);
         setHtml('btn-close-update-modal', I.close);
+        setHtml('ico-modal-changelog', I.changelog || I.logs);
+        setHtml('ico-changelog-gh', I.github);
+        setHtml('ico-modal-update', I.update || I.refresh);
+        setHtml('ico-asset-box', I.box || I.quest);
+        setHtml('ico-notes-doc', I.changelog || I.logs);
+        setHtml('ico-btn-update-gh', I.github);
+        setHtml('ico-recheck-spin', I.refresh);
+        setHtml('ico-notes-spinner', I.gear);
 
         setHtml('ico-modal-video', I.video);
         setHtml('btn-close-video-modal', I.close);
@@ -1649,6 +1657,7 @@ const DQS = {
         const changelogModal = document.getElementById('changelog-modal');
         const btnCloseChangelogModal = document.getElementById('btn-close-changelog-modal');
         const btnCloseChangelogAction = document.getElementById('btn-close-changelog-action');
+        const btnChangelogGh = document.getElementById('btn-changelog-open-github');
         
         const closeChangelog = () => {
             if (changelogModal) changelogModal.classList.add('hidden');
@@ -1659,6 +1668,11 @@ const DQS = {
         if (changelogModal) {
             changelogModal.addEventListener('click', (e) => {
                 if (e.target === changelogModal) closeChangelog();
+            });
+        }
+        if (btnChangelogGh) {
+            btnChangelogGh.addEventListener('click', () => {
+                window.pywebview?.api?.open_url('https://github.com/TentixTV/Discord-Quest-Spoofer');
             });
         }
 
@@ -1719,9 +1733,10 @@ const DQS = {
     async openChangelogModal() {
         const modal = document.getElementById('changelog-modal');
         const listContainer = document.getElementById('changelog-content-list');
+        const I = window.DQS_ICONS || {};
         if (!modal || !listContainer) return;
 
-        listContainer.innerHTML = '<div style="padding:24px;text-align:center;color:#94a3b8;"><span style="display:inline-block;animation:spin 1s linear infinite;margin-right:8px;">⚙</span> Lade Live-Changelog von GitHub...</div>';
+        listContainer.innerHTML = `<div style="padding:24px;text-align:center;color:#94a3b8;"><span style="display:inline-block;animation:spin 1s linear infinite;margin-right:8px;">${I.gear || ''}</span> Lade Live-Changelog von GitHub...</div>`;
         modal.classList.remove('hidden');
 
         try {
@@ -1733,16 +1748,17 @@ const DQS = {
                 entries.forEach((item, idx) => {
                     const isCurrent = idx === 0;
                     const card = document.createElement('div');
-                    card.className = 'changelog-entry-card';
+                    card.className = `changelog-entry-card ${isCurrent ? 'card-latest' : ''}`;
 
                     let itemsHtml = '';
                     if (Array.isArray(item.changes)) {
                         itemsHtml = item.changes.map(ch => {
-                            let formatted = ch.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                            let clean = String(ch || '').trim().replace(/^[•\-\*\s]+/, '');
+                            let formatted = clean.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                             formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
                             return `
                                 <li class="changelog-point">
-                                    <span class="changelog-point-bullet">•</span>
+                                    <span class="changelog-point-bullet"></span>
                                     <span class="changelog-point-text">${formatted}</span>
                                 </li>
                             `;
@@ -1779,6 +1795,7 @@ const DQS = {
     async checkForUpdates(isManual = false) {
         const modal = document.getElementById('update-modal');
         const toastBanner = document.getElementById('update-toast-banner');
+        const I = window.DQS_ICONS || {};
         
         // Element bindings
         const statCur = document.getElementById('stat-cur-ver');
@@ -1800,7 +1817,7 @@ const DQS = {
             modal.classList.remove('hidden');
             if (progContainer) progContainer.classList.add('hidden');
             if (liveNotesContent) {
-                liveNotesContent.innerHTML = '<div class="update-loading-spinner"><span class="spin-icon">⚙</span> Verbinde mit GitHub Releases API (Live)...</div>';
+                liveNotesContent.innerHTML = `<div class="update-loading-spinner"><span class="spin-icon">${I.gear || ''}</span> Verbinde mit GitHub Releases API (Live)...</div>`;
             }
         }
 
@@ -1832,7 +1849,7 @@ const DQS = {
 
             if (statState) {
                 if (hasNewer) {
-                    statState.innerText = '🚀 UPDATE VERFÜGBAR';
+                    statState.innerText = 'UPDATE VERFÜGBAR';
                     statState.className = 'stat-card-val status-val update-ready';
                     statState.style.color = '#38bdf8';
                 } else {
@@ -1870,7 +1887,7 @@ const DQS = {
                 });
             }
 
-            // Buttons
+            // Buttons - 100% SVG Icons, 0% Emojis
             if (hasNewer) {
                 if (!isManual && toastBanner) {
                     const toastVer = document.getElementById('toast-new-version');
@@ -1878,15 +1895,15 @@ const DQS = {
                     toastBanner.classList.remove('hidden');
                 }
                 if (btnAction) {
-                    btnAction.style.display = 'inline-block';
-                    btnAction.innerText = `🚀 JETZT AKTUALISIEREN (${res.asset_size_mb || 119.6} MB)`;
+                    btnAction.style.display = 'inline-flex';
+                    btnAction.innerHTML = `${I.rocket || I.update} JETZT AKTUALISIEREN (${res.asset_size_mb || 119.6} MB)`;
                     btnAction.onclick = () => this.startUpdateProcess(res.download_url);
                 }
                 if (btnCancel) btnCancel.innerText = 'SPÄTER';
             } else {
                 if (btnAction) {
-                    btnAction.style.display = 'inline-block';
-                    btnAction.innerText = '🔄 NEU INSTALLIEREN';
+                    btnAction.style.display = 'inline-flex';
+                    btnAction.innerHTML = `${I.download || I.refresh} NEU INSTALLIEREN`;
                     btnAction.onclick = () => this.startUpdateProcess(res.download_url);
                 }
                 if (btnCancel) btnCancel.innerText = 'SCHLIESSEN';
@@ -1912,29 +1929,31 @@ const DQS = {
         if (btnCancel) btnCancel.style.display = 'none';
         if (progContainer) progContainer.classList.remove('hidden');
 
-        if (progTask) progTask.innerText = 'Lade DQS_Installer.exe von GitHub herunter...';
+        if (progFill) progFill.style.width = '3%';
+        if (progText) progText.innerText = '0%';
+        if (progBytes) progBytes.innerText = '0 MB / 119.7 MB';
+        if (progTask) progTask.innerText = 'Verbinde mit GitHub CDN... Starte Download...';
 
-        let progress = 8;
-        const progressTimer = setInterval(() => {
-            progress = Math.min(progress + 10, 92);
-            if (progFill) progFill.style.width = `${progress}%`;
-            if (progText) progText.innerText = `${progress}%`;
-            const estMb = ((progress / 100) * 119.6).toFixed(1);
-            if (progBytes) progBytes.innerText = `${estMb} MB / 119.6 MB`;
-        }, 320);
+        // Real-time callbacks from Python updater
+        window.onUpdateDownloadProgress = (pct, downloaded, total) => {
+            const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+            if (progFill) progFill.style.width = `${clamped}%`;
+            if (progText) progText.innerText = `${clamped}%`;
+            const dlMb = (downloaded / (1024 * 1024)).toFixed(1);
+            const totMb = (total / (1024 * 1024)).toFixed(1);
+            if (progBytes) progBytes.innerText = `${dlMb} MB / ${totMb} MB`;
+            if (progTask) progTask.innerText = `Lade DQS_Installer.exe herunter... (${clamped}%)`;
+        };
+
+        window.onUpdateDownloadFinished = () => {
+            if (progFill) progFill.style.width = '100%';
+            if (progText) progText.innerText = '100%';
+            if (progTask) progTask.innerText = '✓ Download abgeschlossen! Starte Neuinstallation... Beende DQS...';
+        };
 
         try {
             const res = await window.pywebview?.api?.download_and_install_update(downloadUrl);
-            clearInterval(progressTimer);
-            if (res && res.success) {
-                if (progFill) progFill.style.width = '100%';
-                if (progText) progText.innerText = '100%';
-                if (progBytes) progBytes.innerText = '119.6 MB / 119.6 MB';
-                if (progTask) progTask.innerText = '✓ Download abgeschlossen! Starte Installer...';
-                setTimeout(() => {
-                    window.pywebview?.api?.close_window();
-                }, 1600);
-            } else {
+            if (!res || !res.success) {
                 if (progTask) progTask.innerText = 'Fehler beim Update: ' + (res?.error || 'Download fehlgeschlagen');
                 if (btnCancel) {
                     btnCancel.style.display = 'inline-block';
@@ -1942,7 +1961,6 @@ const DQS = {
                 }
             }
         } catch (e) {
-            clearInterval(progressTimer);
             if (progTask) progTask.innerText = 'Fehler: ' + (e.message || e);
             if (btnCancel) {
                 btnCancel.style.display = 'inline-block';
@@ -2332,9 +2350,9 @@ const DQS = {
                 card.classList.remove('activity-active');
                 card.classList.add('activity-idle');
             }
-            popGame.innerText = 'DQS // Quest Engine (V5)';
+            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.1)';
             popState.innerText = 'Bereit für Quest-Simulation';
-            popTimer.innerText = 'Status: Standby • Keine aktive Simulation';
+            popTimer.innerText = 'Status: Standby • Discord RPC aktiv';
         }
     },
 

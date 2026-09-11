@@ -413,9 +413,9 @@
                     <div class="activity-card activity-idle" id="profile-activity-card">
                         <div class="activity-game-icon-wrap" id="act-gamepad-icon"></div>
                         <div class="activity-details">
-                            <h4 class="activity-game-name" id="pop-act-game">DQS // Quest Engine (V6.1)</h4>
+                            <h4 class="activity-game-name" id="pop-act-game">DQS // Discord Quest Spoofer (V6.1)</h4>
                             <p class="activity-state-sub" id="pop-act-state">Bereit für Quest-Simulation</p>
-                            <span class="activity-timer" id="pop-act-timer">Status: Standby • Keine aktive Simulation</span>
+                            <span class="activity-timer" id="pop-act-timer">Status: Standby • Discord RPC aktiv</span>
                         </div>
                     </div>
                 </div>
@@ -433,10 +433,10 @@
                     </button>
                     <div class="profile-action-row-split">
                         <button class="btn btn-secondary btn-half" id="btn-open-changelog">
-                            <span id="ico-btn-changelog"></span> 📜 CHANGELOG
+                            <span id="ico-btn-changelog"></span> CHANGELOG
                         </button>
                         <button class="btn btn-blurple-glow btn-half" id="btn-manual-update">
-                            <span id="ico-btn-update"></span> 🔄 UPDATES
+                            <span id="ico-btn-update"></span> UPDATES
                         </button>
                     </div>
                 </div>
@@ -475,12 +475,12 @@
     <!-- Changelog Modal -->
     <div id="changelog-modal" class="modal-overlay hidden">
         <div class="modal-box card-3d changelog-modal-box">
-            <div class="modal-header">
+            <div class="modal-header changelog-modal-header">
                 <div class="modal-title-wrap">
-                    <span class="changelog-header-icon" id="ico-modal-changelog">📜</span>
+                    <span class="changelog-header-icon" id="ico-modal-changelog"></span>
                     <div>
                         <h3>WAS GIBT'S NEUES? // CHANGELOG</h3>
-                        <span class="modal-subtitle">DQS • Version <span id="changelog-cur-ver">V6.1.0</span></span>
+                        <span class="modal-subtitle">DQS • Offizielle Release-Dokumentation</span>
                     </div>
                 </div>
                 <button class="modal-close" id="btn-close-changelog-modal"></button>
@@ -490,7 +490,9 @@
             </div>
             <div class="modal-footer changelog-footer">
                 <div class="changelog-footer-left">
-                    <span class="changelog-status-pill">✓ Aktuellste Version aktiv</span>
+                    <button class="btn btn-secondary btn-icon-text" id="btn-changelog-open-github" title="Repository auf GitHub ansehen">
+                        <span class="btn-octo-icon" id="ico-changelog-gh"></span> GITHUB REPO
+                    </button>
                 </div>
                 <button class="btn btn-secondary" id="btn-close-changelog-action">SCHLIESSEN</button>
             </div>
@@ -503,7 +505,7 @@
             <!-- Modal Header -->
             <div class="modal-header update-modal-header">
                 <div class="modal-title-wrap">
-                    <span class="update-header-icon" id="ico-modal-update">🔄</span>
+                    <span class="update-header-icon" id="ico-modal-update"></span>
                     <div>
                         <h3 id="update-modal-title">GITHUB LIVE UPDATER // DQS ENGINE</h3>
                         <span class="modal-subtitle" id="update-modal-subtitle">TentixTV / Discord-Quest-Spoofer • Offizieller Release-Kanal</span>
@@ -554,7 +556,7 @@
                             </div>
                         </div>
                         <div class="update-asset-pill" id="update-asset-pill">
-                            <span class="asset-icon">📦</span>
+                            <span class="asset-icon" id="ico-asset-box"></span>
                             <span class="asset-name" id="update-asset-name">DQS_Installer.exe</span>
                             <span class="asset-size" id="update-asset-size">119.6 MB</span>
                         </div>
@@ -563,12 +565,12 @@
                     <!-- Live GitHub Changelog Box -->
                     <div class="update-notes-container">
                         <div class="update-notes-header">
-                            <span class="notes-header-title">📜 LIVE GITHUB RELEASE NOTES & HIGHLIGHTS</span>
+                            <span class="notes-header-title"><span id="ico-notes-doc"></span> LIVE GITHUB RELEASE NOTES & HIGHLIGHTS</span>
                             <span class="notes-header-sub" id="update-notes-sub">Direkt von GitHub API synchronisiert</span>
                         </div>
                         <div class="update-notes-body markdown-rendered" id="update-live-notes-content">
                             <div class="update-loading-spinner">
-                                <span class="spin-icon">⚙</span> Lade Live-Release von GitHub...
+                                <span class="spin-icon" id="ico-notes-spinner"></span> Lade Live-Release von GitHub...
                             </div>
                         </div>
                     </div>
@@ -594,10 +596,10 @@
             <div class="modal-footer update-modal-footer">
                 <div class="footer-left-actions">
                     <button class="btn btn-secondary btn-icon-text" id="btn-update-open-github" title="Release auf GitHub ansehen">
-                        <span class="btn-octo-icon">⭐</span> GITHUB REPO
+                        <span class="btn-octo-icon" id="ico-btn-update-gh"></span> GITHUB REPO
                     </button>
                     <button class="btn btn-secondary btn-icon-text" id="btn-update-recheck" title="Erneut prüfen">
-                        <span class="btn-spin-icon" id="ico-recheck-spin">🔄</span> LIVE PRÜFEN
+                        <span class="btn-spin-icon" id="ico-recheck-spin"></span> LIVE PRÜFEN
                     </button>
                 </div>
                 <div class="footer-right-actions">
