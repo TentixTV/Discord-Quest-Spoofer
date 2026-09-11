@@ -113,6 +113,7 @@ const DQS = {
     presets: [],
     currentUser: null,
     autoFarmRunning: false,
+    questFilter: 'all',
 
     async init() {
         this.runStartupSplash();
@@ -120,6 +121,7 @@ const DQS = {
         this.renderBadges();
         this.setupWindowControls();
         this.setupNavigation();
+        this.setupQuestFilters();
         this.setupProfileDrawer();
         this.setupSimulator();
         this.setupConsoleTab();
@@ -353,6 +355,30 @@ const DQS = {
         }
     },
 
+    // --- Quests Filter Controls (All / Open / Completed) ---
+    setupQuestFilters() {
+        const pills = document.querySelectorAll('.filter-pill');
+        pills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                const filter = pill.getAttribute('data-filter');
+                if (this.questFilter === filter) return;
+                this.setQuestFilter(filter);
+            });
+        });
+    },
+
+    setQuestFilter(filterName) {
+        this.questFilter = filterName;
+        document.querySelectorAll('.filter-pill').forEach(pill => {
+            if (pill.getAttribute('data-filter') === filterName) {
+                pill.classList.add('active');
+            } else {
+                pill.classList.remove('active');
+            }
+        });
+        this.renderQuestsList();
+    },
+
     // --- 3D Profile Popout ---
     setupProfileDrawer() {
         const pill = document.getElementById('header-user-pill');
@@ -571,19 +597,127 @@ const DQS = {
             console.error("Failed to load auto quest overview:", e);
         }
 
+        this.renderQuestsList();
+        this.renderVideosTab(this.cachedQuests);
+    },
+
+    renderQuestsList() {
+        const I = window.DQS_ICONS;
+        const container = document.getElementById('quests-list');
+        if (!container) return;
+
+        const totalCount = this.cachedQuests.length;
+        const openQuests = this.cachedQuests.filter(q => !q.completed && !q.claimed);
+        const completedQuests = this.cachedQuests.filter(q => q.completed || q.claimed);
+
+        const openCount = openQuests.length;
+        const completedCount = completedQuests.length;
+
+        // Update count badges
+        const countAll = document.getElementById('filter-count-all');
+        const countOpen = document.getElementById('filter-count-open');
+        const countCompleted = document.getElementById('filter-count-completed');
+        const summary = document.getElementById('filter-status-summary');
+
+        if (countAll) countAll.innerText = totalCount;
+        if (countOpen) countOpen.innerText = openCount;
+        if (countCompleted) countCompleted.innerText = completedCount;
+        if (summary) {
+            summary.innerText = `${totalCount} Quests (${openCount} offen, ${completedCount} erledigt)`;
+        }
+
+        let displayList = this.cachedQuests;
+        if (this.questFilter === 'open') {
+            displayList = openQuests;
+        } else if (this.questFilter === 'completed') {
+            displayList = completedQuests;
+        }
+
         container.innerHTML = '';
-        if (this.cachedQuests.length === 0) {
-            container.innerHTML = '<div style="padding:50px;text-align:center;color:#8e92a4;">Keine aktiven Quests auf diesem Account gefunden!</div>';
+
+        if (totalCount === 0) {
+            container.innerHTML = `
+                <div class="quests-empty-state card-3d">
+                    <div class="empty-icon-wrap">${I.quest}</div>
+                    <h3>KEINE AKTIVEN QUESTS GEFUNDEN</h3>
+                    <p>Auf diesem Account sind zurzeit keine Discord-Quests verfügbar.</p>
+                </div>
+            `;
             return;
         }
 
-        this.cachedQuests.forEach(q => {
+        // Celebratory State when user filters for open quests and ALL are finished!
+        if (this.questFilter === 'open' && openCount === 0) {
+            container.innerHTML = `
+                <div class="quests-all-done-card card-3d">
+                    <div class="all-done-icon-stage">
+                        <div class="all-done-energy-ring"></div>
+                        <div class="all-done-energy-ring-pulsing"></div>
+                        <div class="all-done-icon-circle">
+                            ${I.check}
+                        </div>
+                    </div>
+                    <h3 class="all-done-headline">DU HAST ALLE QUESTS ABGESCHLOSSEN!</h3>
+                    <p class="all-done-desc">
+                        Alle verfügbaren Discord-Quests auf diesem Account wurden vollständig erfüllt. Deine Discord Orbs und Belohnungen warten in Discord auf dich!
+                    </p>
+                    <div class="all-done-stats-row">
+                        <div class="all-done-stat-pill">
+                            <span class="stat-label">ERLEDIGTE QUESTS:</span>
+                            <strong class="stat-val emerald">${completedCount} / ${totalCount}</strong>
+                        </div>
+                        <div class="all-done-stat-pill">
+                            <span class="stat-label">STATUS:</span>
+                            <strong class="stat-val cyan">100% SYNCHRONISIERT</strong>
+                        </div>
+                    </div>
+                    <div class="all-done-actions">
+                        <button class="btn btn-secondary" id="btn-show-completed-quests">
+                            ${I.quest} ALLE ABGESCHLOSSENEN QUESTS ANZEIGEN (${completedCount})
+                        </button>
+                        <button class="btn btn-blurple" id="btn-check-new-quests">
+                            ${I.refresh} JETZT AKTUALISIEREN
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('btn-show-completed-quests')?.addEventListener('click', () => {
+                this.setQuestFilter('completed');
+            });
+            document.getElementById('btn-check-new-quests')?.addEventListener('click', () => {
+                this.refreshQuests();
+            });
+            return;
+        }
+
+        if (this.questFilter === 'completed' && completedCount === 0) {
+            container.innerHTML = `
+                <div class="quests-empty-state card-3d">
+                    <div class="empty-icon-wrap">${I.quest}</div>
+                    <h3>NOCH KEINE ABGESCHLOSSENEN QUESTS</h3>
+                    <p>Du hast aktuell noch ${openCount} offene Quests vor dir. Wähle eine Quest oder nutze den Auto-Quest Completer!</p>
+                    <button class="btn btn-blurple" id="btn-show-open-from-empty">
+                        ${I.quest} OFFENE QUESTS ANZEIGEN (${openCount})
+                    </button>
+                </div>
+            `;
+            document.getElementById('btn-show-open-from-empty')?.addEventListener('click', () => {
+                this.setQuestFilter('open');
+            });
+            return;
+        }
+
+        displayList.forEach((q, idx) => {
             const card = this.createQuestCard(q);
+            card.classList.add('quest-card-plop-in');
+            card.style.animationDelay = `${idx * 0.04}s`;
+            if (q.completed || q.claimed) {
+                card.classList.add('quest-completed');
+            }
             container.appendChild(card);
             this.attach3DTilt(card);
         });
-
-        this.renderVideosTab(this.cachedQuests);
     },
 
     createQuestCard(q) {
@@ -704,6 +838,7 @@ const DQS = {
             <div class="quest-info-wrap">
                 <div class="quest-header-row">
                     <span class="quest-game-title">${gameTitle}</span>
+                    ${completed || claimed ? `<span class="badge-tag completed-badge">${I.check} ERFÜLLT</span>` : ''}
                     <span class="badge-tag task">${taskIcon} ${taskLabel}</span>
                     ${rewardBadgeHtml}
                     ${isMobile ? `<span class="badge-tag mobile-task">${I.gamepad} MOBILGERÄT (ANDROID)</span>` : ''}

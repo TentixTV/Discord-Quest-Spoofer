@@ -1124,6 +1124,131 @@ body {
     font-size: 12px;
 }
 
+/* ================= QUESTS FILTER & STATS BAR ================= */
+.quests-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 18px;
+    padding: 10px 16px;
+    background: rgba(14, 16, 24, 0.75);
+    border: 1px solid rgba(42, 45, 64, 0.7);
+    border-radius: 12px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.filter-pills-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(22, 24, 36, 0.85);
+    border: 1px solid rgba(50, 54, 76, 0.7);
+    border-radius: 20px;
+    padding: 6px 14px;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+}
+
+.filter-pill:hover {
+    background: rgba(35, 38, 56, 0.95);
+    border-color: rgba(88, 101, 242, 0.45);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.filter-pill:active {
+    transform: scale(0.96);
+}
+
+.filter-pill.active {
+    background: linear-gradient(135deg, rgba(88, 101, 242, 0.3) 0%, rgba(88, 101, 242, 0.15) 100%);
+    border-color: #5865f2;
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(88, 101, 242, 0.35);
+}
+
+.filter-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.4);
+    font-size: 10px;
+    font-weight: 900;
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+}
+
+.filter-pill.active .filter-count-badge {
+    background: #5865f2;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(88, 101, 242, 0.8);
+    border-color: #7983f5;
+}
+
+.filter-pill[data-filter="open"].active {
+    border-color: #38bdf8;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.25) 0%, rgba(56, 189, 248, 0.1) 100%);
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+}
+.filter-pill[data-filter="open"].active .filter-count-badge {
+    background: #0284c7;
+    border-color: #38bdf8;
+}
+
+.filter-pill[data-filter="completed"].active {
+    border-color: #22c55e;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.1) 100%);
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
+}
+.filter-pill[data-filter="completed"].active .filter-count-badge {
+    background: #16a34a;
+    border-color: #4ade80;
+}
+
+.filter-status-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 0.3px;
+}
+
+.pulse-dot-cyan, .pulsing-dot-cyan {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #06b6d4;
+    box-shadow: 0 0 8px #06b6d4;
+    display: inline-block;
+    animation: cyanDotBreathe 1.8s infinite ease-in-out;
+}
+
+@keyframes cyanDotBreathe {
+    0% { transform: scale(0.85); opacity: 0.5; }
+    50% { transform: scale(1.25); opacity: 1; box-shadow: 0 0 12px #38bdf8; }
+    100% { transform: scale(0.85); opacity: 0.5; }
+}
+
 /* ================= 3D QUEST CARDS ================= */
 .cards-container {
     display: flex;
@@ -1145,6 +1270,41 @@ body {
     overflow: hidden;
 }
 
+.quest-card-plop-in {
+    animation: cardPlopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes cardPlopIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.96) translateY(10px);
+        filter: blur(4px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0px);
+    }
+}
+
+/* Subtle holographic card sweep */
+.quest-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%);
+    transform: skewX(-25deg);
+    pointer-events: none;
+    transition: left 0.75s ease;
+}
+
+.quest-card:hover::before {
+    left: 180%;
+}
+
 .quest-card:hover {
     border-color: rgba(88, 101, 242, 0.55);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55), 0 0 25px rgba(88, 101, 242, 0.2);
@@ -1161,6 +1321,230 @@ body {
 }
 .quest-card:hover::after {
     opacity: 1;
+}
+
+/* Completed Card Styling */
+.quest-card.quest-completed {
+    border-color: rgba(34, 197, 94, 0.35);
+    background: linear-gradient(135deg, rgba(16, 26, 22, 0.85) 0%, rgba(11, 14, 16, 0.95) 100%);
+}
+
+.quest-card.quest-completed:hover {
+    border-color: rgba(34, 197, 94, 0.65);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55), 0 0 25px rgba(34, 197, 94, 0.25);
+}
+
+.badge-tag.completed-badge {
+    background: rgba(34, 197, 94, 0.2);
+    border: 1px solid rgba(34, 197, 94, 0.6);
+    color: #4ade80;
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+    font-weight: 900;
+}
+
+/* Active Simulating Quest Pulsing Border */
+.quest-card.live-synced-active {
+    border-color: #06b6d4 !important;
+    box-shadow: 0 0 25px rgba(6, 182, 212, 0.35), inset 0 0 20px rgba(6, 182, 212, 0.08) !important;
+    animation: liveCardGlow 2s infinite alternate ease-in-out;
+}
+
+@keyframes liveCardGlow {
+    0% { border-color: rgba(6, 182, 212, 0.6); box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); }
+    100% { border-color: rgba(6, 182, 212, 1); box-shadow: 0 0 30px rgba(6, 182, 212, 0.5), 0 0 45px rgba(88, 101, 242, 0.3); }
+}
+
+/* ================= ALL-DONE CELEBRATORY CARD ================= */
+.quests-all-done-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 48px 32px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(13, 20, 18, 0.95) 50%, rgba(88, 101, 242, 0.1) 100%);
+    border: 1.5px solid rgba(34, 197, 94, 0.45);
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 35px rgba(34, 197, 94, 0.2);
+    backdrop-filter: blur(16px);
+    position: relative;
+    overflow: hidden;
+    animation: cardPlopIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.all-done-icon-stage {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 22px;
+}
+
+.all-done-energy-ring {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: #22c55e;
+    border-right-color: #06b6d4;
+    border-bottom-color: #a855f7;
+    animation: splashRingSpin 3s linear infinite;
+    filter: drop-shadow(0 0 14px rgba(34, 197, 94, 0.8));
+}
+
+.all-done-energy-ring-pulsing {
+    position: absolute;
+    inset: -22px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(34, 197, 94, 0.3);
+    animation: celebratePulse 2s ease-in-out infinite;
+}
+
+@keyframes celebratePulse {
+    0% { transform: scale(0.9); opacity: 0.3; }
+    50% { transform: scale(1.1); opacity: 0.8; border-color: rgba(6, 182, 212, 0.6); }
+    100% { transform: scale(0.9); opacity: 0.3; }
+}
+
+.all-done-icon-circle {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(6, 182, 212, 0.25) 100%);
+    border: 2px solid #22c55e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 25px rgba(34, 197, 94, 0.5);
+    position: relative;
+    z-index: 2;
+    animation: floatIcon 3s ease-in-out infinite alternate;
+}
+
+@keyframes floatIcon {
+    0% { transform: translateY(0px); }
+    100% { transform: translateY(-6px); }
+}
+
+.all-done-icon-circle .svg-icon {
+    width: 36px;
+    height: 36px;
+    color: #4ade80;
+    filter: drop-shadow(0 0 10px #22c55e);
+}
+
+.all-done-headline {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #ffffff 0%, #86efac 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+    text-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+}
+
+.all-done-desc {
+    font-size: 13px;
+    line-height: 1.55;
+    color: #cbd5e1;
+    max-width: 540px;
+    margin-bottom: 22px;
+}
+
+.all-done-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.all-done-stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 11.5px;
+}
+
+.all-done-stat-pill .stat-label {
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.all-done-stat-pill .stat-val.emerald {
+    color: #4ade80;
+    font-weight: 900;
+    text-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+.all-done-stat-pill .stat-val.cyan {
+    color: #38bdf8;
+    font-weight: 900;
+    text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+}
+
+.all-done-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Generic Empty State */
+.quests-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px;
+    background: rgba(18, 20, 30, 0.7);
+    border: 1px solid rgba(42, 45, 64, 0.7);
+    border-radius: 14px;
+    animation: cardPlopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.empty-icon-wrap {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    background: rgba(88, 101, 242, 0.15);
+    border: 1px solid rgba(88, 101, 242, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--neon-blurple);
+    margin-bottom: 16px;
+    box-shadow: 0 0 20px rgba(88, 101, 242, 0.25);
+}
+
+.empty-icon-wrap .svg-icon {
+    width: 28px;
+    height: 28px;
+}
+
+.quests-empty-state h3 {
+    font-size: 16px;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 6px;
+}
+
+.quests-empty-state p {
+    font-size: 12px;
+    color: var(--text-muted);
+    max-width: 440px;
+    margin-bottom: 16px;
+    line-height: 1.5;
 }
 
 .quest-tile-wrap {
@@ -1234,6 +1618,19 @@ body {
     border: 1px solid rgba(254, 231, 92, 0.45);
     color: #fde047;
     box-shadow: 0 0 10px rgba(254, 231, 92, 0.2);
+    animation: orbBadgeGlow 2.5s infinite alternate ease-in-out;
+}
+
+@keyframes orbBadgeGlow {
+    0% {
+        box-shadow: 0 0 6px rgba(254, 231, 92, 0.2);
+        border-color: rgba(254, 231, 92, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 16px rgba(254, 231, 92, 0.6), 0 0 24px rgba(254, 231, 92, 0.25);
+        border-color: rgba(254, 231, 92, 0.9);
+        color: #ffffff;
+    }
 }
 
 .badge-tag.multi {

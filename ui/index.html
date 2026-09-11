@@ -176,6 +176,28 @@
                 </div>
             </div>
 
+            <!-- Quests Filter & Stats Bar -->
+            <div class="quests-filter-bar">
+                <div class="filter-pills-group">
+                    <button class="filter-pill active" data-filter="all" id="filter-btn-all">
+                        <span class="filter-pill-label">ALLE</span>
+                        <span class="filter-count-badge" id="filter-count-all">0</span>
+                    </button>
+                    <button class="filter-pill" data-filter="open" id="filter-btn-open">
+                        <span class="filter-pill-label">OFFEN / AKTIV</span>
+                        <span class="filter-count-badge" id="filter-count-open">0</span>
+                    </button>
+                    <button class="filter-pill" data-filter="completed" id="filter-btn-completed">
+                        <span class="filter-pill-label">ABGESCHLOSSEN</span>
+                        <span class="filter-count-badge" id="filter-count-completed">0</span>
+                    </button>
+                </div>
+                <div class="filter-status-info">
+                    <span class="pulsing-dot-cyan"></span>
+                    <span id="filter-status-summary">Lade Quests...</span>
+                </div>
+            </div>
+
             <div class="cards-container" id="quests-list">
                 <!-- Dynamically Rendered Quests or High-Tech Loader -->
             </div>
