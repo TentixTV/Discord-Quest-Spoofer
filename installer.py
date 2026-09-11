@@ -39,7 +39,72 @@ def get_bundle_dir():
         return sys._MEIPASS
     return os.path.dirname(os.path.abspath(__file__))
 
+def get_desktop_directories():
+    """Finds all active desktop directories (handles OneDrive, Roaming, Local, Registry)."""
+    desktops = []
+    # 1. Query Windows Registry for user's official Desktop location
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders") as key:
+            val, _ = winreg.QueryValueEx(key, "Desktop")
+            val = os.path.expandvars(val)
+            if os.path.exists(val) and val not in desktops:
+                desktops.append(val)
+    except Exception:
+        pass
+
+    user_prof = os.environ.get("USERPROFILE", os.path.expanduser("~"))
+    std_desktop = os.path.join(user_prof, "Desktop")
+    if os.path.exists(std_desktop) and std_desktop not in desktops:
+        desktops.append(std_desktop)
+
+    onedrive_desktop = os.path.join(user_prof, "OneDrive", "Desktop")
+    if os.path.exists(onedrive_desktop) and onedrive_desktop not in desktops:
+        desktops.append(onedrive_desktop)
+
+    public_desktop = os.path.join(os.environ.get("PUBLIC", r"C:\Users\Public"), "Desktop")
+    if os.path.exists(public_desktop) and public_desktop not in desktops:
+        desktops.append(public_desktop)
+
+    return desktops
+
 def create_windows_shortcut(target_exe, shortcut_path, icon_path=None, description=""):
+    try:
+        clean_target = os.path.abspath(target_exe).replace('"', '""')
+        clean_workdir = os.path.dirname(os.path.abspath(target_exe)).replace('"', '""')
+        clean_shortcut = os.path.abspath(shortcut_path).replace('"', '""')
+
+        vbs = f'''
+Set oWS = WScript.CreateObject("WScript.Shell")
+sLinkFile = "{clean_shortcut}"
+Set oLink = oWS.CreateShortcut(sLinkFile)
+oLink.TargetPath = "{clean_target}"
+oLink.WorkingDirectory = "{clean_workdir}"
+'''
+        if icon_path and os.path.exists(icon_path):
+            clean_icon = os.path.abspath(icon_path).replace('"', '""')
+            vbs += f'oLink.IconLocation = "{clean_icon}, 0"\n'
+        if description:
+            clean_desc = description.replace('"', '""')
+            vbs += f'oLink.Description = "{clean_desc}"\n'
+        vbs += 'oLink.Save\n'
+
+        vbs_path = os.path.join(tempfile.gettempdir(), f"dqs_shortcut_{int(time.time()*1000)}.vbs")
+        with open(vbs_path, "w", encoding="utf-8") as f:
+            f.write(vbs)
+
+        subprocess.run(["cscript.exe", "//Nologo", vbs_path], creationflags=subprocess.CREATE_NO_WINDOW, check=False)
+        try:
+            os.remove(vbs_path)
+        except Exception:
+            pass
+
+        if os.path.exists(shortcut_path):
+            return True
+    except Exception:
+        pass
+
+    # PowerShell fallback
     try:
         ps_script = f'''
 $WshShell = New-Object -comObject WScript.Shell
@@ -55,7 +120,7 @@ $Shortcut.WorkingDirectory = "{os.path.dirname(target_exe)}"
 
         subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps_script],
                        creationflags=subprocess.CREATE_NO_WINDOW, check=False)
-        return True
+        return os.path.exists(shortcut_path)
     except Exception as e:
         print(f"Failed to create shortcut: {e}")
         return False
@@ -340,8 +405,13 @@ class DQSInstaller(ctk.CTk):
 
             self._update_progress(0.75, "Erstelle Uninstaller...")
             uninstaller_path = os.path.join(target_dir, "Uninstall.bat")
-            desktop_link = os.path.join(os.environ.get("USERPROFILE", "C:\\"), "Desktop", "DQS - Discord Quest Spoofer.lnk")
+            desktop_dirs = get_desktop_directories()
             startmenu_folder = os.path.join(os.environ.get("APPDATA", "C:\\"), "Microsoft", "Windows", "Start Menu", "Programs", "Discord Quest Spoofer")
+
+            cleanup_desktop_cmds = ""
+            for d in desktop_dirs:
+                cleanup_desktop_cmds += f'del /F /Q "{os.path.join(d, "DQS.lnk")}" 2>nul\n'
+                cleanup_desktop_cmds += f'del /F /Q "{os.path.join(d, "DQS - Discord Quest Spoofer.lnk")}" 2>nul\n'
 
             uninstall_script = f"""@echo off
 title DQS Uninstaller
@@ -351,8 +421,7 @@ echo ===================================================
 echo.
 taskkill /F /IM DQS.exe 2>nul
 taskkill /F /IM dummy_runner.exe 2>nul
-del /F /Q "{desktop_link}" 2>nul
-rmdir /S /Q "{startmenu_folder}" 2>nul
+{cleanup_desktop_cmds}rmdir /S /Q "{startmenu_folder}" 2>nul
 echo Entferne Programmdateien...
 cd ..
 timeout /t 2 /nobreak >nul
@@ -371,7 +440,15 @@ exit
             # Shortcuts
             self._update_progress(0.85, "Registriere Desktop- und Startmenü-Verknüpfungen...")
             if self.chk_desktop.get() == 1:
-                create_windows_shortcut(installed_exe, desktop_link, installed_ico, "DQS - Discord Quest Spoofer by Sandro (T3X / TNTIX)")
+                for d_dir in desktop_dirs:
+                    try:
+                        os.makedirs(d_dir, exist_ok=True)
+                        link1 = os.path.join(d_dir, "DQS.lnk")
+                        link2 = os.path.join(d_dir, "DQS - Discord Quest Spoofer.lnk")
+                        create_windows_shortcut(installed_exe, link1, installed_ico, "DQS - Discord Quest Spoofer")
+                        create_windows_shortcut(installed_exe, link2, installed_ico, "DQS - Discord Quest Spoofer by Sandro (T3X / TNTIX)")
+                    except Exception as e:
+                        print(f"Desktop shortcut error in {d_dir}: {e}")
 
             if self.chk_startmenu.get() == 1:
                 os.makedirs(startmenu_folder, exist_ok=True)

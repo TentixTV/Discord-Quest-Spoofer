@@ -661,17 +661,79 @@ body {
     padding: 26px 36px 45px;
 }
 
+/* ================= JUICY TAB "PLOPP" TRANSITIONS ================= */
 .tab-view {
     display: none;
-    animation: fadeInTab 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.tab-view.active {
-    display: block;
+    opacity: 0;
 }
 
-@keyframes fadeInTab {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+.tab-view.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Entering Tab Plopp: spring bounce with scale & slight blur removal */
+.tab-view.tab-plop-enter {
+    animation: tabPlopEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes tabPlopEnter {
+    0% {
+        opacity: 0;
+        transform: scale(0.94) translateY(12px);
+        filter: blur(5px);
+    }
+    65% {
+        opacity: 1;
+        transform: scale(1.015) translateY(-2px);
+        filter: blur(0px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0px);
+    }
+}
+
+/* Exiting Tab Plopp: quick pop away with scale down & blur */
+.tab-view.tab-plop-exit {
+    display: block !important;
+    animation: tabPlopExit 0.15s cubic-bezier(0.4, 0, 1, 1) forwards;
+    pointer-events: none;
+}
+
+@keyframes tabPlopExit {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0px);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.95) translateY(-8px);
+        filter: blur(6px);
+    }
+}
+
+/* Staggered Child Element Plopp for Cards & Toolbars inside Active Tab */
+.tab-view.tab-plop-enter > * {
+    animation: childPlopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.tab-view.tab-plop-enter > *:nth-child(1) { animation-delay: 0.02s; }
+.tab-view.tab-plop-enter > *:nth-child(2) { animation-delay: 0.06s; }
+.tab-view.tab-plop-enter > *:nth-child(3) { animation-delay: 0.10s; }
+.tab-view.tab-plop-enter > *:nth-child(4) { animation-delay: 0.14s; }
+.tab-view.tab-plop-enter > *:nth-child(5) { animation-delay: 0.18s; }
+
+@keyframes childPlopIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 .view-toolbar {
@@ -2408,7 +2470,7 @@ body {
     position: fixed;
     inset: 0;
     z-index: 99999;
-    background: radial-gradient(circle at 50% 45%, #131525 0%, #090a10 70%, #050608 100%);
+    background: radial-gradient(circle at 50% 50%, #0e101c 0%, #07080f 65%, #030406 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2427,38 +2489,53 @@ body {
 }
 
 @keyframes splashStagePop {
-    0% { transform: scale(0.85); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+    0% { transform: scale(0.82); opacity: 0; filter: blur(8px); }
+    100% { transform: scale(1); opacity: 1; filter: blur(0px); }
 }
 
 .splash-logo-container {
     position: relative;
-    width: 110px;
-    height: 110px;
+    width: 124px;
+    height: 124px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 24px;
+    margin-bottom: 26px;
 }
 
 .splash-energy-ring {
     position: absolute;
-    inset: -14px;
+    inset: -18px;
     border-radius: 50%;
     border: 2.5px solid transparent;
     border-top-color: #5865f2;
     border-right-color: #06b6d4;
     border-bottom-color: #a855f7;
-    animation: splashRingSpin 2s linear infinite;
-    filter: drop-shadow(0 0 12px rgba(88, 101, 242, 0.85));
+    animation: splashRingSpin 2.2s linear infinite;
+    filter: drop-shadow(0 0 16px rgba(88, 101, 242, 0.9));
 }
 
 .splash-energy-ring-inner {
     position: absolute;
-    inset: -6px;
+    inset: -8px;
     border-radius: 50%;
-    border: 1.5px dashed rgba(255, 255, 255, 0.35);
+    border: 1.5px dashed rgba(6, 182, 212, 0.6);
     animation: splashRingSpinRev 3.5s linear infinite;
+    filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.7));
+}
+
+.splash-energy-ring-pulsing {
+    position: absolute;
+    inset: -28px;
+    border-radius: 50%;
+    border: 1px solid rgba(88, 101, 242, 0.25);
+    animation: splashPulseRing 2.2s ease-in-out infinite;
+}
+
+@keyframes splashPulseRing {
+    0% { transform: scale(0.92); opacity: 0.2; }
+    50% { transform: scale(1.08); opacity: 0.75; border-color: rgba(6, 182, 212, 0.55); }
+    100% { transform: scale(0.92); opacity: 0.2; }
 }
 
 @keyframes splashRingSpin {
@@ -2472,64 +2549,27 @@ body {
 }
 
 .splash-app-icon {
-    width: 90px;
-    height: 90px;
+    width: 98px;
+    height: 98px;
     object-fit: contain;
     position: relative;
     z-index: 2;
-    filter: drop-shadow(0 0 25px rgba(88, 101, 242, 0.9));
-    animation: splashIconPulse 2s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 28px rgba(88, 101, 242, 0.95));
+    animation: splashIconPulse 2.4s ease-in-out infinite alternate;
 }
 
 @keyframes splashIconPulse {
-    0% { transform: scale(0.96); filter: drop-shadow(0 0 18px rgba(88, 101, 242, 0.7)); }
-    100% { transform: scale(1.04); filter: drop-shadow(0 0 32px rgba(88, 101, 242, 1)); }
+    0% { transform: scale(0.96); filter: drop-shadow(0 0 20px rgba(88, 101, 242, 0.75)); }
+    100% { transform: scale(1.04); filter: drop-shadow(0 0 36px rgba(88, 101, 242, 1)); }
 }
 
 .splash-glow-core {
     position: absolute;
-    inset: 10px;
+    inset: 4px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(88, 101, 242, 0.6) 0%, rgba(6, 182, 212, 0.2) 60%, transparent 100%);
-    filter: blur(15px);
+    background: radial-gradient(circle, rgba(88, 101, 242, 0.65) 0%, rgba(6, 182, 212, 0.25) 50%, transparent 80%);
+    filter: blur(18px);
     z-index: 1;
-}
-
-.splash-branding {
-    margin-bottom: 22px;
-}
-
-.splash-title {
-    font-size: 26px;
-    font-weight: 900;
-    letter-spacing: 3px;
-    background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 60%, #93c5fd 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    line-height: 1.2;
-}
-
-.splash-badge {
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 1px;
-    color: #ffffff;
-    background: linear-gradient(135deg, #5865f2 0%, #9333ea 100%);
-    padding: 3px 9px;
-    border-radius: 12px;
-    -webkit-text-fill-color: #ffffff;
-    box-shadow: 0 0 12px rgba(88, 101, 242, 0.6);
-}
-
-.splash-subtitle {
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 3px;
-    color: var(--text-muted);
-    margin-top: 4px;
 }
 
 .splash-status-wrapper {
@@ -2537,32 +2577,33 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .splash-progress-track {
     width: 100%;
-    height: 4px;
+    height: 5px;
     background: rgba(255, 255, 255, 0.08);
-    border-radius: 4px;
+    border-radius: 5px;
     overflow: hidden;
     position: relative;
-    border: 1px solid rgba(88, 101, 242, 0.2);
+    border: 1px solid rgba(88, 101, 242, 0.3);
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
 }
 
 .splash-progress-bar {
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, #5865f2 0%, #06b6d4 50%, #22c55e 100%);
-    box-shadow: 0 0 12px #5865f2;
-    border-radius: 4px;
-    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 14px #5865f2;
+    border-radius: 5px;
+    transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .splash-status-label {
-    font-size: 9.5px;
+    font-size: 10px;
     font-weight: 800;
-    letter-spacing: 1.5px;
+    letter-spacing: 1.6px;
     color: #94a3b8;
     text-transform: uppercase;
     font-family: 'Consolas', monospace;
@@ -2609,13 +2650,47 @@ body {
 
 /* ================= LICENSE & SECURITY MODAL ================= */
 .license-modal-box {
-    max-width: 720px;
+    max-width: 740px;
     width: 92%;
-    background: #0d0f19;
-    border: 1px solid rgba(88, 101, 242, 0.4);
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(88, 101, 242, 0.25);
+    background: #0b0d17;
+    border: 1px solid rgba(88, 101, 242, 0.45);
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(88, 101, 242, 0.25);
     border-radius: 14px;
     overflow: hidden;
+}
+
+.license-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px 16px;
+    background: rgba(18, 20, 32, 0.95);
+    border-bottom: 1px solid rgba(88, 101, 242, 0.25);
+}
+
+.modal-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.license-modal-heading {
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.license-modal-sub {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    display: block;
+    margin-top: 2px;
 }
 
 .modal-brand-icon {
@@ -2625,14 +2700,19 @@ body {
     filter: drop-shadow(0 0 10px rgba(88, 101, 242, 0.7));
 }
 
+.license-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .license-lang-switch {
     display: inline-flex;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(88, 101, 242, 0.25);
     border-radius: 20px;
     padding: 3px;
-    gap: 4px;
-    margin-right: 12px;
+    gap: 3px;
 }
 
 .lang-btn {
@@ -2648,10 +2728,50 @@ body {
     transition: all 0.2s ease;
 }
 
+.lang-btn:hover {
+    color: #ffffff;
+}
+
 .lang-btn.active {
     background: #5865f2;
     color: #ffffff;
     box-shadow: 0 0 10px rgba(88, 101, 242, 0.6);
+}
+
+.license-close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.license-close-btn .win-ctrl-svg,
+.license-close-btn .svg-icon {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.license-close-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.6);
+    color: #f87171;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.4);
+}
+
+.license-close-btn:hover .win-ctrl-svg,
+.license-close-btn:hover .svg-icon {
+    transform: rotate(90deg) scale(1.1);
 }
 
 .license-modal-body {

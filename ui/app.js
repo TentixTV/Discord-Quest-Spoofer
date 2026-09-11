@@ -303,7 +303,14 @@ const DQS = {
     },
 
     switchTab(tabId) {
+        if (this.activeTab === tabId && document.getElementById(`tab-${tabId}`)?.classList.contains('active')) {
+            return;
+        }
+
+        const oldTabId = this.activeTab;
         this.activeTab = tabId;
+
+        // Immediately update navbar buttons
         document.querySelectorAll('.nav-tab').forEach(t => {
             if (t.getAttribute('data-tab') === tabId) {
                 t.classList.add('active');
@@ -312,13 +319,38 @@ const DQS = {
             }
         });
 
-        document.querySelectorAll('.tab-view').forEach(v => {
-            if (v.id === `tab-${tabId}`) {
-                v.classList.add('active');
-            } else {
-                v.classList.remove('active');
-            }
-        });
+        const currentTabEl = document.getElementById(`tab-${oldTabId}`);
+        const nextTabEl = document.getElementById(`tab-${tabId}`);
+
+        if (currentTabEl && currentTabEl !== nextTabEl && currentTabEl.classList.contains('active')) {
+            // Trigger exit plopp animation
+            currentTabEl.classList.remove('tab-plop-enter');
+            currentTabEl.classList.add('tab-plop-exit');
+
+            setTimeout(() => {
+                currentTabEl.classList.remove('active', 'tab-plop-exit');
+
+                if (nextTabEl) {
+                    nextTabEl.classList.remove('tab-plop-exit');
+                    nextTabEl.classList.add('active', 'tab-plop-enter');
+
+                    setTimeout(() => {
+                        nextTabEl.classList.remove('tab-plop-enter');
+                    }, 400);
+                }
+            }, 140);
+        } else {
+            // Immediate activation (e.g. startup / direct call)
+            document.querySelectorAll('.tab-view').forEach(v => {
+                if (v.id === `tab-${tabId}`) {
+                    v.classList.remove('tab-plop-exit');
+                    v.classList.add('active', 'tab-plop-enter');
+                    setTimeout(() => v.classList.remove('tab-plop-enter'), 400);
+                } else {
+                    v.classList.remove('active', 'tab-plop-enter', 'tab-plop-exit');
+                }
+            });
+        }
     },
 
     // --- 3D Profile Popout ---
