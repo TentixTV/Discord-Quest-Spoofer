@@ -128,6 +128,7 @@ const DQS = {
         this.setupVideoModal();
         this.setupLicenseModal();
         this.setupTutorialModal();
+        this.setupChangelogAndUpdateModals();
 
         // Load data from bridge
         await this.loadCurrentUser();
@@ -148,6 +149,9 @@ const DQS = {
                 this.refreshQuests(true);
             }
         });
+
+        // Background auto-update check on startup (after 2.5s)
+        setTimeout(() => this.checkForUpdates(false), 2500);
     },
 
     // --- High-Fidelity V6 Sound Engine (Ambient Drone & Joy-Con Snap Click) ---
@@ -328,7 +332,6 @@ const DQS = {
 
         setHtml('ico-hdr-gear', I.gear);
         setHtml('btn-win-min', I.min);
-        setHtml('btn-win-max', I.max);
         setHtml('btn-win-close', I.close);
 
         setHtml('ico-hdr-quests', I.quest);
@@ -356,7 +359,11 @@ const DQS = {
         setHtml('ico-btn-user-switch', I.users);
         setHtml('ico-btn-copy-id', I.copy);
         setHtml('ico-btn-github', I.github);
+        setHtml('ico-btn-changelog', I.changelog || I.logs);
+        setHtml('ico-btn-update', I.update || I.refresh);
         setHtml('btn-close-account-modal', I.close);
+        setHtml('btn-close-changelog-modal', I.close);
+        setHtml('btn-close-update-modal', I.close);
 
         setHtml('ico-modal-video', I.video);
         setHtml('btn-close-video-modal', I.close);
@@ -418,15 +425,18 @@ const DQS = {
 
     // --- Window Controls ---
     setupWindowControls() {
-        document.getElementById('btn-win-min').addEventListener('click', () => {
-            window.pywebview?.api?.minimize_window();
-        });
-        document.getElementById('btn-win-max').addEventListener('click', () => {
-            window.pywebview?.api?.maximize_window();
-        });
-        document.getElementById('btn-win-close').addEventListener('click', () => {
-            window.pywebview?.api?.close_window();
-        });
+        const btnMin = document.getElementById('btn-win-min');
+        if (btnMin) {
+            btnMin.addEventListener('click', () => {
+                window.pywebview?.api?.minimize_window();
+            });
+        }
+        const btnClose = document.getElementById('btn-win-close');
+        if (btnClose) {
+            btnClose.addEventListener('click', () => {
+                window.pywebview?.api?.close_window();
+            });
+        }
     },
 
     // --- Navigation Tabs ---
@@ -578,11 +588,21 @@ const DQS = {
         }
 
         // Account Switcher Modal
-        document.getElementById('btn-switch-account').addEventListener('click', () => {
+        document.getElementById('btn-switch-account')?.addEventListener('click', () => {
             this.openAccountModal();
         });
-        document.getElementById('btn-close-account-modal').addEventListener('click', () => {
-            document.getElementById('account-modal').classList.add('hidden');
+        document.getElementById('btn-close-account-modal')?.addEventListener('click', () => {
+            document.getElementById('account-modal')?.classList.add('hidden');
+        });
+
+        // Changelog Button
+        document.getElementById('btn-open-changelog')?.addEventListener('click', () => {
+            this.openChangelogModal();
+        });
+
+        // Manual Update Checker Button
+        document.getElementById('btn-manual-update')?.addEventListener('click', () => {
+            this.checkForUpdates(true);
         });
     },
 
@@ -1520,6 +1540,267 @@ const DQS = {
 
         if (linkGh) linkGh.addEventListener('click', () => openUrl('https://github.com/TentixTV/Discord-Quest-Spoofer'));
         if (linkIssues) linkIssues.addEventListener('click', () => openUrl('https://github.com/TentixTV/Discord-Quest-Spoofer/issues'));
+    },
+
+    // --- Changelog & GitHub Updater Modals ---
+    setupChangelogAndUpdateModals() {
+        const changelogModal = document.getElementById('changelog-modal');
+        const btnCloseChangelogModal = document.getElementById('btn-close-changelog-modal');
+        const btnCloseChangelogAction = document.getElementById('btn-close-changelog-action');
+        
+        const closeChangelog = () => {
+            if (changelogModal) changelogModal.classList.add('hidden');
+        };
+
+        if (btnCloseChangelogModal) btnCloseChangelogModal.addEventListener('click', closeChangelog);
+        if (btnCloseChangelogAction) btnCloseChangelogAction.addEventListener('click', closeChangelog);
+        if (changelogModal) {
+            changelogModal.addEventListener('click', (e) => {
+                if (e.target === changelogModal) closeChangelog();
+            });
+        }
+
+        const updateModal = document.getElementById('update-modal');
+        const btnCloseUpdateModal = document.getElementById('btn-close-update-modal');
+        const btnUpdateCancel = document.getElementById('btn-update-cancel');
+
+        const closeUpdate = () => {
+            if (updateModal) updateModal.classList.add('hidden');
+        };
+
+        if (btnCloseUpdateModal) btnCloseUpdateModal.addEventListener('click', closeUpdate);
+        if (btnUpdateCancel) btnUpdateCancel.addEventListener('click', closeUpdate);
+        if (updateModal) {
+            updateModal.addEventListener('click', (e) => {
+                if (e.target === updateModal) closeUpdate();
+            });
+        }
+
+        // Toast Banner actions
+        const btnToastUpdate = document.getElementById('btn-toast-update-now');
+        const btnToastDismiss = document.getElementById('btn-toast-update-dismiss');
+        const toastBanner = document.getElementById('update-toast-banner');
+
+        if (btnToastUpdate) {
+            btnToastUpdate.addEventListener('click', () => {
+                if (toastBanner) toastBanner.classList.add('hidden');
+                this.checkForUpdates(true);
+            });
+        }
+        if (btnToastDismiss) {
+            btnToastDismiss.addEventListener('click', () => {
+                if (toastBanner) toastBanner.classList.add('hidden');
+            });
+        }
+    },
+
+    async openChangelogModal() {
+        const modal = document.getElementById('changelog-modal');
+        const listContainer = document.getElementById('changelog-content-list');
+        if (!modal || !listContainer) return;
+
+        listContainer.innerHTML = '<div style="padding:24px;text-align:center;color:#94a3b8;"><span style="display:inline-block;animation:spin 1s linear infinite;margin-right:8px;">⚙</span> Lade Changelog...</div>';
+        modal.classList.remove('hidden');
+
+        try {
+            const data = await window.pywebview?.api?.get_changelog();
+            const entries = (data && Array.isArray(data.entries) && data.entries.length > 0) ? data.entries : [
+                {
+                    version: "V6.1.0",
+                    date: "11.09.2026",
+                    title: "Auto-Updater & Dynamic Profile & Windows Toast Release",
+                    changes: [
+                        "Automatischer Update-Checker beim Start via GitHub API Releases",
+                        "Dynamische Erkennung von Bio und benutzerdefiniertem Status pro Account (keine Hardcoded-Fallbacks)",
+                        "Changelog-Übersicht und Manueller Update-Button im Discord-Profil",
+                        "Native Windows Benachrichtigung nach 15 Minuten Spiel-Simulation",
+                        "Deaktivierung des Vollbildmodus (nur Minimieren und Schließen)"
+                    ]
+                },
+                {
+                    version: "V6.0.0",
+                    date: "11.09.2026",
+                    title: "High-Fidelity V6 Audio & Interactive Tutorial & Offline Standalone Installer",
+                    changes: [
+                        "Interaktives Tutorial & Hilfebereich oben rechts mit 4 Kategorien & Quick-Action",
+                        "Atmosphärischer 432Hz Sinuswellen-Ambience Sound beim Start",
+                        "Sanfter Joy-Con Snap Übergangssound beim Laden der Quests",
+                        "High-Fidelity 1-Sekunden Heartbeat Synchronisation zwischen Timer und Fortschrittsbalken",
+                        "Saubere 2-Spalten Navbar & neue Vektoricone für Minuten und Spiele"
+                    ]
+                }
+            ];
+
+            listContainer.innerHTML = '';
+            entries.forEach((item, idx) => {
+                const isCurrent = idx === 0;
+                const card = document.createElement('div');
+                card.className = 'changelog-entry-card';
+
+                const itemsHtml = Array.isArray(item.changes) 
+                    ? item.changes.map(ch => `
+                        <li class="changelog-point">
+                            <span class="changelog-point-bullet">•</span>
+                            <span class="changelog-point-text">${ch}</span>
+                        </li>
+                    `).join('')
+                    : '';
+
+                card.innerHTML = `
+                    <div class="changelog-entry-header">
+                        <div class="changelog-version-tag ${isCurrent ? 'version-current' : ''}">
+                            ${item.version || 'Version'} ${isCurrent ? '<span class="changelog-badge-current">AKTUELL</span>' : ''}
+                        </div>
+                        <span class="changelog-date">${item.date || ''}</span>
+                    </div>
+                    <h4 class="changelog-title">${item.title || ''}</h4>
+                    <ul class="changelog-list">
+                        ${itemsHtml}
+                    </ul>
+                `;
+                listContainer.appendChild(card);
+            });
+        } catch (e) {
+            console.error('Failed to load changelog:', e);
+            listContainer.innerHTML = '<div style="padding:20px;text-align:center;color:#f87171;">Changelog konnte nicht geladen werden.</div>';
+        }
+    },
+
+    _updateDownloadUrl: null,
+    async checkForUpdates(isManual = false) {
+        const modal = document.getElementById('update-modal');
+        const iconCircle = document.getElementById('update-icon-circle');
+        const icoState = document.getElementById('ico-update-state');
+        const headline = document.getElementById('update-headline');
+        const desc = document.getElementById('update-description');
+        const progContainer = document.getElementById('update-progress-container');
+        const progFill = document.getElementById('update-progress-fill');
+        const progText = document.getElementById('update-progress-text');
+        const btnAction = document.getElementById('btn-update-action');
+        const btnCancel = document.getElementById('btn-update-cancel');
+        const toastBanner = document.getElementById('update-toast-banner');
+
+        if (isManual && modal) {
+            modal.classList.remove('hidden');
+            if (iconCircle) iconCircle.className = 'update-icon-circle update-state-checking';
+            if (icoState) icoState.innerText = '🔍';
+            if (headline) headline.innerText = 'Suche nach Updates...';
+            if (desc) desc.innerText = 'Verbinde mit GitHub Releases (TentixTV/Discord-Quest-Spoofer)...';
+            if (progContainer) progContainer.style.display = 'none';
+            if (btnAction) btnAction.style.display = 'none';
+            if (btnCancel) {
+                btnCancel.style.display = 'inline-block';
+                btnCancel.innerText = 'ABBRECHEN';
+            }
+        }
+
+        try {
+            const res = await window.pywebview?.api?.check_update();
+            if (!res) {
+                if (isManual && modal) {
+                    if (headline) headline.innerText = 'Fehler beim Suchen';
+                    if (desc) desc.innerText = 'Konnte die GitHub API nicht erreichen. Bitte prüfe deine Internetverbindung.';
+                }
+                return;
+            }
+
+            if (res.update_available) {
+                this._updateDownloadUrl = res.download_url;
+
+                // Show toast banner on startup background check
+                if (!isManual && toastBanner) {
+                    const toastVer = document.getElementById('toast-new-version');
+                    if (toastVer) toastVer.innerText = res.latest_version || 'Neu';
+                    toastBanner.classList.remove('hidden');
+                }
+
+                if (modal && isManual) {
+                    if (iconCircle) iconCircle.className = 'update-icon-circle update-state-available';
+                    if (icoState) icoState.innerText = '🚀';
+                    if (headline) headline.innerText = `Neues Update verfügbar: ${res.latest_version}!`;
+                    if (desc) {
+                        const notes = res.release_notes ? `<div class="update-notes-preview" style="margin-top:10px;padding:8px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:11px;color:#94a3b8;max-height:100px;overflow-y:auto;text-align:left;">${res.release_notes.replace(/\n/g, '<br>')}</div>` : '';
+                        desc.innerHTML = `Deine Version: <strong>${res.current_version}</strong><br>Neueste Version: <strong style="color:#10b981;">${res.latest_version}</strong>${notes}`;
+                    }
+                    if (btnAction) {
+                        btnAction.style.display = 'inline-block';
+                        btnAction.innerText = 'JETZT AKTUALISIEREN';
+                        btnAction.onclick = () => this.startUpdateProcess(res.download_url);
+                    }
+                }
+            } else {
+                if (isManual && modal) {
+                    if (iconCircle) iconCircle.className = 'update-icon-circle update-state-uptodate';
+                    if (icoState) icoState.innerText = '✓';
+                    if (headline) headline.innerText = 'Alles auf dem neuesten Stand!';
+                    if (desc) desc.innerHTML = `Du nutzt bereits die aktuellste Version (<strong>${res.current_version || 'V6.1.0'}</strong>).<br>Es sind keine neuen Updates auf GitHub vorhanden.`;
+                    if (btnCancel) btnCancel.innerText = 'SCHLIESSEN';
+                    if (btnAction) btnAction.style.display = 'none';
+                }
+            }
+        } catch (e) {
+            console.error('Update check failed:', e);
+            if (isManual && modal) {
+                if (headline) headline.innerText = 'Verbindungsfehler';
+                if (desc) desc.innerText = 'Update-Prüfung fehlgeschlagen: ' + (e.message || e);
+            }
+        }
+    },
+
+    async startUpdateProcess(downloadUrl) {
+        const headline = document.getElementById('update-headline');
+        const desc = document.getElementById('update-description');
+        const progContainer = document.getElementById('update-progress-container');
+        const progFill = document.getElementById('update-progress-fill');
+        const progText = document.getElementById('update-progress-text');
+        const btnAction = document.getElementById('btn-update-action');
+        const btnCancel = document.getElementById('btn-update-cancel');
+        const iconCircle = document.getElementById('update-icon-circle');
+        const icoState = document.getElementById('ico-update-state');
+
+        if (btnAction) btnAction.style.display = 'none';
+        if (btnCancel) btnCancel.style.display = 'none';
+        if (iconCircle) iconCircle.className = 'update-icon-circle update-state-downloading';
+        if (icoState) icoState.innerText = '⬇️';
+        if (headline) headline.innerText = 'Lade Update herunter...';
+        if (desc) desc.innerText = 'Der neue Installer wird heruntergeladen und ausgeführt. Die App startet anschließend neu.';
+        if (progContainer) progContainer.style.display = 'block';
+
+        let progress = 5;
+        const progressTimer = setInterval(() => {
+            progress = Math.min(progress + 12, 90);
+            if (progFill) progFill.style.width = `${progress}%`;
+            if (progText) progText.innerText = `${progress}%`;
+        }, 350);
+
+        try {
+            const res = await window.pywebview?.api?.download_and_install_update(downloadUrl);
+            clearInterval(progressTimer);
+            if (res && res.success) {
+                if (progFill) progFill.style.width = '100%';
+                if (progText) progText.innerText = '100%';
+                if (headline) headline.innerText = 'Update gestartet!';
+                if (desc) desc.innerText = 'Der Installer wurde erfolgreich gestartet. Die Anwendung wird jetzt beendet.';
+                setTimeout(() => {
+                    window.pywebview?.api?.close_window();
+                }, 1500);
+            } else {
+                if (headline) headline.innerText = 'Fehler beim Update';
+                if (desc) desc.innerText = res?.error || 'Download oder Ausführung fehlgeschlagen.';
+                if (btnCancel) {
+                    btnCancel.style.display = 'inline-block';
+                    btnCancel.innerText = 'SCHLIESSEN';
+                }
+            }
+        } catch (e) {
+            clearInterval(progressTimer);
+            if (headline) headline.innerText = 'Update fehlgeschlagen';
+            if (desc) desc.innerText = 'Fehler: ' + (e.message || e);
+            if (btnCancel) {
+                btnCancel.style.display = 'inline-block';
+                btnCancel.innerText = 'SCHLIESSEN';
+            }
+        }
     },
 
     // --- Videos Tab ---
