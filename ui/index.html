@@ -87,11 +87,11 @@
             <div id="header-user-pill" class="user-pill" title="Discord-Profil öffnen">
                 <div class="mini-avatar-wrap">
                     <img src="assets/tentix_avatar.png" alt="Avatar" class="mini-avatar" id="hdr-avatar" onerror="if(window.DQS_EMBEDDED_ASSETS) this.src=window.DQS_EMBEDDED_ASSETS.avatar;">
-                    <span class="status-indicator dnd"><span class="dnd-minus"></span></span>
+                    <span class="status-indicator dnd" id="hdr-status-indicator"><span class="dnd-minus" id="hdr-status-icon"></span></span>
                 </div>
                 <div class="user-pill-info">
                     <span class="pill-username" id="hdr-username">Discord-Nutzer</span>
-                    <span class="pill-status">BEREIT</span>
+                    <span class="pill-status" id="hdr-user-status">BEREIT</span>
                 </div>
                 <div class="gear-wrap" id="hdr-gear-wrap" title="Einstellungen">
                     <span id="ico-hdr-gear"></span>
@@ -497,38 +497,113 @@
         </div>
     </div>
 
-    <!-- Update Checker & Downloader Modal -->
+    <!-- Advanced GitHub Live Update Modal -->
     <div id="update-modal" class="modal-overlay hidden">
-        <div class="modal-box card-3d update-modal-box">
-            <div class="modal-header">
+        <div class="modal-box card-3d update-modal-box-v2">
+            <!-- Modal Header -->
+            <div class="modal-header update-modal-header">
                 <div class="modal-title-wrap">
                     <span class="update-header-icon" id="ico-modal-update">🔄</span>
                     <div>
-                        <h3 id="update-modal-title">UPDATE-STATUS</h3>
-                        <span class="modal-subtitle" id="update-modal-subtitle">DQS GitHub Updater</span>
+                        <h3 id="update-modal-title">GITHUB LIVE UPDATER // DQS ENGINE</h3>
+                        <span class="modal-subtitle" id="update-modal-subtitle">TentixTV / Discord-Quest-Spoofer • Offizieller Release-Kanal</span>
                     </div>
                 </div>
-                <button class="modal-close" id="btn-close-update-modal"></button>
+                <div class="update-header-right">
+                    <span class="live-api-badge" id="update-live-api-badge">
+                        <span class="pulse-dot green"></span> GITHUB API: ONLINE
+                    </span>
+                    <button class="modal-close" id="btn-close-update-modal"></button>
+                </div>
             </div>
-            <div class="modal-body update-modal-body">
-                <div id="update-status-view">
-                    <div class="update-icon-circle" id="update-icon-circle">
-                        <span id="ico-update-state">🔍</span>
-                    </div>
-                    <h4 id="update-headline">Suche nach Updates...</h4>
-                    <p id="update-description">Verbinde mit GitHub API...</p>
 
-                    <div id="update-progress-container" style="display: none;">
-                        <div class="update-progress-bar-track">
-                            <div class="update-progress-bar-fill" id="update-progress-fill"></div>
+            <div class="modal-body update-modal-body-v2">
+                <!-- 1. Stats Bar (3 Cards) -->
+                <div class="update-stats-grid">
+                    <div class="update-stat-card">
+                        <span class="stat-card-label">INSTALLIERTE VERSION</span>
+                        <div class="stat-card-val-row">
+                            <span class="stat-card-val" id="stat-cur-ver">V6.1.0</span>
+                            <span class="stat-card-tag local">Lokal</span>
                         </div>
-                        <span class="update-progress-text" id="update-progress-text">0%</span>
+                    </div>
+                    <div class="update-stat-card">
+                        <span class="stat-card-label">GITHUB NEUESTE VERSION</span>
+                        <div class="stat-card-val-row">
+                            <span class="stat-card-val" id="stat-latest-ver">V6.1.0</span>
+                            <span class="stat-card-tag latest" id="tag-latest-source">GitHub API</span>
+                        </div>
+                    </div>
+                    <div class="update-stat-card">
+                        <span class="stat-card-label">RELEASE-STATUS</span>
+                        <div class="stat-card-val-row">
+                            <span class="stat-card-val status-val" id="stat-release-state">✓ AKTUELL</span>
+                            <span class="stat-card-tag pulse-tag" id="tag-state-pill">Verifiziert</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Live Release Details Card -->
+                <div class="update-release-card" id="update-release-card">
+                    <div class="update-release-header">
+                        <div class="update-author-info">
+                            <img src="https://avatars.githubusercontent.com/u/95185365?v=4" alt="TentixTV" class="update-author-avatar" id="update-author-avatar">
+                            <div class="update-author-meta">
+                                <h4 class="update-release-title" id="update-release-title">DQS // Discord Quest Spoofer - Release V6.1.0</h4>
+                                <span class="update-release-meta-txt" id="update-release-meta">Erstellt von <strong>@TentixTV</strong> • Veröffentlicht am 11. September 2026</span>
+                            </div>
+                        </div>
+                        <div class="update-asset-pill" id="update-asset-pill">
+                            <span class="asset-icon">📦</span>
+                            <span class="asset-name" id="update-asset-name">DQS_Installer.exe</span>
+                            <span class="asset-size" id="update-asset-size">119.6 MB</span>
+                        </div>
+                    </div>
+
+                    <!-- Live GitHub Changelog Box -->
+                    <div class="update-notes-container">
+                        <div class="update-notes-header">
+                            <span class="notes-header-title">📜 LIVE GITHUB RELEASE NOTES & HIGHLIGHTS</span>
+                            <span class="notes-header-sub" id="update-notes-sub">Direkt von GitHub API synchronisiert</span>
+                        </div>
+                        <div class="update-notes-body markdown-rendered" id="update-live-notes-content">
+                            <div class="update-loading-spinner">
+                                <span class="spin-icon">⚙</span> Lade Live-Release von GitHub...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Live Download & Install Progress Bar (Shown during download) -->
+                <div id="update-progress-container" class="update-progress-card hidden">
+                    <div class="update-progress-info-row">
+                        <span class="progress-task-label" id="update-progress-task">Lade DQS_Installer.exe herunter...</span>
+                        <span class="progress-pct-val" id="update-progress-text">0%</span>
+                    </div>
+                    <div class="update-progress-track">
+                        <div class="update-progress-fill" id="update-progress-fill"></div>
+                    </div>
+                    <div class="update-progress-sub-row">
+                        <span id="update-download-bytes">0 MB / 119.6 MB</span>
+                        <span id="update-download-speed">High-Speed GitHub CDN</span>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer update-footer">
-                <button class="btn btn-secondary" id="btn-update-cancel">ABBRECHEN</button>
-                <button class="btn btn-emerald btn-glow" id="btn-update-action" style="display: none;">JETZT AKTUALISIEREN</button>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer update-modal-footer">
+                <div class="footer-left-actions">
+                    <button class="btn btn-secondary btn-icon-text" id="btn-update-open-github" title="Release auf GitHub ansehen">
+                        <span class="btn-octo-icon">⭐</span> GITHUB REPO
+                    </button>
+                    <button class="btn btn-secondary btn-icon-text" id="btn-update-recheck" title="Erneut prüfen">
+                        <span class="btn-spin-icon" id="ico-recheck-spin">🔄</span> LIVE PRÜFEN
+                    </button>
+                </div>
+                <div class="footer-right-actions">
+                    <button class="btn btn-secondary" id="btn-update-cancel">SCHLIESSEN</button>
+                    <button class="btn btn-emerald btn-glow" id="btn-update-action" style="display: none;">JETZT AKTUALISIEREN</button>
+                </div>
             </div>
         </div>
     </div>

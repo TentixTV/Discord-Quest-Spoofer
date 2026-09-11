@@ -534,6 +534,7 @@ const DQS = {
 
         const openPopout = () => {
             this.pollSimStatus();
+            this.loadCurrentUser();
             popout.classList.remove('hidden');
             backdrop.classList.remove('hidden');
         };
@@ -647,6 +648,51 @@ const DQS = {
         const popName = document.getElementById('popout-name');
         if (popName) popName.innerText = displayName;
 
+        // 1.5 Header User Pill Custom Status / Bio / Presence
+        const hdrStatus = document.getElementById('hdr-user-status');
+        if (hdrStatus) {
+            const cs = user.custom_status;
+            if (cs && (cs.text || cs.emoji_name || cs.emoji_url)) {
+                let sHtml = '';
+                if (cs.emoji_url) {
+                    sHtml += `<img src="${cs.emoji_url}" class="mini-status-emoji" alt="">`;
+                } else if (cs.emoji_name && !cs.emoji_id) {
+                    sHtml += `<span class="mini-status-emoji-txt">${cs.emoji_name}</span>`;
+                }
+                sHtml += `<span class="mini-status-text">${cs.text || cs.emoji_name || ''}</span>`;
+                hdrStatus.innerHTML = sHtml;
+                hdrStatus.title = cs.text || '';
+            } else if (user.bio && user.bio.trim()) {
+                const firstLine = user.bio.trim().split('\n')[0].trim();
+                hdrStatus.innerHTML = `<span class="mini-status-text">${firstLine}</span>`;
+                hdrStatus.title = user.bio.trim();
+            } else {
+                const st = (user.status || 'online').toLowerCase();
+                const stMap = {
+                    'online': 'ONLINE',
+                    'dnd': 'BITTE NICHT STÖREN',
+                    'idle': 'ABWESEND',
+                    'invisible': 'UNSICHTBAR',
+                    'offline': 'OFFLINE'
+                };
+                hdrStatus.innerHTML = `<span class="mini-status-text">${stMap[st] || 'BEREIT'}</span>`;
+                hdrStatus.title = `Status: ${stMap[st] || st}`;
+            }
+        }
+
+        // Header Avatar status dot
+        const hdrDot = document.getElementById('hdr-status-indicator');
+        const hdrIcon = document.getElementById('hdr-status-icon');
+        if (hdrDot) {
+            const st = (user.status || 'online').toLowerCase();
+            hdrDot.className = `status-indicator ${st}`;
+            if (hdrIcon) {
+                if (st === 'dnd') hdrIcon.className = 'dnd-minus';
+                else if (st === 'idle') hdrIcon.className = 'idle-moon';
+                else hdrIcon.className = '';
+            }
+        }
+
         // 2. Handle & Pronouns
         const popHandle = document.getElementById('popout-handle');
         if (popHandle) {
@@ -726,8 +772,9 @@ const DQS = {
                     return div.innerHTML;
                 };
                 const escaped = escapeHtml(user.bio.trim());
-                // Auto-link URLs cleanly
-                const linked = escaped.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" class="bio-link" target="_blank">$1</a>');
+                // Auto-link URLs cleanly and format line breaks
+                let linked = escaped.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" class="bio-link" target="_blank">$1</a>');
+                linked = linked.replace(/\n/g, '<br>');
                 bioBox.innerHTML = linked;
                 bioBox.querySelectorAll('.bio-link').forEach(link => {
                     link.addEventListener('click', (e) => {
@@ -737,6 +784,7 @@ const DQS = {
                     });
                 });
             } else {
+                if (bioSection) bioSection.style.display = 'block';
                 bioBox.innerHTML = '<p class="bio-empty-text">Keine Biografie hinterlegt.</p>';
             }
         }
@@ -1542,6 +1590,60 @@ const DQS = {
         if (linkIssues) linkIssues.addEventListener('click', () => openUrl('https://github.com/TentixTV/Discord-Quest-Spoofer/issues'));
     },
 
+    // --- Helper: Lightweight Markdown to Clean HTML Parser ---
+    _parseMarkdownToHtml(md) {
+        if (!md) return '<p>Keine Release-Notizen verfügbar.</p>';
+        const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        
+        const lines = md.split('\n');
+        let html = '';
+        let inList = false;
+
+        for (let line of lines) {
+            let trimmed = line.trim();
+            if (!trimmed) {
+                if (inList) {
+                    html += '</ul>';
+                    inList = false;
+                }
+                continue;
+            }
+
+            if (trimmed.startsWith('### ')) {
+                if (inList) { html += '</ul>'; inList = false; }
+                html += `<h4>${escapeHtml(trimmed.slice(4))}</h4>`;
+            } else if (trimmed.startsWith('## ')) {
+                if (inList) { html += '</ul>'; inList = false; }
+                html += `<h3>${escapeHtml(trimmed.slice(3))}</h3>`;
+            } else if (trimmed.startsWith('# ')) {
+                if (inList) { html += '</ul>'; inList = false; }
+                html += `<h2>${escapeHtml(trimmed.slice(2))}</h2>`;
+            } else if (trimmed.startsWith('---') || trimmed.startsWith('___')) {
+                if (inList) { html += '</ul>'; inList = false; }
+                html += '<hr>';
+            } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
+                if (!inList) {
+                    html += '<ul>';
+                    inList = true;
+                }
+                let itemContent = escapeHtml(trimmed.slice(2));
+                itemContent = itemContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                itemContent = itemContent.replace(/`([^`]+)`/g, '<code>$1</code>');
+                itemContent = itemContent.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="bio-link" target="_blank">$1</a>');
+                html += `<li>${itemContent}</li>`;
+            } else {
+                if (inList) { html += '</ul>'; inList = false; }
+                let para = escapeHtml(trimmed);
+                para = para.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                para = para.replace(/`([^`]+)`/g, '<code>$1</code>');
+                para = para.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="bio-link" target="_blank">$1</a>');
+                html += `<p style="margin: 5px 0;">${para}</p>`;
+            }
+        }
+        if (inList) html += '</ul>';
+        return html;
+    },
+
     // --- Changelog & GitHub Updater Modals ---
     setupChangelogAndUpdateModals() {
         const changelogModal = document.getElementById('changelog-modal');
@@ -1576,6 +1678,26 @@ const DQS = {
             });
         }
 
+        // Live Recheck button
+        const btnRecheck = document.getElementById('btn-update-recheck');
+        if (btnRecheck) {
+            btnRecheck.addEventListener('click', async () => {
+                const spin = document.getElementById('ico-recheck-spin');
+                if (spin) spin.style.animation = 'spin 0.8s linear infinite';
+                await this.checkForUpdates(true);
+                if (spin) spin.style.animation = '';
+            });
+        }
+
+        // Open GitHub Repo / Release
+        const btnOpenGh = document.getElementById('btn-update-open-github');
+        if (btnOpenGh) {
+            btnOpenGh.addEventListener('click', () => {
+                const url = this._latestReleaseUrl || 'https://github.com/TentixTV/Discord-Quest-Spoofer/releases';
+                window.pywebview?.api?.open_url(url);
+            });
+        }
+
         // Toast Banner actions
         const btnToastUpdate = document.getElementById('btn-toast-update-now');
         const btnToastDismiss = document.getElementById('btn-toast-update-dismiss');
@@ -1599,67 +1721,53 @@ const DQS = {
         const listContainer = document.getElementById('changelog-content-list');
         if (!modal || !listContainer) return;
 
-        listContainer.innerHTML = '<div style="padding:24px;text-align:center;color:#94a3b8;"><span style="display:inline-block;animation:spin 1s linear infinite;margin-right:8px;">⚙</span> Lade Changelog...</div>';
+        listContainer.innerHTML = '<div style="padding:24px;text-align:center;color:#94a3b8;"><span style="display:inline-block;animation:spin 1s linear infinite;margin-right:8px;">⚙</span> Lade Live-Changelog von GitHub...</div>';
         modal.classList.remove('hidden');
 
         try {
             const data = await window.pywebview?.api?.get_changelog();
-            const entries = (data && Array.isArray(data.entries) && data.entries.length > 0) ? data.entries : [
-                {
-                    version: "V6.1.0",
-                    date: "11.09.2026",
-                    title: "Auto-Updater & Dynamic Profile & Windows Toast Release",
-                    changes: [
-                        "Automatischer Update-Checker beim Start via GitHub API Releases",
-                        "Dynamische Erkennung von Bio und benutzerdefiniertem Status pro Account (keine Hardcoded-Fallbacks)",
-                        "Changelog-Übersicht und Manueller Update-Button im Discord-Profil",
-                        "Native Windows Benachrichtigung nach 15 Minuten Spiel-Simulation",
-                        "Deaktivierung des Vollbildmodus (nur Minimieren und Schließen)"
-                    ]
-                },
-                {
-                    version: "V6.0.0",
-                    date: "11.09.2026",
-                    title: "High-Fidelity V6 Audio & Interactive Tutorial & Offline Standalone Installer",
-                    changes: [
-                        "Interaktives Tutorial & Hilfebereich oben rechts mit 4 Kategorien & Quick-Action",
-                        "Atmosphärischer 432Hz Sinuswellen-Ambience Sound beim Start",
-                        "Sanfter Joy-Con Snap Übergangssound beim Laden der Quests",
-                        "High-Fidelity 1-Sekunden Heartbeat Synchronisation zwischen Timer und Fortschrittsbalken",
-                        "Saubere 2-Spalten Navbar & neue Vektoricone für Minuten und Spiele"
-                    ]
-                }
-            ];
+            const entries = (data && Array.isArray(data.entries) && data.entries.length > 0) ? data.entries : [];
+            
+            if (entries.length > 0) {
+                listContainer.innerHTML = '';
+                entries.forEach((item, idx) => {
+                    const isCurrent = idx === 0;
+                    const card = document.createElement('div');
+                    card.className = 'changelog-entry-card';
 
-            listContainer.innerHTML = '';
-            entries.forEach((item, idx) => {
-                const isCurrent = idx === 0;
-                const card = document.createElement('div');
-                card.className = 'changelog-entry-card';
+                    let itemsHtml = '';
+                    if (Array.isArray(item.changes)) {
+                        itemsHtml = item.changes.map(ch => {
+                            let formatted = ch.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                            formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+                            return `
+                                <li class="changelog-point">
+                                    <span class="changelog-point-bullet">•</span>
+                                    <span class="changelog-point-text">${formatted}</span>
+                                </li>
+                            `;
+                        }).join('');
+                    } else if (item.body) {
+                        itemsHtml = `<div class="changelog-body-text">${this._parseMarkdownToHtml(item.body)}</div>`;
+                    }
 
-                const itemsHtml = Array.isArray(item.changes) 
-                    ? item.changes.map(ch => `
-                        <li class="changelog-point">
-                            <span class="changelog-point-bullet">•</span>
-                            <span class="changelog-point-text">${ch}</span>
-                        </li>
-                    `).join('')
-                    : '';
-
-                card.innerHTML = `
-                    <div class="changelog-entry-header">
-                        <div class="changelog-version-tag ${isCurrent ? 'version-current' : ''}">
-                            ${item.version || 'Version'} ${isCurrent ? '<span class="changelog-badge-current">AKTUELL</span>' : ''}
+                    card.innerHTML = `
+                        <div class="changelog-entry-header">
+                            <div class="changelog-version-tag ${isCurrent ? 'version-current' : ''}">
+                                ${item.version || 'Version'} ${isCurrent ? '<span class="changelog-badge-current">LIVE GITHUB</span>' : ''}
+                            </div>
+                            <span class="changelog-date">${item.date || ''}</span>
                         </div>
-                        <span class="changelog-date">${item.date || ''}</span>
-                    </div>
-                    <h4 class="changelog-title">${item.title || ''}</h4>
-                    <ul class="changelog-list">
-                        ${itemsHtml}
-                    </ul>
-                `;
-                listContainer.appendChild(card);
-            });
+                        <h4 class="changelog-title">${item.title || ''}</h4>
+                        <ul class="changelog-list">
+                            ${itemsHtml}
+                        </ul>
+                    `;
+                    listContainer.appendChild(card);
+                });
+            } else {
+                listContainer.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8;">Keine Changelog-Einträge gefunden.</div>';
+            }
         } catch (e) {
             console.error('Failed to load changelog:', e);
             listContainer.innerHTML = '<div style="padding:20px;text-align:center;color:#f87171;">Changelog konnte nicht geladen werden.</div>';
@@ -1667,111 +1775,153 @@ const DQS = {
     },
 
     _updateDownloadUrl: null,
+    _latestReleaseUrl: null,
     async checkForUpdates(isManual = false) {
         const modal = document.getElementById('update-modal');
-        const iconCircle = document.getElementById('update-icon-circle');
-        const icoState = document.getElementById('ico-update-state');
-        const headline = document.getElementById('update-headline');
-        const desc = document.getElementById('update-description');
+        const toastBanner = document.getElementById('update-toast-banner');
+        
+        // Element bindings
+        const statCur = document.getElementById('stat-cur-ver');
+        const statLatest = document.getElementById('stat-latest-ver');
+        const statState = document.getElementById('stat-release-state');
+        const tagLatestSource = document.getElementById('tag-latest-source');
+        const tagStatePill = document.getElementById('tag-state-pill');
+        const relTitle = document.getElementById('update-release-title');
+        const relMeta = document.getElementById('update-release-meta');
+        const authorAvatar = document.getElementById('update-author-avatar');
+        const assetName = document.getElementById('update-asset-name');
+        const assetSize = document.getElementById('update-asset-size');
+        const liveNotesContent = document.getElementById('update-live-notes-content');
         const progContainer = document.getElementById('update-progress-container');
-        const progFill = document.getElementById('update-progress-fill');
-        const progText = document.getElementById('update-progress-text');
         const btnAction = document.getElementById('btn-update-action');
         const btnCancel = document.getElementById('btn-update-cancel');
-        const toastBanner = document.getElementById('update-toast-banner');
 
         if (isManual && modal) {
             modal.classList.remove('hidden');
-            if (iconCircle) iconCircle.className = 'update-icon-circle update-state-checking';
-            if (icoState) icoState.innerText = '🔍';
-            if (headline) headline.innerText = 'Suche nach Updates...';
-            if (desc) desc.innerText = 'Verbinde mit GitHub Releases (TentixTV/Discord-Quest-Spoofer)...';
-            if (progContainer) progContainer.style.display = 'none';
-            if (btnAction) btnAction.style.display = 'none';
-            if (btnCancel) {
-                btnCancel.style.display = 'inline-block';
-                btnCancel.innerText = 'ABBRECHEN';
+            if (progContainer) progContainer.classList.add('hidden');
+            if (liveNotesContent) {
+                liveNotesContent.innerHTML = '<div class="update-loading-spinner"><span class="spin-icon">⚙</span> Verbinde mit GitHub Releases API (Live)...</div>';
             }
         }
 
         try {
             const res = await window.pywebview?.api?.check_update();
-            if (!res) {
+            if (!res || !res.success) {
                 if (isManual && modal) {
-                    if (headline) headline.innerText = 'Fehler beim Suchen';
-                    if (desc) desc.innerText = 'Konnte die GitHub API nicht erreichen. Bitte prüfe deine Internetverbindung.';
+                    if (statState) {
+                        statState.innerText = 'OFFLINE';
+                        statState.className = 'stat-card-val status-val';
+                        statState.style.color = '#f87171';
+                    }
+                    if (liveNotesContent) {
+                        liveNotesContent.innerHTML = `<div style="padding:20px;text-align:center;color:#f87171;">Konnte GitHub API nicht erreichen (${res?.error || 'Netzwerkfehler'}). Bitte prüfe deine Internetverbindung.</div>`;
+                    }
                 }
                 return;
             }
 
-            if (res.update_available) {
-                this._updateDownloadUrl = res.download_url;
+            // Populate live data
+            this._updateDownloadUrl = res.download_url;
+            this._latestReleaseUrl = res.html_url || 'https://github.com/TentixTV/Discord-Quest-Spoofer/releases';
 
-                // Show toast banner on startup background check
-                if (!isManual && toastBanner) {
-                    const toastVer = document.getElementById('toast-new-version');
-                    if (toastVer) toastVer.innerText = res.latest_version || 'Neu';
-                    toastBanner.classList.remove('hidden');
-                }
+            if (statCur) statCur.innerText = res.current_version || 'V6.1.0';
+            if (statLatest) statLatest.innerText = res.latest_version || res.current_version;
+            if (tagLatestSource) tagLatestSource.innerText = 'GitHub Live API';
 
-                if (modal && isManual) {
-                    if (iconCircle) iconCircle.className = 'update-icon-circle update-state-available';
-                    if (icoState) icoState.innerText = '🚀';
-                    if (headline) headline.innerText = `Neues Update verfügbar: ${res.latest_version}!`;
-                    if (desc) {
-                        const notes = res.release_notes ? `<div class="update-notes-preview" style="margin-top:10px;padding:8px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:11px;color:#94a3b8;max-height:100px;overflow-y:auto;text-align:left;">${res.release_notes.replace(/\n/g, '<br>')}</div>` : '';
-                        desc.innerHTML = `Deine Version: <strong>${res.current_version}</strong><br>Neueste Version: <strong style="color:#10b981;">${res.latest_version}</strong>${notes}`;
-                    }
-                    if (btnAction) {
-                        btnAction.style.display = 'inline-block';
-                        btnAction.innerText = 'JETZT AKTUALISIEREN';
-                        btnAction.onclick = () => this.startUpdateProcess(res.download_url);
-                    }
-                }
-            } else {
-                if (isManual && modal) {
-                    if (iconCircle) iconCircle.className = 'update-icon-circle update-state-uptodate';
-                    if (icoState) icoState.innerText = '✓';
-                    if (headline) headline.innerText = 'Alles auf dem neuesten Stand!';
-                    if (desc) desc.innerHTML = `Du nutzt bereits die aktuellste Version (<strong>${res.current_version || 'V6.1.0'}</strong>).<br>Es sind keine neuen Updates auf GitHub vorhanden.`;
-                    if (btnCancel) btnCancel.innerText = 'SCHLIESSEN';
-                    if (btnAction) btnAction.style.display = 'none';
+            const hasNewer = Boolean(res.has_update || res.update_available);
+
+            if (statState) {
+                if (hasNewer) {
+                    statState.innerText = '🚀 UPDATE VERFÜGBAR';
+                    statState.className = 'stat-card-val status-val update-ready';
+                    statState.style.color = '#38bdf8';
+                } else {
+                    statState.innerText = '✓ AKTUELL';
+                    statState.className = 'stat-card-val status-val';
+                    statState.style.color = '#10b981';
                 }
             }
+
+            if (tagStatePill) {
+                tagStatePill.innerText = hasNewer ? 'Neuer Build' : 'Verifiziert';
+                tagStatePill.className = hasNewer ? 'stat-card-tag latest' : 'stat-card-tag pulse-tag';
+            }
+
+            if (relTitle) relTitle.innerText = res.release_name || `DQS // Release ${res.latest_version}`;
+            if (relMeta) {
+                const dateStr = res.published_date || 'Gerade eben';
+                relMeta.innerHTML = `Erstellt von <strong>@${res.author?.login || 'TentixTV'}</strong> • Veröffentlicht am ${dateStr} • GitHub Live Stream`;
+            }
+            if (authorAvatar && res.author?.avatar_url) {
+                authorAvatar.src = res.author.avatar_url;
+            }
+            if (assetName) assetName.innerText = res.asset_name || 'DQS_Installer.exe';
+            if (assetSize) assetSize.innerText = `${res.asset_size_mb || 119.6} MB`;
+
+            // Live rendered markdown notes
+            if (liveNotesContent) {
+                const renderedHtml = this._parseMarkdownToHtml(res.changelog);
+                liveNotesContent.innerHTML = renderedHtml;
+                liveNotesContent.querySelectorAll('a').forEach(a => {
+                    a.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        window.pywebview?.api?.open_url(a.getAttribute('href'));
+                    });
+                });
+            }
+
+            // Buttons
+            if (hasNewer) {
+                if (!isManual && toastBanner) {
+                    const toastVer = document.getElementById('toast-new-version');
+                    if (toastVer) toastVer.innerText = res.latest_version;
+                    toastBanner.classList.remove('hidden');
+                }
+                if (btnAction) {
+                    btnAction.style.display = 'inline-block';
+                    btnAction.innerText = `🚀 JETZT AKTUALISIEREN (${res.asset_size_mb || 119.6} MB)`;
+                    btnAction.onclick = () => this.startUpdateProcess(res.download_url);
+                }
+                if (btnCancel) btnCancel.innerText = 'SPÄTER';
+            } else {
+                if (btnAction) {
+                    btnAction.style.display = 'inline-block';
+                    btnAction.innerText = '🔄 NEU INSTALLIEREN';
+                    btnAction.onclick = () => this.startUpdateProcess(res.download_url);
+                }
+                if (btnCancel) btnCancel.innerText = 'SCHLIESSEN';
+            }
         } catch (e) {
-            console.error('Update check failed:', e);
-            if (isManual && modal) {
-                if (headline) headline.innerText = 'Verbindungsfehler';
-                if (desc) desc.innerText = 'Update-Prüfung fehlgeschlagen: ' + (e.message || e);
+            console.error('Update check error:', e);
+            if (isManual && modal && liveNotesContent) {
+                liveNotesContent.innerHTML = `<div style="padding:20px;text-align:center;color:#f87171;">Fehler beim Laden von GitHub: ${e.message || e}</div>`;
             }
         }
     },
 
     async startUpdateProcess(downloadUrl) {
-        const headline = document.getElementById('update-headline');
-        const desc = document.getElementById('update-description');
         const progContainer = document.getElementById('update-progress-container');
         const progFill = document.getElementById('update-progress-fill');
         const progText = document.getElementById('update-progress-text');
+        const progBytes = document.getElementById('update-download-bytes');
+        const progTask = document.getElementById('update-progress-task');
         const btnAction = document.getElementById('btn-update-action');
         const btnCancel = document.getElementById('btn-update-cancel');
-        const iconCircle = document.getElementById('update-icon-circle');
-        const icoState = document.getElementById('ico-update-state');
 
         if (btnAction) btnAction.style.display = 'none';
         if (btnCancel) btnCancel.style.display = 'none';
-        if (iconCircle) iconCircle.className = 'update-icon-circle update-state-downloading';
-        if (icoState) icoState.innerText = '⬇️';
-        if (headline) headline.innerText = 'Lade Update herunter...';
-        if (desc) desc.innerText = 'Der neue Installer wird heruntergeladen und ausgeführt. Die App startet anschließend neu.';
-        if (progContainer) progContainer.style.display = 'block';
+        if (progContainer) progContainer.classList.remove('hidden');
 
-        let progress = 5;
+        if (progTask) progTask.innerText = 'Lade DQS_Installer.exe von GitHub herunter...';
+
+        let progress = 8;
         const progressTimer = setInterval(() => {
-            progress = Math.min(progress + 12, 90);
+            progress = Math.min(progress + 10, 92);
             if (progFill) progFill.style.width = `${progress}%`;
             if (progText) progText.innerText = `${progress}%`;
-        }, 350);
+            const estMb = ((progress / 100) * 119.6).toFixed(1);
+            if (progBytes) progBytes.innerText = `${estMb} MB / 119.6 MB`;
+        }, 320);
 
         try {
             const res = await window.pywebview?.api?.download_and_install_update(downloadUrl);
@@ -1779,14 +1929,13 @@ const DQS = {
             if (res && res.success) {
                 if (progFill) progFill.style.width = '100%';
                 if (progText) progText.innerText = '100%';
-                if (headline) headline.innerText = 'Update gestartet!';
-                if (desc) desc.innerText = 'Der Installer wurde erfolgreich gestartet. Die Anwendung wird jetzt beendet.';
+                if (progBytes) progBytes.innerText = '119.6 MB / 119.6 MB';
+                if (progTask) progTask.innerText = '✓ Download abgeschlossen! Starte Installer...';
                 setTimeout(() => {
                     window.pywebview?.api?.close_window();
-                }, 1500);
+                }, 1600);
             } else {
-                if (headline) headline.innerText = 'Fehler beim Update';
-                if (desc) desc.innerText = res?.error || 'Download oder Ausführung fehlgeschlagen.';
+                if (progTask) progTask.innerText = 'Fehler beim Update: ' + (res?.error || 'Download fehlgeschlagen');
                 if (btnCancel) {
                     btnCancel.style.display = 'inline-block';
                     btnCancel.innerText = 'SCHLIESSEN';
@@ -1794,8 +1943,7 @@ const DQS = {
             }
         } catch (e) {
             clearInterval(progressTimer);
-            if (headline) headline.innerText = 'Update fehlgeschlagen';
-            if (desc) desc.innerText = 'Fehler: ' + (e.message || e);
+            if (progTask) progTask.innerText = 'Fehler: ' + (e.message || e);
             if (btnCancel) {
                 btnCancel.style.display = 'inline-block';
                 btnCancel.innerText = 'SCHLIESSEN';
