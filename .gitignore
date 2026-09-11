@@ -17,3 +17,5 @@ obf_*/
 dist/
 build/
 *.spec
+_local_unencrypted_source/
+restore_dev_source.py

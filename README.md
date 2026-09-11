@@ -1,15 +1,15 @@
-# 🎮 DQS // Discord Quest Spoofer (Release V5.5.0)
+# 🎮 DQS // Discord Quest Spoofer (Release V6.0.0)
 > **Projekt von Sandro (T3X / TNTIX)**  
 > 🔗 GitHub: [https://github.com/TentixTV/Discord-Quest-Spoofer](https://github.com/TentixTV/Discord-Quest-Spoofer)  
-> 🚀 Neuestes Release: [https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V5.5.0](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V5.5.0)
+> 🚀 Neuestes Release: [https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.0.0](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.0.0)
 
 ---
 
-## 📥 Download (Release V5.5.0)
+## 📥 Download (Release V6.0.0)
 
 | Datei | Was ist das? | Download |
 | :--- | :--- | :--- |
-| **`DQS_Installer.exe`** | Der 1-Klick Installer (haut DQS auf deinen PC, macht Desktop-Icon & Startmenü fertig) | [⬇️ DQS_Installer.exe](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/download/V5.5.0/DQS_Installer.exe) |
+| **`DQS_Installer.exe`** | Der 1-Klick Installer (haut DQS auf deinen PC, macht Desktop-Icon & Startmenü fertig) | [⬇️ DQS_Installer.exe](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/download/V6.0.0/DQS_Installer.exe) |
 
 > ℹ️ *Info:* Die `DQS.exe` selbst landet durch den Installer ganz normal in deinem Benutzerordner (`%LOCALAPPDATA%\Programs\Discord Quest Spoofer`).
 
@@ -32,38 +32,42 @@ Das Tool simuliert Discord gegenüber einfach, dass du das Game zockst, schickt 
 
 ---
 
-## ✨ Was DQS V5.5.0 alles kann:
+## ✨ Was DQS V6.0.0 alles kann:
 
+- 🔔 **Native Windows Toast Benachrichtigungen**:
+  - Sobald eine Quest zu 100% erfüllt ist oder der Express-Abschluss fertig ist, schickt DQS dir eine native Windows-Desktop-Benachrichtigung mit Spieltitel und Belohnungsdetails.
+- 🎵 **High-Tech Audio & Sound Engine**:
+  - Atmosphärischer Ambient-Hintergrundsound während des Startup Splash Screens (4–12 Sekunden dynamisch).
+  - Mechanischer Joy-Con Einrast-Klick (Snap Click) im exakten Moment des App-Popups.
+- 🌑 **Stealth Obsidian Monochrome Look**:
+  - Komplettes High-Contrast Design in Obsidian Schwarz (`#050608`), Titan Silber und Diamant Weiß – exakt gematcht auf das `DQS.png` App-Icon.
+  - Klare, farbige Funktionsbuttons (Grün für Start/Claim, Rot für Stop, Blau/Cyan für Express) für beste Bedienbarkeit.
+  - Monochromer 3D Partikel-Sternenhimmel im Hintergrund.
+- 🔍 **Universelle Lokale Account-Erkennung**:
+  - Scannt und erkennt automatisch aktive Discord-Accounts auf jedem PC – egal ob Discord Desktop Clients (Discord, Canary, PTB, Dev, Lightcord) oder Browser (Chrome, Brave, Edge, Opera, Opera GX, Vivaldi, Yandex) über alle Profile (`Default`, `Profile 1..5`).
 - 🎁 **Belohnungen aller Art mitnehmen**:
-  - 💎 **Discord Orbs**: Mit schick animiertem 60-FPS Orbs-Icon.
+  - 💎 **Discord Orbs**: Mit 60-FPS Orbs-Icon.
   - 🎭 **Avatar-Dekos**: Dauerhaft direkt in dein Discord-Profil freischalten.
-  - ⚔️ **Ingame Items & Codes**: Wenn ein Freischalt-Code für ein Spiel zurückkommt, kopiert DQS ihn dir direkt automatisch in die Windows-Zwischenablage.
+  - ⚔️ **Ingame Items & Codes**: Freischalt-Codes für Spiele landen direkt in der Zwischenablage.
 - 📱 **Handy-Quests (Mobile Simulation)**:
-  - Quests, die eigentlich die Discord-Handy-App verlangen (`WATCH_VIDEO_ON_MOBILE`), werden mit echten Android-Headern simuliert.
+  - Quests, die die Discord Mobile-App verlangen (`WATCH_VIDEO_ON_MOBILE`), werden mit echten Android-Headern simuliert.
 - ⚡ **Video-Quests in 5 Sekunden**:
-  - Echte Video-Quests lassen sich per Express-Button in 5s abschließen. Normale Spiele mit Trailern werden nicht mehr versehentlich als Video behandelt, sondern richtig als Spiel simuliert.
+  - Echte Video-Quests lassen sich per Express-Button in 5s abschließen.
 - 🎮 **Über 24.000 Games in der Datenbank**:
   - DQS synchronisiert sich mit Discords offizieller Spiele-Datenbank. Erkennt jedes Quest-Game automatisch und startet den richtigen Prozessnamen.
 - 🎲 **Multi-Game Quests**:
-  - Bei Quests mit Spiele-Paketen (z.B. Capcom Bundles) kannst du dir das Game im Dropdown selbst aussuchen.
-- 🌌 **Holografischer Startup-Screen & 3D Hintergrund**:
-  - Neuer Splash-Screen in der Mitte (ohne Boxen/Kanten), der nach 4-12 Sekunden dynamischer Ladezeit flüssig aufpoppt.
-  - Im Hintergrund läuft ein 3D-Partikel-Canvas.
-- 🔄 **Live-Sync Balken**:
-  - Der %-Balken im Quests-Tab und Simulator läuft im Sekundentakt live mit Discord mit.
-- 📜 **Lizenz & Info im Client**:
-  - Klick oben links auf das App-Icon öffnet die Lizenz- und Info-Übersicht (Deutsch/Englisch umschaltbar).
-- 🔒 **PyArmor Verschlüsselt**:
-  - Der Code ist mit Bytecode-Verschlüsselung geschützt, damit niemand fremden Schadcode reinschmuggeln kann.
+  - Bei Quests mit Spiele-Paketen (z.B. Capcom Bundles) kannst du dir das Game im Dropdown aussuchen.
+- 🔒 **PyArmor Bytecode-Verschlüsselung**:
+  - Vollständiger Schutz des Quellcodes durch PyArmor-Verschlüsselung.
 
 ---
 
 ## 🚀 Wie benutze ich das?
 
-1. Lad dir die **`DQS_Installer.exe`** aus dem [Releases-Tab](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V5.5.0) runter.
-2. Installer kurz durchklicken.
+1. Lad dir die **`DQS_Installer.exe`** aus dem [Releases-Tab](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.0.0) runter.
+2. Installer kurz durchklicken (legt Verknüpfung auf deinem Desktop an).
 3. DQS starten.
-4. Account auswählen (Token wird automatisch erkannt).
+4. Account auswählen (dein lokaler Account wird sofort erkannt).
 5. Klick auf **Alle Quests annehmen** oder starte die Simulation – fertig, lehn dich zurück!
 
 ---

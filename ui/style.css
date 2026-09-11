@@ -1,25 +1,39 @@
 /*
- * DQS // High-End Discord Theme & 3D Glassmorphism Stylesheet
- * 100% Vector SVGs, 3D Tilt Physics, Electric Quests Aura, Dual Video Bars
+ * DQS // V6.0.0 High-End Stealth Monochrome & 3D Glassmorphism Stylesheet
+ * Obsidian Black, Titanium Silver & Diamond White (Matching DQS App Icon)
+ * 100% Vector SVGs, 3D Tilt Physics, Electric Aura, Dual Video Bars
  */
 
 :root {
-    --bg-dark: #08090d;
-    --bg-card: rgba(18, 19, 28, 0.88);
-    --card-border: rgba(45, 48, 68, 0.75);
+    --bg-dark: #050608;
+    --bg-surface: #0b0c10;
+    --bg-card: rgba(14, 15, 21, 0.92);
+    --card-border: rgba(255, 255, 255, 0.10);
+    --card-border-hover: rgba(255, 255, 255, 0.32);
+
+    /* Sleek Monochrome Palette (Matching DQS.png Icon) */
+    --mono-white: #ffffff;
+    --mono-silver: #cbd5e1;
+    --mono-slate: #94a3b8;
+    --mono-charcoal: #181924;
+    --mono-glow: rgba(255, 255, 255, 0.25);
+
+    /* Preserved Vibrant Functional Action Colors */
     --neon-blurple: #5865F2;
     --neon-blurple-hover: #4752C4;
     --neon-blurple-glow: rgba(88, 101, 242, 0.4);
-    --emerald: #23A55A;
-    --emerald-glow: rgba(35, 165, 90, 0.4);
-    --cyan: #38BDF8;
+    --emerald: #22c55e;
+    --emerald-glow: rgba(34, 197, 94, 0.45);
+    --cyan: #38bdf8;
     --cyan-glow: rgba(56, 189, 248, 0.4);
-    --crimson: #F23F43;
-    --gold: #FEE75C;
-    --gold-glow: rgba(254, 231, 92, 0.45);
-    --purple: #9333EA;
-    --text-primary: #F2F3F5;
-    --text-muted: #8E92A4;
+    --crimson: #ef4444;
+    --crimson-glow: rgba(239, 68, 68, 0.45);
+    --gold: #facc15;
+    --gold-glow: rgba(250, 204, 21, 0.45);
+
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #64748b;
     --font-stack: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -43,13 +57,13 @@
     border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba(88, 101, 242, 0.45);
+    background: rgba(255, 255, 255, 0.22);
     border-radius: 3px;
     backdrop-filter: blur(4px);
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(88, 101, 242, 0.85);
-    box-shadow: 0 0 8px rgba(88, 101, 242, 0.5);
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.35);
 }
 
 body {
@@ -100,9 +114,9 @@ body {
 /* ================= TITLEBAR (SPACIOUS & AIRY) ================= */
 #app-titlebar {
     height: 74px;
-    background: rgba(12, 13, 19, 0.88);
+    background: rgba(8, 9, 13, 0.94);
     backdrop-filter: blur(22px);
-    border-bottom: 1px solid rgba(40, 43, 62, 0.85);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -151,7 +165,7 @@ body {
     object-fit: contain;
     position: relative;
     z-index: 2;
-    filter: drop-shadow(0 0 10px rgba(88, 101, 242, 0.65));
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.65));
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .brand-img:hover {
@@ -161,7 +175,7 @@ body {
 .logo-glow {
     position: absolute;
     inset: -6px;
-    background: radial-gradient(circle, rgba(88, 101, 242, 0.45) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.35) 0%, transparent 70%);
     border-radius: 50%;
     filter: blur(8px);
     z-index: 1;
@@ -183,7 +197,7 @@ body {
     font-size: 19px;
     font-weight: 900;
     letter-spacing: 1.2px;
-    background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -247,10 +261,10 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: rgba(16, 18, 26, 0.85);
+    background: rgba(11, 12, 16, 0.92);
     padding: 4px 6px;
     border-radius: 24px;
-    border: 1px solid rgba(40, 43, 62, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     flex-shrink: 0;
 }
 
@@ -280,40 +294,41 @@ body {
 
 .nav-tab:hover {
     color: #ffffff;
-    background: rgba(88, 101, 242, 0.15);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .nav-tab.active {
     color: #ffffff;
-    background: var(--neon-blurple);
-    box-shadow: 0 2px 14px var(--neon-blurple-glow);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.22), inset 0 0 8px rgba(255, 255, 255, 0.1);
 }
 
 .tab-badge {
     background: #ffffff;
-    color: var(--neon-blurple);
+    color: #050608;
     font-size: 9px;
     font-weight: 900;
     padding: 1px 5.5px;
     border-radius: 9px;
 }
 
-/* Quests Tab Electric Energy Effects */
+/* Quests Tab Electric Energy Effects (Diamond White & Silver Spark) */
 .nav-tab.quests-tab.active {
-    background: linear-gradient(135deg, #5865F2 0%, #4338ca 100%);
-    box-shadow: 0 0 22px rgba(88, 101, 242, 0.65), inset 0 0 10px rgba(199, 210, 254, 0.5);
-    border: 1px solid rgba(165, 180, 252, 0.5);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(203, 213, 225, 0.10) 100%);
+    box-shadow: 0 0 22px rgba(255, 255, 255, 0.35), inset 0 0 10px rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.5);
     animation: electricBorderPulse 2.5s infinite alternate ease-in-out;
 }
 
 @keyframes electricBorderPulse {
     0% {
-        box-shadow: 0 0 16px rgba(88, 101, 242, 0.5), inset 0 0 8px rgba(199, 210, 254, 0.4);
-        border-color: rgba(165, 180, 252, 0.4);
+        box-shadow: 0 0 14px rgba(255, 255, 255, 0.25), inset 0 0 6px rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
     }
     100% {
-        box-shadow: 0 0 30px rgba(88, 101, 242, 0.85), inset 0 0 16px rgba(199, 210, 254, 0.7);
-        border-color: rgba(224, 231, 255, 0.85);
+        box-shadow: 0 0 26px rgba(255, 255, 255, 0.5), inset 0 0 12px rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.85);
     }
 }
 
@@ -333,7 +348,7 @@ body {
     height: 4px;
     background: #ffffff;
     border-radius: 50%;
-    box-shadow: 0 0 8px #93c5fd, 0 0 12px #5865f2;
+    box-shadow: 0 0 8px #ffffff, 0 0 14px rgba(255, 255, 255, 0.8);
     animation: sparkFlyUp 2s infinite ease-out;
 }
 
@@ -773,12 +788,12 @@ body {
 
 /* Master Auto-Quest Hero Card */
 .autofarm-hero-card {
-    background: linear-gradient(135deg, rgba(35, 165, 90, 0.14) 0%, rgba(20, 26, 28, 0.95) 50%, rgba(88, 101, 242, 0.12) 100%);
-    border: 1px solid rgba(35, 165, 90, 0.4);
+    background: linear-gradient(135deg, rgba(22, 24, 33, 0.95) 0%, rgba(12, 13, 18, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 14px;
     padding: 20px 24px;
     margin-bottom: 18px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 25px rgba(35, 165, 90, 0.18);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 25px rgba(255, 255, 255, 0.06);
     backdrop-filter: blur(16px);
     position: relative;
     overflow: hidden;
@@ -1259,8 +1274,8 @@ body {
 .quest-card {
     display: flex;
     align-items: center;
-    background: linear-gradient(135deg, rgba(20, 22, 33, 0.88) 0%, rgba(13, 14, 21, 0.95) 100%);
-    border: 1px solid rgba(42, 45, 64, 0.8);
+    background: linear-gradient(135deg, rgba(17, 18, 25, 0.92) 0%, rgba(9, 10, 14, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 14px;
     padding: 18px 22px;
     backdrop-filter: blur(14px);
@@ -1306,8 +1321,8 @@ body {
 }
 
 .quest-card:hover {
-    border-color: rgba(88, 101, 242, 0.55);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55), 0 0 25px rgba(88, 101, 242, 0.2);
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 25px rgba(255, 255, 255, 0.10);
 }
 
 .quest-card::after {
@@ -1954,7 +1969,7 @@ body {
     font-size: 16px;
     font-weight: 900;
     letter-spacing: 1px;
-    background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 6px;
@@ -2035,8 +2050,8 @@ body {
 }
 
 .card-3d {
-    background: linear-gradient(135deg, rgba(20, 22, 33, 0.88) 0%, rgba(13, 14, 21, 0.95) 100%);
-    border: 1px solid rgba(42, 45, 64, 0.8);
+    background: linear-gradient(135deg, rgba(17, 18, 25, 0.92) 0%, rgba(9, 10, 14, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 12px;
     padding: 22px;
     backdrop-filter: blur(14px);
@@ -2967,7 +2982,7 @@ body {
     position: fixed;
     inset: 0;
     z-index: 99999;
-    background: radial-gradient(circle at 50% 48%, #0d0f1c 0%, #060810 60%, #020305 100%);
+    background: radial-gradient(circle at 50% 48%, #0e0f16 0%, #06070a 60%, #020204 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3005,27 +3020,27 @@ body {
     inset: -16px;
     border-radius: 50%;
     border: 2px solid transparent;
-    border-top-color: #5865f2;
-    border-right-color: #06b6d4;
-    border-bottom-color: #8b5cf6;
+    border-top-color: #ffffff;
+    border-right-color: #cbd5e1;
+    border-bottom-color: #64748b;
     animation: splashRingSpin 2.4s linear infinite;
-    filter: drop-shadow(0 0 16px rgba(88, 101, 242, 0.9));
+    filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.85));
 }
 
 .splash-energy-ring-inner {
     position: absolute;
     inset: -6px;
     border-radius: 50%;
-    border: 1.5px dashed rgba(6, 182, 212, 0.6);
+    border: 1.5px dashed rgba(255, 255, 255, 0.65);
     animation: splashRingSpinRev 3.6s linear infinite;
-    filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.75));
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.6));
 }
 
 .splash-energy-ring-pulsing {
     position: absolute;
     inset: -28px;
     border-radius: 50%;
-    border: 1px solid rgba(88, 101, 242, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     animation: splashPulseRing 2.4s ease-in-out infinite;
 }
 
@@ -3051,20 +3066,20 @@ body {
     object-fit: contain;
     position: relative;
     z-index: 2;
-    filter: drop-shadow(0 0 30px rgba(88, 101, 242, 0.95));
+    filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 10px rgba(203, 213, 225, 0.6));
     animation: splashIconPulse 2.6s ease-in-out infinite alternate;
 }
 
 @keyframes splashIconPulse {
-    0% { transform: scale(0.97); filter: drop-shadow(0 0 22px rgba(88, 101, 242, 0.8)); }
-    100% { transform: scale(1.03); filter: drop-shadow(0 0 38px rgba(88, 101, 242, 1)); }
+    0% { transform: scale(0.97); filter: drop-shadow(0 0 22px rgba(255, 255, 255, 0.75)); }
+    100% { transform: scale(1.03); filter: drop-shadow(0 0 40px rgba(255, 255, 255, 1)); }
 }
 
 .splash-glow-core {
     position: absolute;
     inset: 2px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(88, 101, 242, 0.6) 0%, rgba(6, 182, 212, 0.25) 50%, transparent 80%);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.45) 0%, rgba(203, 213, 225, 0.25) 50%, transparent 80%);
     filter: blur(20px);
     z-index: 1;
 }
@@ -3084,15 +3099,15 @@ body {
     border-radius: 99px;
     overflow: hidden;
     position: relative;
-    border: 1px solid rgba(88, 101, 242, 0.28);
-    box-shadow: 0 0 16px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 16px rgba(0, 0, 0, 0.7);
 }
 
 .splash-progress-bar {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #5865f2 0%, #06b6d4 50%, #22c55e 100%);
-    box-shadow: 0 0 14px rgba(88, 101, 242, 0.8), 0 0 28px rgba(6, 182, 212, 0.4);
+    background: linear-gradient(90deg, #ffffff 0%, #cbd5e1 50%, #ffffff 100%);
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.95), 0 0 28px rgba(203, 213, 225, 0.5);
     border-radius: 99px;
     position: relative;
     overflow: hidden;
@@ -3143,8 +3158,8 @@ body {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    border: 1.5px solid rgba(88, 101, 242, 0.45);
-    box-shadow: inset 0 0 35px rgba(88, 101, 242, 0.08), 0 0 45px rgba(0, 0, 0, 0.95);
+    border: 1.5px solid rgba(255, 255, 255, 0.22);
+    box-shadow: inset 0 0 35px rgba(255, 255, 255, 0.03), 0 0 45px rgba(0, 0, 0, 0.98);
     opacity: 0;
     transform: scale(0.92);
     filter: blur(6px);
@@ -3159,9 +3174,9 @@ body {
 }
 
 @keyframes appPopIn {
-    0% { transform: scale(0.92); opacity: 0; filter: blur(6px); border-color: rgba(88, 101, 242, 0.1); }
-    50% { border-color: rgba(88, 101, 242, 0.9); box-shadow: inset 0 0 50px rgba(88, 101, 242, 0.25), 0 0 60px rgba(88, 101, 242, 0.4); }
-    100% { transform: scale(1); opacity: 1; filter: blur(0px); border-color: rgba(88, 101, 242, 0.45); }
+    0% { transform: scale(0.92); opacity: 0; filter: blur(6px); border-color: rgba(255, 255, 255, 0.1); }
+    50% { border-color: rgba(255, 255, 255, 0.85); box-shadow: inset 0 0 50px rgba(255, 255, 255, 0.15), 0 0 60px rgba(255, 255, 255, 0.3); }
+    100% { transform: scale(1); opacity: 1; filter: blur(0px); border-color: rgba(255, 255, 255, 0.22); }
 }
 
 /* ================= LICENSE & SECURITY MODAL ================= */

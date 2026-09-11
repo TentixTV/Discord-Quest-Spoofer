@@ -29,11 +29,11 @@
     const nodeCount = 55;
     const nodes = [];
     const colors = [
-        'rgba(88, 101, 242, ', // Blurple
-        'rgba(6, 182, 212, ',  // Cyan
-        'rgba(168, 85, 247, ', // Purple
-        'rgba(34, 197, 94, ',  // Emerald
-        'rgba(250, 204, 21, '  // Gold
+        'rgba(255, 255, 255, ', // Diamond White
+        'rgba(241, 245, 249, ', // Crisp White
+        'rgba(203, 213, 225, ', // Titanium Silver
+        'rgba(148, 163, 184, ', // Slate Grey
+        'rgba(100, 116, 139, '  // Deep Charcoal
     ];
 
     for (let i = 0; i < nodeCount; i++) {
@@ -93,7 +93,7 @@
                     ctx.beginPath();
                     ctx.moveTo(projX, projY);
                     ctx.lineTo(projX2, projY2);
-                    ctx.strokeStyle = `rgba(88, 101, 242, ${alpha})`;
+                    ctx.strokeStyle = `rgba(226, 232, 240, ${alpha * 0.75})`;
                     ctx.lineWidth = 0.8 * scale;
                     ctx.stroke();
                 }
@@ -149,6 +149,134 @@ const DQS = {
         });
     },
 
+    // --- High-Fidelity V6 Sound Engine (Ambient Drone & Joy-Con Snap Click) ---
+    _audioCtx: null,
+    _ambientAudio: null,
+    getAudioCtx() {
+        if (!this._audioCtx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) {
+                this._audioCtx = new AudioCtx();
+            }
+        }
+        if (this._audioCtx && this._audioCtx.state === 'suspended') {
+            this._audioCtx.resume();
+        }
+        return this._audioCtx;
+    },
+
+    playStartupAmbient(duration = 8) {
+        try {
+            if (window.DQS_EMBEDDED_ASSETS?.startup_ambient) {
+                const aud = new Audio(window.DQS_EMBEDDED_ASSETS.startup_ambient);
+                aud.volume = 0.55;
+                aud.play().catch(() => {});
+                this._ambientAudio = aud;
+                return;
+            }
+        } catch (e) {}
+
+        // Web Audio API procedural synthesis fallback
+        try {
+            const ctx = this.getAudioCtx();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            const masterGain = ctx.createGain();
+            masterGain.gain.setValueAtTime(0.001, now);
+            masterGain.gain.exponentialRampToValueAtTime(0.2, now + 1.2);
+            masterGain.gain.setValueAtTime(0.2, now + Math.max(0.5, duration - 0.8));
+            masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            masterGain.connect(ctx.destination);
+
+            const sub = ctx.createOscillator();
+            sub.type = 'sine';
+            sub.frequency.setValueAtTime(55, now);
+            sub.frequency.exponentialRampToValueAtTime(65, now + duration);
+            sub.connect(masterGain);
+            sub.start(now);
+            sub.stop(now + duration);
+
+            [110, 164.81, 220].forEach((f, idx) => {
+                const osc = ctx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(f, now);
+                osc.frequency.linearRampToValueAtTime(f * 1.05, now + duration);
+                const g = ctx.createGain();
+                g.gain.value = 0.12 / (idx + 1);
+                osc.connect(g);
+                g.connect(masterGain);
+                osc.start(now);
+                osc.stop(now + duration);
+            });
+        } catch (err) {}
+    },
+
+    playTransitionClick() {
+        if (this._ambientAudio) {
+            try {
+                this._ambientAudio.pause();
+                this._ambientAudio = null;
+            } catch (e) {}
+        }
+
+        // 1. Try embedded Joy-Con snap click
+        try {
+            if (window.DQS_EMBEDDED_ASSETS?.transition_click) {
+                const click = new Audio(window.DQS_EMBEDDED_ASSETS.transition_click);
+                click.volume = 0.95;
+                click.play().catch(() => {});
+                return;
+            }
+        } catch (e) {}
+
+        // 2. Procedural Joy-Con Latch Click Web Audio Synthesis fallback
+        try {
+            const ctx = this.getAudioCtx();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+
+            // Transient 1: Initial plastic/metal contact click
+            const osc1 = ctx.createOscillator();
+            osc1.type = 'triangle';
+            osc1.frequency.setValueAtTime(3200, now);
+            osc1.frequency.exponentialRampToValueAtTime(800, now + 0.025);
+            const g1 = ctx.createGain();
+            g1.gain.setValueAtTime(0.75, now);
+            g1.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+            osc1.connect(g1);
+            g1.connect(ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.04);
+
+            // Transient 2: Iconic Joy-Con Latch Spring Snap (16ms later)
+            const t2 = now + 0.016;
+            const osc2 = ctx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(1760, t2);
+            osc2.frequency.exponentialRampToValueAtTime(1200, t2 + 0.045);
+            const g2 = ctx.createGain();
+            g2.gain.setValueAtTime(0.9, t2);
+            g2.gain.exponentialRampToValueAtTime(0.001, t2 + 0.065);
+            osc2.connect(g2);
+            g2.connect(ctx.destination);
+            osc2.start(t2);
+            osc2.stop(t2 + 0.07);
+
+            // Tactile low-end thud
+            const oscBody = ctx.createOscillator();
+            oscBody.type = 'sine';
+            oscBody.frequency.setValueAtTime(150, t2);
+            oscBody.frequency.exponentialRampToValueAtTime(50, t2 + 0.03);
+            const gb = ctx.createGain();
+            gb.gain.setValueAtTime(0.45, t2);
+            gb.gain.exponentialRampToValueAtTime(0.001, t2 + 0.035);
+            oscBody.connect(gb);
+            gb.connect(ctx.destination);
+            oscBody.start(t2);
+            oscBody.stop(t2 + 0.04);
+        } catch (e) {}
+    },
+
     // --- Startup Splash Screen Animation (Random 4 - 12 Seconds) ---
     runStartupSplash() {
         const splash = document.getElementById('dqs-startup-splash');
@@ -162,9 +290,12 @@ const DQS = {
         let elapsed = 0;
         const intervalMs = 60;
 
+        // Play subtle atmospheric startup soundscape
+        this.playStartupAmbient(totalDuration / 1000);
+
         const getStatusText = (pct) => {
             if (pct < 16) return 'INITIALISIERE QUANTUM KERN-SYSTEME...';
-            if (pct < 34) return 'LADE DISCORD QUEST ENGINE (V5)...';
+            if (pct < 34) return 'LADE DISCORD QUEST ENGINE (V6)...';
             if (pct < 52) return 'LOKALISIERE DETECTABLE GAMES & PROZESSE...';
             if (pct < 70) return 'SYNCHRONISIERE DISCORD RPC & HEARTBEATS...';
             if (pct < 86) return 'VERIFIZIERE SICHERHEITS-SCHUTZ & LOKALE TOKEN...';
@@ -188,6 +319,8 @@ const DQS = {
                 if (status) status.innerText = 'SYSTEM BEREIT - POPPING UP...';
 
                 setTimeout(() => {
+                    // Play the satisfying Joy-Con snap click right at popup!
+                    this.playTransitionClick();
                     if (splash) splash.classList.add('splash-pop-exit');
                     if (root) root.classList.add('app-pop-enter');
                     setTimeout(() => {
@@ -195,7 +328,7 @@ const DQS = {
                             splash.parentNode.removeChild(splash);
                         }
                     }, 600);
-                }, 300);
+                }, 200);
             }
         }, intervalMs);
     },
