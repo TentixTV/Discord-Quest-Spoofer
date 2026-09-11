@@ -137,9 +137,16 @@ const DQS = {
         this.pollSimStatus();
         setInterval(() => this.pollSimStatus(), 1000);
 
-        // Auto-refresh quests periodically and on window focus
+        // Auto-refresh quests periodically and on window focus (throttled to 30s)
         setInterval(() => this.refreshQuests(true), 45000);
-        window.addEventListener('focus', () => this.refreshQuests(true));
+        let lastFocusRefresh = Date.now();
+        window.addEventListener('focus', () => {
+            const now = Date.now();
+            if (now - lastFocusRefresh > 30000) {
+                lastFocusRefresh = now;
+                this.refreshQuests(true);
+            }
+        });
     },
 
     // --- Startup Splash Screen Animation (Random 4 - 12 Seconds) ---
@@ -675,8 +682,9 @@ const DQS = {
         const I = window.DQS_ICONS;
         const container = document.getElementById('quests-list');
 
-        if (!silent) {
-            // Futuristic Cyber Loading Screen with Skeleton Cards
+        const hasCards = this.cachedQuests && this.cachedQuests.length > 0;
+        if (!silent && !hasCards) {
+            // Futuristic Cyber Loading Screen with Skeleton Cards (only on initial empty load)
             container.innerHTML = `
                 <div class="api-loading-card card-3d">
                     <div class="loading-cyber-core">
@@ -713,7 +721,11 @@ const DQS = {
 
         if (!window.pywebview?.api) return;
         const quests = await window.pywebview.api.get_quests();
-        this.cachedQuests = quests || [];
+        if (quests && Array.isArray(quests) && quests.length > 0) {
+            this.cachedQuests = quests;
+        } else if (!this.cachedQuests || this.cachedQuests.length === 0) {
+            this.cachedQuests = quests || [];
+        }
 
         const badge = document.getElementById('quests-badge');
         if (badge) badge.innerText = this.cachedQuests.length;
@@ -1859,7 +1871,7 @@ window.onAutoQuestFinished = function(totalOrbs) {
     setTimeout(() => {
         const tracker = document.getElementById('autofarm-live-tracker');
         if (tracker) tracker.style.display = 'none';
-        if (window.DQS) window.DQS.refreshQuests();
+        if (window.DQS) window.DQS.refreshQuests(true);
     }, 3000);
 };
 
@@ -1869,21 +1881,28 @@ window.onAutoQuestStopped = function() {
         DQS.currentFarmQuestName = null;
         DQS.currentFarmDurationText = null;
         DQS.updateProfileActivity(false, null, 0);
-        window.DQS.refreshQuests();
+        window.DQS.refreshQuests(true);
     }
 };
 
 window.onFarmProgress = function(pInfo) {
     if (pInfo && pInfo.quest_id && window.DQS) {
-        DQS.refreshQuests();
+        DQS.refreshQuests(true);
     }
 };
 
-// Start when PyWebView is ready
-if (window.pywebview && window.pywebview.api) {
+// Start when PyWebView is ready (guaranteed single execution)
+let dqsInitialized = false;
+function initDQSOnce() {
+    if (dqsInitialized) return;
+    dqsInitialized = true;
     DQS.init();
+}
+
+if (window.pywebview && window.pywebview.api) {
+    initDQSOnce();
 } else {
     window.addEventListener('pywebviewready', () => {
-        DQS.init();
+        initDQSOnce();
     });
 }

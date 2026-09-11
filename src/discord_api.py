@@ -95,14 +95,37 @@ def resolve_application_metadata(app_id: str, token: str = "") -> Dict[str, str]
 class DiscordQuestsAPI:
     def __init__(self, token: str):
         self.token = token.strip()
+        self._last_raw_quests = None
+        self._last_raw_time = 0
 
     def get_user_quests(self) -> Dict[str, Any]:
-        """Fetches raw quests payload from Discord API."""
+        """Fetches raw quests payload from Discord API with intelligent caching and 429 protection."""
+        now = time.time()
+        # If fetched within last 15 seconds, return cached raw quests to protect against rate limits
+        if self._last_raw_quests and (now - self._last_raw_time < 15):
+            return self._last_raw_quests
+
         url = "https://discord.com/api/v9/quests/@me"
-        r = requests.get(url, headers=get_headers(self.token), timeout=12)
-        if r.status_code == 200:
-            return r.json()
-        raise Exception(f"Fehler beim Laden der Quests (HTTP {r.status_code}): {r.text[:200]}")
+        try:
+            r = requests.get(url, headers=get_headers(self.token), timeout=12)
+            if r.status_code == 200:
+                data = r.json()
+                self._last_raw_quests = data
+                self._last_raw_time = now
+                return data
+            
+            # HTTP 429: Rate limited by Discord. Gracefully return cached data if available.
+            if r.status_code == 429 and self._last_raw_quests:
+                return self._last_raw_quests
+
+            if self._last_raw_quests:
+                return self._last_raw_quests
+
+            raise Exception(f"Fehler beim Laden der Quests (HTTP {r.status_code}): {r.text[:200]}")
+        except Exception as e:
+            if self._last_raw_quests:
+                return self._last_raw_quests
+            raise e
 
     def get_parsed_quests(self) -> List[Dict[str, Any]]:
         """Parses active and available quests with normalized structure and multi-game detection."""

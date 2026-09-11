@@ -141,39 +141,61 @@ class DQSBridge:
 
                 self._api = DiscordQuestsAPI(token)
                 self._farmer = QuestFarmer(api=self._api, simulator=self._simulator)
+                self._cached_quests = []
+                self._last_quests_fetch = 0
                 return {"success": True, "user": self.get_current_user()}
             return {"success": False, "error": "Ungültiger Token"}
         except Exception as e:
             return {"success": False, "error": str(e)}
 
     # --- Quests API ---
-    def get_quests(self):
+    def get_quests(self, force=False):
         if not self._api and self._current_user:
             self._api = DiscordQuestsAPI(self._current_user["token"])
         if not self._api:
             return []
+
+        now = time.time()
+        # Fast cache return within 15 seconds to prevent rate limits
+        if not force and hasattr(self, "_cached_quests") and self._cached_quests:
+            if hasattr(self, "_last_quests_fetch") and (now - self._last_quests_fetch < 15):
+                return self._cached_quests
+
         try:
             quests = self._api.get_parsed_quests()
-            for q in quests:
-                task_type = q.get("task_type", "UNKNOWN")
-                is_vid = task_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE", "PLAY_ACTIVITY") or bool(q.get("has_video"))
-                if q.get("claimed"):
-                    q["duration_text"] = "(Abgeholt)"
-                elif q.get("completed"):
-                    q["duration_text"] = "(Erfüllt)"
-                elif is_vid:
-                    q["duration_text"] = "(ca. 30 Sek.)"
-                else:
-                    needed = max(0, q.get("target_seconds", 900) - q.get("current_seconds", 0))
-                    q["duration_text"] = format_duration(needed)
-            self._cached_quests = quests
-            return quests
+            if quests:
+                for q in quests:
+                    task_type = q.get("task_type", "UNKNOWN")
+                    is_vid = task_type in ("WATCH_VIDEO", "WATCH_VIDEO_ON_MOBILE", "PLAY_ACTIVITY") or bool(q.get("has_video"))
+                    if q.get("claimed"):
+                        q["duration_text"] = "(Abgeholt)"
+                    elif q.get("completed"):
+                        q["duration_text"] = "(Erfüllt)"
+                    elif is_vid:
+                        q["duration_text"] = "(ca. 30 Sek.)"
+                    else:
+                        needed = max(0, q.get("target_seconds", 900) - q.get("current_seconds", 0))
+                        q["duration_text"] = format_duration(needed)
+                self._cached_quests = quests
+                self._last_quests_fetch = now
+                return quests
+            elif hasattr(self, "_cached_quests") and self._cached_quests:
+                return self._cached_quests
+            else:
+                self._cached_quests = []
+                self._last_quests_fetch = now
+                return []
         except Exception as e:
             print("Error fetching quests:", e)
+            if hasattr(self, "_cached_quests") and self._cached_quests:
+                return self._cached_quests
             return []
 
     def get_auto_quest_overview(self):
-        quests = self.get_quests()
+        if hasattr(self, "_cached_quests") and self._cached_quests:
+            quests = self._cached_quests
+        else:
+            quests = self.get_quests()
         dur = calculate_quests_duration(quests)
         return {
             "running": self._auto_farm_running,
