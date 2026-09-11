@@ -1652,6 +1652,21 @@ const DQS = {
         return html;
     },
 
+    // --- Helper: Universal Smooth Wheel Scrolling for WebView2 Containers ---
+    makeScrollableOnWheel(el) {
+        if (!el || el._hasWheelHandler) return;
+        el._hasWheelHandler = true;
+        el.addEventListener('wheel', (e) => {
+            if (!e.deltaY) return;
+            const prevTop = el.scrollTop;
+            el.scrollTop += e.deltaY;
+            if (el.scrollTop !== prevTop) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, { passive: false });
+    },
+
     // --- Changelog & GitHub Updater Modals ---
     setupChangelogAndUpdateModals() {
         const changelogModal = document.getElementById('changelog-modal');
@@ -1691,6 +1706,14 @@ const DQS = {
                 if (e.target === updateModal) closeUpdate();
             });
         }
+
+        // Enable smooth wheel scrolling for update modal containers
+        const updateBody = document.querySelector('.update-modal-body-v2');
+        const updateNotesBox = document.querySelector('.update-notes-container');
+        const updateNotesContent = document.getElementById('update-live-notes-content');
+        if (updateBody) this.makeScrollableOnWheel(updateBody);
+        if (updateNotesBox) this.makeScrollableOnWheel(updateNotesBox);
+        if (updateNotesContent) this.makeScrollableOnWheel(updateNotesContent);
 
         // Live Recheck button
         const btnRecheck = document.getElementById('btn-update-recheck');
@@ -1736,6 +1759,8 @@ const DQS = {
         const I = window.DQS_ICONS || {};
         if (!modal || !listContainer) return;
 
+        this.makeScrollableOnWheel(listContainer);
+
         listContainer.innerHTML = `<div style="padding:24px;text-align:center;color:#94a3b8;"><span style="display:inline-block;animation:spin 1s linear infinite;margin-right:8px;">${I.gear || ''}</span> Lade Live-Changelog von GitHub...</div>`;
         modal.classList.remove('hidden');
 
@@ -1779,6 +1804,13 @@ const DQS = {
                             ${itemsHtml}
                         </ul>
                     `;
+
+                    // Enable smooth scrolling on the individual box/list
+                    const innerList = card.querySelector('.changelog-list');
+                    if (innerList) this.makeScrollableOnWheel(innerList);
+                    const innerBody = card.querySelector('.changelog-body-text');
+                    if (innerBody) this.makeScrollableOnWheel(innerBody);
+
                     listContainer.appendChild(card);
                 });
             } else {
@@ -1841,7 +1873,7 @@ const DQS = {
             this._updateDownloadUrl = res.download_url;
             this._latestReleaseUrl = res.html_url || 'https://github.com/TentixTV/Discord-Quest-Spoofer/releases';
 
-            if (statCur) statCur.innerText = res.current_version || 'V6.1.0';
+            if (statCur) statCur.innerText = res.current_version || 'V6.1.2';
             if (statLatest) statLatest.innerText = res.latest_version || res.current_version;
             if (tagLatestSource) tagLatestSource.innerText = 'GitHub Live API';
 
@@ -2350,7 +2382,7 @@ const DQS = {
                 card.classList.remove('activity-active');
                 card.classList.add('activity-idle');
             }
-            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.1)';
+            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.1.2)';
             popState.innerText = 'Bereit für Quest-Simulation';
             popTimer.innerText = 'Status: Standby • Discord RPC aktiv';
         }
