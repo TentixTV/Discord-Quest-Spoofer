@@ -254,28 +254,31 @@ const DQS = {
         setHtml('ico-gh-logo-en', I.github);
     },
 
-    // --- Render Discord Badges (Base64 Guaranteed) ---
-    renderBadges() {
+    // --- Render Discord Badges (Dynamic with Live CDN Support) ---
+    renderBadges(badgesList) {
         const container = document.getElementById('badges-container');
         if (!container) return;
         container.innerHTML = '';
 
-        const badges = [
-            { key: 'nitro', title: 'Discord Nitro 3 Jahre' },
-            { key: 'bravery', title: 'HypeSquad Bravery' },
-            { key: 'booster', title: 'Server Booster Level 9' },
-            { key: 'legacy', title: 'Ursprünglicher Name: tentix#0001' },
-            { key: 'quest', title: 'Discord Quest Meister' },
-            { key: 'orbs', title: 'Orbs Sammler' }
-        ];
+        const badges = (badgesList && badgesList.length > 0) ? badgesList : (this.currentUser?.badges || []);
+        if (!badges || badges.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
 
+        container.style.display = 'inline-flex';
         badges.forEach(b => {
             const img = document.createElement('img');
             img.className = 'badge-icon';
-            img.title = b.title;
-            img.alt = b.key;
-            const b64 = window.DQS_EMBEDDED_ASSETS?.[b.key];
-            img.src = b64 || `assets/badges/${b.key}.png`;
+            img.title = b.description || b.id || 'Discord Badge';
+            img.alt = b.id || 'badge';
+            
+            const b64 = window.DQS_EMBEDDED_ASSETS?.[b.id];
+            img.src = b.icon_url || b64 || `assets/badges/${b.id}.png`;
+            img.onerror = () => {
+                if (b64) img.src = b64;
+                else img.style.display = 'none';
+            };
             container.appendChild(img);
         });
     },
@@ -433,10 +436,13 @@ const DQS = {
             window.pywebview?.api?.open_url('https://github.com/TentixTV/Discord-Quest-Spoofer');
         });
 
-        document.getElementById('link-tentix-space').addEventListener('click', (e) => {
-            e.preventDefault();
-            window.pywebview?.api?.open_url('https://tentix.space');
-        });
+        const linkTentix = document.getElementById('link-tentix-space');
+        if (linkTentix) {
+            linkTentix.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.pywebview?.api?.open_url('https://tentix.space');
+            });
+        }
 
         // Account Switcher Modal
         document.getElementById('btn-switch-account').addEventListener('click', () => {
@@ -473,19 +479,112 @@ const DQS = {
         if (!window.pywebview?.api) return;
         const user = await window.pywebview.api.get_current_user();
         if (user) {
-            this.currentUser = user;
-            const displayName = user.global_name || user.username || 'TΞП†1Ж ツ';
-            document.getElementById('hdr-username').innerText = displayName;
-            document.getElementById('popout-name').innerText = displayName;
-            document.getElementById('popout-handle').innerText = `${user.username || 'tentix'} • - ʜᴇᴀʀᴛ/ʟᴇꜱꜱ/ᴡɪᴛʜᴏᴜᴛ/ʏᴏᴜ -`;
+            this.syncUserProfile(user);
+        }
+    },
 
-            if (user.avatar && user.id) {
-                const ext = user.avatar.startsWith('a_') ? 'gif' : 'png';
-                const avUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}?size=128`;
-                const hdrAv = document.getElementById('hdr-avatar');
-                if (hdrAv) hdrAv.src = avUrl;
-                const popAv = document.getElementById('pop-avatar');
-                if (popAv) popAv.src = avUrl;
+    syncUserProfile(user) {
+        if (!user) return;
+        this.currentUser = user;
+        const displayName = user.global_name || user.username || 'TΞП†1Ж ツ';
+
+        // 1. Header & Popout Names
+        const hdrName = document.getElementById('hdr-username');
+        if (hdrName) hdrName.innerText = displayName;
+        const popName = document.getElementById('popout-name');
+        if (popName) popName.innerText = displayName;
+
+        // 2. Handle & Pronouns
+        const popHandle = document.getElementById('popout-handle');
+        if (popHandle) {
+            if (user.pronouns && user.pronouns.trim()) {
+                popHandle.innerText = `${user.username || 'discord'} • ${user.pronouns.trim()}`;
+            } else {
+                popHandle.innerText = user.username ? `@${user.username}` : 'discord';
+            }
+        }
+
+        // 3. Avatar (Header & Popout)
+        const avUrl = user.avatar_url || (user.avatar && user.id ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${user.avatar.startsWith('a_') ? 'gif' : 'png'}?size=256` : 'assets/tentix_avatar.gif');
+        const hdrAv = document.getElementById('hdr-avatar');
+        if (hdrAv) hdrAv.src = avUrl;
+        const popAv = document.getElementById('pop-avatar');
+        if (popAv) popAv.src = avUrl;
+
+        // 4. Banner (Live Image, Accent Hex Gradient, or Mesh Fallback)
+        const bannerWrap = document.getElementById('pop-banner-wrap');
+        const bannerImg = document.getElementById('pop-banner');
+        if (bannerWrap && bannerImg) {
+            if (user.banner_url) {
+                bannerImg.style.display = 'block';
+                bannerImg.src = user.banner_url;
+                bannerWrap.style.background = 'transparent';
+            } else if (user.accent_hex) {
+                bannerImg.style.display = 'none';
+                bannerWrap.style.background = `linear-gradient(135deg, ${user.accent_hex} 0%, rgba(15, 17, 26, 0.95) 100%)`;
+            } else {
+                bannerImg.style.display = 'none';
+                bannerWrap.style.background = 'linear-gradient(135deg, #1e202e 0%, #0d0e15 100%)';
+            }
+        }
+
+        // 5. Presence / Online Status on Avatar Badge
+        const statusBadge = document.getElementById('popout-status-badge');
+        if (statusBadge) {
+            const st = (user.status || 'online').toLowerCase();
+            statusBadge.className = `popout-status-badge ${st}`;
+        }
+
+        // 6. Custom Status Speech Bubble
+        const statusBubble = document.getElementById('popout-status-bubble');
+        const bubbleEmojiWrap = document.getElementById('bubble-emoji-container');
+        const bubbleText = document.getElementById('bubble-text');
+        const cs = user.custom_status;
+        if (statusBubble && bubbleText) {
+            if (cs && (cs.text || cs.emoji_name || cs.emoji_id || cs.emoji_url)) {
+                statusBubble.style.display = 'flex';
+                if (bubbleEmojiWrap) {
+                    if (cs.emoji_url) {
+                        bubbleEmojiWrap.innerHTML = `<img src="${cs.emoji_url}" class="bubble-custom-emoji" alt="${cs.emoji_name || ''}">`;
+                    } else if (cs.emoji_name && !cs.emoji_id) {
+                        bubbleEmojiWrap.innerHTML = `<span style="font-size: 13px; margin-right: 4px;">${cs.emoji_name}</span>`;
+                    } else {
+                        bubbleEmojiWrap.innerHTML = '';
+                    }
+                }
+                bubbleText.innerText = cs.text || '';
+            } else {
+                statusBubble.style.display = 'none';
+            }
+        }
+
+        // 7. Badges
+        this.renderBadges(user.badges);
+
+        // 8. Bio ("ÜBER MICH")
+        const bioBox = document.getElementById('popout-bio');
+        const bioSection = document.getElementById('popout-bio-section');
+        if (bioBox) {
+            if (user.bio && user.bio.trim()) {
+                if (bioSection) bioSection.style.display = 'block';
+                const escapeHtml = (str) => {
+                    const div = document.createElement('div');
+                    div.textContent = str;
+                    return div.innerHTML;
+                };
+                const escaped = escapeHtml(user.bio.trim());
+                // Auto-link URLs cleanly
+                const linked = escaped.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" class="bio-link" target="_blank">$1</a>');
+                bioBox.innerHTML = linked;
+                bioBox.querySelectorAll('.bio-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const url = link.getAttribute('href');
+                        window.pywebview?.api?.open_url(url);
+                    });
+                });
+            } else {
+                bioBox.innerHTML = '<p class="bio-empty-text">Keine Biografie hinterlegt.</p>';
             }
         }
     },
@@ -493,46 +592,76 @@ const DQS = {
     async openAccountModal() {
         const modal = document.getElementById('account-modal');
         const list = document.getElementById('modal-accounts-list');
-        list.innerHTML = '<div style="padding:10px;text-align:center;">Lade Accounts...</div>';
+        list.innerHTML = '<div style="padding:16px;text-align:center;color:#94a3b8;"><span style="display:inline-block;margin-right:8px;animation:spin 1s linear infinite;">⚙</span> Lade Accounts...</div>';
         modal.classList.remove('hidden');
 
         const accs = await window.pywebview?.api?.get_accounts();
         list.innerHTML = '';
 
         if (!accs || accs.length === 0) {
-            list.innerHTML = '<div style="padding:10px;text-align:center;color:#8e92a4;">Keine aktiven Accounts gefunden.</div>';
+            list.innerHTML = '<div style="padding:16px;text-align:center;color:#8e92a4;">Keine aktiven Accounts lokal gefunden.<br><span style="font-size:11px;opacity:0.8;">Füge oben manuell einen Token ein.</span></div>';
             return;
         }
 
         accs.forEach(acc => {
             const row = document.createElement('div');
-            row.className = 'account-row';
+            const isCurrent = acc.is_current || (this.currentUser && this.currentUser.id === acc.id);
+            row.className = `account-row ${isCurrent ? 'active-account' : ''}`;
             const name = acc.global_name || acc.username;
+            const handle = acc.username;
+            const avUrl = acc.avatar_url || (acc.avatar && acc.id ? `https://cdn.discordapp.com/avatars/${acc.id}/${acc.avatar}.${acc.avatar.startsWith('a_') ? 'gif' : 'png'}?size=96` : 'assets/tentix_avatar.gif');
+            
             row.innerHTML = `
                 <div class="account-row-left">
-                    <span>${window.DQS_ICONS.users}</span>
-                    <span>${name}</span>
+                    <img src="${avUrl}" class="account-row-avatar" alt="Avatar" onerror="this.src='assets/tentix_avatar.gif'">
+                    <div class="account-row-info">
+                        <span class="account-row-name">${name}</span>
+                        <span class="account-row-handle">@${handle}</span>
+                    </div>
                 </div>
-                <button class="btn btn-blurple btn-small">AUSWÄHLEN</button>
+                <div class="account-row-right">
+                    ${isCurrent 
+                        ? '<span class="account-status-active-tag">AKTIV</span>' 
+                        : '<button class="btn btn-blurple btn-small btn-account-select">AUSWÄHLEN</button>'}
+                </div>
             `;
-            row.querySelector('button').addEventListener('click', async () => {
-                const res = await window.pywebview.api.switch_account(acc.token);
-                if (res.success) {
-                    modal.classList.add('hidden');
-                    await this.loadCurrentUser();
-                    await this.refreshQuests();
-                }
-            });
+
+            const btn = row.querySelector('.btn-account-select');
+            if (btn) {
+                btn.addEventListener('click', async () => {
+                    btn.disabled = true;
+                    btn.innerText = 'LÄDT...';
+                    const res = await window.pywebview.api.switch_account(acc.token);
+                    if (res.success) {
+                        modal.classList.add('hidden');
+                        if (res.user) this.syncUserProfile(res.user);
+                        else await this.loadCurrentUser();
+                        await this.refreshQuests();
+                    } else {
+                        btn.disabled = false;
+                        btn.innerText = 'AUSWÄHLEN';
+                        alert('Fehler beim Account-Wechsel: ' + (res.error || 'Unbekannt'));
+                    }
+                });
+            }
+
             list.appendChild(row);
         });
 
         document.getElementById('btn-load-custom-token').onclick = async () => {
             const tok = document.getElementById('input-custom-token').value.trim();
             if (tok) {
+                const btn = document.getElementById('btn-load-custom-token');
+                btn.disabled = true;
+                btn.innerText = 'LÄDT...';
                 const res = await window.pywebview.api.switch_account(tok);
+                btn.disabled = false;
+                btn.innerText = 'LADEN';
                 if (res.success) {
                     modal.classList.add('hidden');
-                    await this.loadCurrentUser();
+                    document.getElementById('input-custom-token').value = '';
+                    if (res.user) this.syncUserProfile(res.user);
+                    else await this.loadCurrentUser();
                     await this.refreshQuests();
                 } else {
                     alert('Fehler: ' + (res.error || 'Ungültiger Token'));

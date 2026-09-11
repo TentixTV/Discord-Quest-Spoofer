@@ -351,49 +351,50 @@
     <!-- BACKDROP CLICK OVERLAY FOR POPOUT -->
     <div id="popout-backdrop" class="popout-backdrop hidden"></div>
 
-    <!-- 100% AUTHENTIC DISCORD PROFILE POPOUT (STATIC & SOLID) -->
+    <!-- 100% AUTHENTIC DISCORD PROFILE POPOUT (DYNAMICALLY SYNCED) -->
     <div id="discord-profile-popout" class="discord-popout hidden">
         <div class="popout-card-inner">
-            <!-- Animated Banner -->
-            <div class="popout-banner-wrap">
+            <!-- Animated Banner (Dynamically Synced with Discord Profile) -->
+            <div class="popout-banner-wrap" id="pop-banner-wrap">
                 <img src="assets/tentix_banner.gif" alt="Banner" class="popout-banner-img" id="pop-banner" onerror="this.src='assets/tentix_banner.png'">
                 <button class="popout-close-btn" id="btn-close-popout" title="Schließen"></button>
             </div>
 
-            <!-- Avatar with Border & DND Status -->
+            <!-- Avatar with Border & Dynamic Status -->
             <div class="popout-avatar-row">
                 <div class="popout-avatar-frame">
                     <img src="assets/tentix_avatar.gif" alt="Avatar" class="popout-avatar-img" id="pop-avatar" onerror="if(window.DQS_EMBEDDED_ASSETS) this.src=window.DQS_EMBEDDED_ASSETS.avatar;">
-                    <div class="popout-status-badge dnd">
-                        <span class="dnd-minus"></span>
+                    <div class="popout-status-badge dnd" id="popout-status-badge">
+                        <span class="dnd-minus" id="popout-status-icon"></span>
                     </div>
                 </div>
             </div>
 
             <div class="popout-body">
                 <!-- Custom Status Speech Bubble -->
-                <div class="status-speech-bubble">
-                    <span class="bubble-indicator"></span>
-                    <span class="speech-quote">Behind every kiss is a claw that can bite</span>
+                <div class="status-speech-bubble" id="popout-status-bubble">
+                    <span class="bubble-indicator" id="bubble-indicator"></span>
+                    <span id="bubble-emoji-container"></span>
+                    <span class="speech-quote" id="bubble-text">Behind every kiss is a claw that can bite</span>
                 </div>
 
                 <!-- Username & Identification -->
                 <div class="user-identification">
                     <h3 class="display-name" id="popout-name">TΞП†1Ж ツ</h3>
-                    <span class="handle-name" id="popout-handle">tentix • - ʜᴇᴀʀᴛ/ʟᴇꜱꜱ/ᴡɪᴛʜᴏᴜᴛ/ʏᴏᴜ -</span>
+                    <span class="handle-name" id="popout-handle">tentix</span>
                 </div>
 
                 <!-- Authentic Badges Pill -->
                 <div class="badges-pill" id="badges-container">
-                    <!-- Populated dynamically via JS from embedded base64 -->
+                    <!-- Populated dynamically via JS -->
                 </div>
 
                 <div class="profile-divider"></div>
 
                 <!-- About Me -->
-                <div class="profile-section">
+                <div class="profile-section" id="popout-bio-section">
                     <h5 class="section-title">ÜBER MICH</h5>
-                    <div class="about-me-box font-goth">
+                    <div class="about-me-box" id="popout-bio">
                         <p>ㅤ ㅤ ₊⊹ - ♱ <a href="#" id="link-tentix-space">https://tentix.space</a> ♱ - ⊹₊</p>
                         <p>ㅤㅤㅤㅤ ⋆｡‧₊°♱༺𓆩❦︎𓆪༻♱༉‧₊˚.</p>
                         <p>˚ʚ♡ɞ˚ ㅤ ⊹ ࣪ 𝕽𝖚𝖑𝖊 𝖇𝖗𝖊𝖆𝖐𝖊𝖗 ⊹ ࣪ ˖ ˚ʚ♡ɞ˚</p>
