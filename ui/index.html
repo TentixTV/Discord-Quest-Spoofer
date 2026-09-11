@@ -98,6 +98,12 @@
                 </div>
             </div>
 
+            <!-- Tutorial & Help Trigger Button (Top Right) -->
+            <button id="btn-open-tutorial" class="titlebar-tutorial-btn" title="DQS Schritt-für-Schritt Anleitung & Hilfe öffnen">
+                <span id="ico-tutorial-hdr"></span>
+                <span class="tutorial-btn-text">ANLEITUNG & HILFE</span>
+            </button>
+
             <!-- Window Controls -->
             <div class="window-controls">
                 <button class="win-btn win-min" id="btn-win-min" title="Minimieren"></button>
@@ -622,6 +628,319 @@ copies or substantial portions of the Software.</pre>
             </div>
             <div class="modal-footer license-footer">
                 <button class="btn btn-emerald" id="btn-close-license-modal-footer">VERSTANDEN & SCHLIESSEN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Step-by-Step Tutorial & Help Modal -->
+    <div id="tutorial-modal" class="modal-overlay hidden">
+        <div class="modal-box tutorial-modal-box">
+            <div class="tutorial-modal-header">
+                <div class="modal-title-wrap">
+                    <span class="tutorial-header-icon" id="ico-tutorial-modal-title"></span>
+                    <div>
+                        <h3 class="tutorial-modal-heading">DQS // SCHRITT-FÜR-SCHRITT ANLEITUNG & HILFE</h3>
+                        <span class="tutorial-modal-sub">OFFIZIELLES TUTORIAL • 15-MINUTEN-REGEL, IN-APP ERKLÄRUNG & TROUBLESHOOTING</span>
+                    </div>
+                </div>
+                <button class="tutorial-close-btn" id="btn-close-tutorial-modal" title="Schließen"></button>
+            </div>
+
+            <!-- Horizontal Tab Bar for Tutorial Sections -->
+            <div class="tutorial-tabs-bar">
+                <button class="tut-tab-btn active" id="btn-tut-tab-steps" data-pane="tut-pane-steps">
+                    <span id="ico-tut-tab-rocket"></span> SCHNELLSTART (1-2-3)
+                </button>
+                <button class="tut-tab-btn" id="btn-tut-tab-wait15" data-pane="tut-pane-wait15">
+                    <span id="ico-tut-tab-clock"></span> 15 MIN. WARTEZEIT (WICHTIG!)
+                </button>
+                <button class="tut-tab-btn" id="btn-tut-tab-troubleshoot" data-pane="tut-pane-troubleshoot">
+                    <span id="ico-tut-tab-tools"></span> TROUBLESHOOTING
+                </button>
+                <button class="tut-tab-btn" id="btn-tut-tab-developer" data-pane="tut-pane-developer">
+                    <span id="ico-tut-tab-dev"></span> DEVELOPER & SUPPORT
+                </button>
+            </div>
+
+            <div class="modal-body tutorial-modal-body">
+                <!-- Pane 1: Step-by-Step Walkthrough -->
+                <div id="tut-pane-steps" class="tutorial-pane active">
+                    <div class="tut-intro-banner">
+                        <span class="tut-intro-badge">ANFÄNGER-GUIDE</span>
+                        <h4>So schaltest du jede Discord-Quest in wenigen Klicks frei:</h4>
+                        <p>DQS (Discord Quest Spoofer) übernimmt die gesamte Arbeit vollautomatisch für dich — ohne dass du riesige Spiele herunterladen oder deine Grafikkarte quälen musst.</p>
+                    </div>
+
+                    <div class="tut-steps-grid">
+                        <!-- Step 1 Card -->
+                        <div class="tut-step-card">
+                            <div class="step-card-header">
+                                <span class="step-number">SCHRITT 1</span>
+                                <h5 class="step-title">Account auswählen</h5>
+                            </div>
+                            <!-- In-App Mockup Schematic -->
+                            <div class="tut-schematic-box">
+                                <div class="schematic-pill">
+                                    <span class="schematic-avatar"></span>
+                                    <div class="schematic-user-lines">
+                                        <span class="schematic-line-name">Dein Discord Account</span>
+                                        <span class="schematic-line-sub">Automatisch lokal erkannt ✓</span>
+                                    </div>
+                                    <span class="schematic-badge-ok">VERBUNDEN</span>
+                                </div>
+                            </div>
+                            <p class="step-desc">
+                                DQS scannt beim Start vollautomatisch deine installierten Discord-Clients (Stable, Canary, PTB) und Browser (Chrome, Edge, Brave, Opera GX). Wähle deinen Account oben rechts einfach aus.
+                            </p>
+                        </div>
+
+                        <!-- Step 2 Card -->
+                        <div class="tut-step-card">
+                            <div class="step-card-header">
+                                <span class="step-number">SCHRITT 2</span>
+                                <h5 class="step-title">Quest-Typ prüfen & starten</h5>
+                            </div>
+                            <!-- In-App Mockup Schematic -->
+                            <div class="tut-schematic-box">
+                                <div class="schematic-quest-row">
+                                    <div class="schematic-quest-type video">
+                                        <span class="sq-tag cyan">VIDEO-QUEST</span>
+                                        <span class="sq-action cyan">EXPRESS (5s)</span>
+                                    </div>
+                                    <div class="schematic-quest-type game">
+                                        <span class="sq-tag emerald">GAME-QUEST</span>
+                                        <span class="sq-action emerald">SIMULATION (15m)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="step-desc">
+                                <strong>Video-Quests:</strong> Klicke auf den cyanfarbenen <em>Express-Abschluss</em>-Button — die Quest ist in 5 Sekunden erledigt!<br>
+                                <strong>Game-Quests:</strong> Klicke auf <em>Simulation Starten</em> oder nutze oben den Master-Button <em>Alle Quests erledigen</em>.
+                            </p>
+                        </div>
+
+                        <!-- Step 3 Card -->
+                        <div class="tut-step-card">
+                            <div class="step-card-header">
+                                <span class="step-number">SCHRITT 3</span>
+                                <h5 class="step-title">Simulation laufen lassen</h5>
+                            </div>
+                            <!-- In-App Mockup Schematic -->
+                            <div class="tut-schematic-box">
+                                <div class="schematic-progress-wrap">
+                                    <div class="schematic-prog-labels">
+                                        <span>Heartbeats: LIVE</span>
+                                        <span class="cyan">7:30 / 15:00 (50%)</span>
+                                    </div>
+                                    <div class="schematic-bar-track">
+                                        <div class="schematic-bar-fill" style="width: 50%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="step-desc">
+                                DQS sendet im Hintergrund echte RPC-Heartbeats an Discords Server. Lasse DQS einfach minimiert weiterlaufen — Discord zählt die Spielzeit im Minutentakt mit.
+                            </p>
+                        </div>
+
+                        <!-- Step 4 Card -->
+                        <div class="tut-step-card">
+                            <div class="step-card-header">
+                                <span class="step-number">SCHRITT 4</span>
+                                <h5 class="step-title">Belohnung abholen</h5>
+                            </div>
+                            <!-- In-App Mockup Schematic -->
+                            <div class="tut-schematic-box">
+                                <div class="schematic-reward-box">
+                                    <span class="schematic-toast-icon">🔔</span>
+                                    <div class="schematic-toast-text">
+                                        <strong>DQS // Quest Abgeschlossen!</strong>
+                                        <span>100% erreicht • Belohnung bereit</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="step-desc">
+                                Sobald die 100% erreicht sind, ploppt eine Windows-Desktop-Benachrichtigung auf. Klicke auf <em>Belohnung abholen</em>. Codes landen automatisch in deiner Windows-Zwischenablage!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pane 2: The 15-Minute Waiting Rule (Essential Notice) -->
+                <div id="tut-pane-wait15" class="tutorial-pane">
+                    <div class="wait15-hero-card">
+                        <div class="wait15-header-row">
+                            <span class="wait15-badge-alert">WICHTIGE ERKLÄRUNG</span>
+                            <span class="wait15-timer-chip">⏳ 15 MINUTEN SPIELZEIT</span>
+                        </div>
+                        <h3 class="wait15-headline">Warum muss man bei Spielen tatsächlich 15 Minuten warten?</h3>
+                        <p class="wait15-lead">
+                            Viele Nutzer fragen, warum Video-Quests in 5 Sekunden fertig sind, Spiele-Quests aber ca. 15 Minuten dauern. Hier ist die technische Wahrheit direkt vom Entwickler:
+                        </p>
+
+                        <div class="wait15-fact-grid">
+                            <div class="fact-card">
+                                <div class="fact-icon-wrap" id="ico-fact-server"></div>
+                                <div class="fact-text">
+                                    <h5>1. Serverseitige Verifikation durch Discord</h5>
+                                    <p>
+                                        Discord prüft normale Spiele-Quests (<code>PLAY_ON_DESKTOP</code>) streng auf ihren eigenen Servern. Discord verlangt, dass ein Spiel mindestens <strong>15 Minuten kontinuierlich aktiv</strong> läuft und minütlich verifizierte Heartbeats übermittelt.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="fact-card">
+                                <div class="fact-icon-wrap" id="ico-fact-instant"></div>
+                                <div class="fact-text">
+                                    <h5>2. Warum man Spiele nicht in 5 Sekunden skippen kann</h5>
+                                    <p>
+                                        Ein sofortiger 5-Sekunden-Skip für Spiele ist technisch unmöglich, weil Discord Zeitstempel abgleicht. Würde man der Discord-API einen falschen Zeitstempel schicken, weist der Server den Fortschritt sofort ab. Daher simuliert DQS die 15 Minuten ehrlich und 100% sicher.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="fact-card">
+                                <div class="fact-icon-wrap" id="ico-fact-benefit"></div>
+                                <div class="fact-text">
+                                    <h5>3. Dein gewaltiger Vorteil mit DQS</h5>
+                                    <p>
+                                        Du musst <strong>kein 100 GB Spiel herunterladen</strong>, keinen Speicherplatz opfern und deine Grafikkarte nicht belasten. DQS erledigt die 15 Minuten geräuschlos im Hintergrund. Du kannst währenddessen YouTube gucken oder arbeiten — DQS benachrichtigt dich, wenn es fertig ist!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Visualizer -->
+                        <div class="wait15-timeline-card">
+                            <h5 class="timeline-title">DER 15-MINUTEN ABLAUF IM DETAIL:</h5>
+                            <div class="timeline-bar-wrap">
+                                <div class="timeline-segment">
+                                    <span class="tl-point">0 Min</span>
+                                    <span class="tl-label">Start Heartbeats</span>
+                                </div>
+                                <div class="timeline-line active"></div>
+                                <div class="timeline-segment">
+                                    <span class="tl-point">5 Min</span>
+                                    <span class="tl-label">33% Synced</span>
+                                </div>
+                                <div class="timeline-line active"></div>
+                                <div class="timeline-segment">
+                                    <span class="tl-point">10 Min</span>
+                                    <span class="tl-label">66% Synced</span>
+                                </div>
+                                <div class="timeline-line active"></div>
+                                <div class="timeline-segment">
+                                    <span class="tl-point highlight">15 Min</span>
+                                    <span class="tl-label highlight">100% & Fertig! 🎉</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pane 3: Troubleshooting Guide -->
+                <div id="tut-pane-troubleshoot" class="tutorial-pane">
+                    <div class="troubleshoot-intro">
+                        <h4>Häufige Fragen & Problemlösungen</h4>
+                        <p>Sollte einmal etwas nicht auf Anhieb klappen, findest du hier für jedes Problem die passende Lösung:</p>
+                    </div>
+
+                    <div class="troubleshoot-list">
+                        <!-- Problem 1 -->
+                        <div class="troubleshoot-card">
+                            <div class="tb-header">
+                                <span class="tb-icon q-mark">?</span>
+                                <h5 class="tb-question">Mein lokaler Discord-Account wird in der Liste nicht angezeigt?</h5>
+                            </div>
+                            <div class="tb-body">
+                                <p><strong>Ursache:</strong> Discord hat den Sitzungs-Token noch nicht auf die lokale Festplatte geschrieben oder der Browser-Cache ist älter.</p>
+                                <p><strong>Lösung:</strong> Öffne kurz die Discord-App auf deinem PC oder öffne Discord in deinem Browser (Chrome, Edge, Brave, Opera GX) und drücke einmal <code>F5</code>. Wechsle danach zurück zu DQS und klicke in der Menüleiste auf deinen Avatar / Einstellungen und wähle <em>Accounts neu erkennen</em>.</p>
+                            </div>
+                        </div>
+
+                        <!-- Problem 2 -->
+                        <div class="troubleshoot-card">
+                            <div class="tb-header">
+                                <span class="tb-icon q-mark">?</span>
+                                <h5 class="tb-question">Die Quest-Prozente bleiben stehen oder Discord zeigt keinen Fortschritt?</h5>
+                            </div>
+                            <div class="tb-body">
+                                <p><strong>Ursache:</strong> Discords Desktop-Client aktualisiert die Anzeige in den Benutzereinstellungen nicht im Sekundentakt, sondern puffert die Daten.</p>
+                                <p><strong>Lösung:</strong> Keine Panik! Der Zähler auf den Discord-Servern läuft im Hintergrund weiter. Klicke in DQS auf den Button <em>Aktualisieren</em> oder öffne die Discord-Einstellungen kurz neu. Nach spätestens 15 Minuten wird die Quest garantiert freigeschaltet.</p>
+                            </div>
+                        </div>
+
+                        <!-- Problem 3 -->
+                        <div class="troubleshoot-card">
+                            <div class="tb-header">
+                                <span class="tb-icon q-mark">?</span>
+                                <h5 class="tb-question">Windows Defender oder ein Antivirus meldet einen Fund (False Positive)?</h5>
+                            </div>
+                            <div class="tb-body">
+                                <p><strong>Ursache:</strong> Zum Schutz vor fremdem Code-Diebstahl und schädlichen Klonen ist der Quellcode von DQS mit <strong>PyArmor</strong> vorkompiliert und verschlüsselt. Manche Antiviren-Programme schlagen bei verschlüsseltem Python-Code fälschlicherweise Alarm.</p>
+                                <p><strong>Lösung:</strong> DQS ist zu 100% virenfrei, enthält keinerlei Schadcode, keinen Token-Logger und keine Backdoor, wenn du es direkt von Sandros GitHub geladen hast. Füge DQS einfach zu den Ausnahmen deines Antiviren-Programms hinzu.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pane 4: Developer Disclaimer & Direct Support -->
+                <div id="tut-pane-developer" class="tutorial-pane">
+                    <div class="developer-hero-card">
+                        <div class="dev-author-header">
+                            <img src="DQS.png" alt="DQS" class="dev-card-avatar" onerror="this.src='../DQS.png'">
+                            <div class="dev-meta">
+                                <h4 class="dev-name">Sandro (T3X / TNTIX)</h4>
+                                <span class="dev-role">Entwickler von DQS // Discord Quest Spoofer</span>
+                            </div>
+                        </div>
+
+                        <!-- Disclaimer Box -->
+                        <div class="dev-disclaimer-box">
+                            <div class="disclaimer-title-row">
+                                <span class="disclaimer-badge">PERSÖNLICHER HINWEIS & DISCLAIMER</span>
+                            </div>
+                            <p>
+                                DQS wird von mir mit größter Leidenschaft für die Community entwickelt und gepflegt. Da Discord seine internen APIs, Header und Quests-Strukturen regelmäßig ohne Ankündigung aktualisiert, kann es trotz aller gründlichen Tests jederzeit zu <strong>unvorhergesehenen Bugs oder Synchronisationsfehlern</strong> kommen, die mir noch nicht bekannt sind.
+                            </p>
+                            <p>
+                                <strong>Mein Versprechen an dich:</strong> Ich werde alles in meiner Macht Stehende tun, um jedes Problem sofort zu beheben, sobald es mir gemeldet wird! Du kannst mich dafür direkt auf Discord kontaktieren:
+                            </p>
+                        </div>
+
+                        <!-- Direct 1-Click Friend Request Action Card -->
+                        <div class="dev-friend-action-card">
+                            <div class="friend-card-content">
+                                <div class="friend-tag-row">
+                                    <span class="friend-label">Offizieller Discord-Tag:</span>
+                                    <span class="friend-tag">tentix</span>
+                                    <span class="friend-id">(ID: 405441217766359051)</span>
+                                </div>
+                                <p class="friend-subtext">
+                                    Klicke auf den Button unten, um mir mit deinem aktuell in DQS ausgewählten Account direkt eine Freundschaftsanfrage auf Discord zu schicken:
+                                </p>
+                                
+                                <button class="btn btn-emerald btn-lg friend-request-btn" id="btn-add-tentix">
+                                    <span id="ico-btn-friend-req"></span> SANDRO (TENTIX) AUF DISCORD ADDEN
+                                </button>
+                                <div id="add-tentix-status" class="friend-status-msg hidden"></div>
+                            </div>
+                        </div>
+
+                        <!-- Official Links Row -->
+                        <div class="dev-links-row">
+                            <a href="javascript:void(0)" class="btn btn-secondary" id="btn-tut-open-github">
+                                <span id="ico-tut-gh"></span> GitHub Repository besuchen
+                            </a>
+                            <a href="javascript:void(0)" class="btn btn-secondary" id="btn-tut-open-issues">
+                                <span id="ico-tut-bug"></span> Bug melden / Issue erstellen
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer tutorial-footer">
+                <button class="btn btn-secondary" id="btn-close-tutorial-modal-footer">SCHLIESSEN</button>
             </div>
         </div>
     </div>

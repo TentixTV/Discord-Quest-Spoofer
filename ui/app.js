@@ -127,6 +127,7 @@ const DQS = {
         this.setupConsoleTab();
         this.setupVideoModal();
         this.setupLicenseModal();
+        this.setupTutorialModal();
 
         // Load data from bridge
         await this.loadCurrentUser();
@@ -392,6 +393,21 @@ const DQS = {
         setHtml('ico-license-warn-en', I.shield);
         setHtml('ico-license-info-en', I.quest);
         setHtml('ico-gh-logo-en', I.github);
+
+        // Tutorial Modal & Header
+        setHtml('ico-tutorial-hdr', I.tutorial || I.help);
+        setHtml('ico-tutorial-modal-title', I.tutorial || I.help);
+        setHtml('btn-close-tutorial-modal', I.close);
+        setHtml('ico-tut-tab-rocket', I.sparkles || I.play);
+        setHtml('ico-tut-tab-clock', I.shield || I.refresh);
+        setHtml('ico-tut-tab-tools', I.gear || I.console);
+        setHtml('ico-tut-tab-dev', I.friend || I.users);
+        setHtml('ico-fact-server', I.shield);
+        setHtml('ico-fact-instant', I.sparkles || I.play);
+        setHtml('ico-fact-benefit', I.quest);
+        setHtml('ico-btn-friend-req', I.friend || I.users);
+        setHtml('ico-tut-gh', I.github);
+        setHtml('ico-tut-bug', I.alert || I.shield);
     },
 
     // --- Render Discord Badges (Dynamic with Live CDN Support) ---
@@ -1424,6 +1440,109 @@ const DQS = {
 
         if (linkGhDe) linkGhDe.addEventListener('click', openGh);
         if (linkGhEn) linkGhEn.addEventListener('click', openGh);
+    },
+
+    // --- Tutorial & Interactive Help Modal (15-Min Explanation & Sandro Support) ---
+    setupTutorialModal() {
+        const modal = document.getElementById('tutorial-modal');
+        const trigger = document.getElementById('btn-open-tutorial');
+        const closeHeader = document.getElementById('btn-close-tutorial-modal');
+        const closeFooter = document.getElementById('btn-close-tutorial-modal-footer');
+        const tabBtns = document.querySelectorAll('.tut-tab-btn');
+        const panes = document.querySelectorAll('.tutorial-pane');
+        const btnAddTentix = document.getElementById('btn-add-tentix');
+        const tentixStatus = document.getElementById('add-tentix-status');
+        const linkGh = document.getElementById('btn-tut-open-github');
+        const linkIssues = document.getElementById('btn-tut-open-issues');
+
+        const openModal = () => {
+            if (modal) modal.classList.remove('hidden');
+        };
+        const closeModal = () => {
+            if (modal) modal.classList.add('hidden');
+        };
+
+        if (trigger) trigger.addEventListener('click', openModal);
+        if (closeHeader) closeHeader.addEventListener('click', closeModal);
+        if (closeFooter) closeFooter.addEventListener('click', closeModal);
+
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+        }
+
+        // Tab Switching
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetPaneId = btn.getAttribute('data-pane');
+                tabBtns.forEach(b => b.classList.remove('active'));
+                panes.forEach(p => p.classList.remove('active'));
+
+                btn.classList.add('active');
+                const targetPane = document.getElementById(targetPaneId);
+                if (targetPane) targetPane.classList.add('active');
+            });
+        });
+
+        // 1-Click Friend Request to tentix (Sandro)
+        if (btnAddTentix) {
+            btnAddTentix.addEventListener('click', async () => {
+                btnAddTentix.disabled = true;
+                const origHtml = btnAddTentix.innerHTML;
+                btnAddTentix.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ANFRAGE WIRD GESENDET...`;
+
+                if (tentixStatus) {
+                    tentixStatus.className = 'friend-status-msg info';
+                    tentixStatus.innerText = 'Verbindung zu Discord wird hergestellt...';
+                    tentixStatus.classList.remove('hidden');
+                }
+
+                try {
+                    let res = null;
+                    if (window.pywebview?.api?.send_friend_request_to_dev) {
+                        res = await window.pywebview.api.send_friend_request_to_dev();
+                    } else {
+                        // Browser preview simulation
+                        await new Promise(r => setTimeout(r, 600));
+                        res = { success: true, message: "Freundschaftsanfrage erfolgreich an tentix gesendet!" };
+                    }
+
+                    if (tentixStatus) {
+                        tentixStatus.classList.remove('hidden');
+                        if (res && res.success) {
+                            tentixStatus.className = 'friend-status-msg success';
+                            tentixStatus.innerText = res.message || 'Freundschaftsanfrage an Sandro (tentix) erfolgreich gesendet!';
+                        } else {
+                            const isFallback = res && res.fallback_copied;
+                            tentixStatus.className = isFallback ? 'friend-status-msg warning' : 'friend-status-msg error';
+                            tentixStatus.innerText = res?.message || 'Fehler beim Senden. Tag "tentix" kopiert!';
+                        }
+                    }
+                } catch (err) {
+                    if (tentixStatus) {
+                        tentixStatus.className = 'friend-status-msg error';
+                        tentixStatus.innerText = `Fehler: ${err?.message || err}`;
+                        tentixStatus.classList.remove('hidden');
+                    }
+                } finally {
+                    btnAddTentix.disabled = false;
+                    btnAddTentix.innerHTML = origHtml;
+                }
+            });
+        }
+
+        // Links
+        const openUrl = (url) => {
+            if (window.pywebview?.api?.open_external_url) {
+                window.pywebview.api.open_external_url(url);
+            } else {
+                window.open(url, '_blank');
+            }
+        };
+
+        if (linkGh) linkGh.addEventListener('click', () => openUrl('https://github.com/TentixTV/Discord-Quest-Spoofer'));
+        if (linkIssues) linkIssues.addEventListener('click', () => openUrl('https://github.com/TentixTV/Discord-Quest-Spoofer/issues'));
     },
 
     // --- Videos Tab ---
