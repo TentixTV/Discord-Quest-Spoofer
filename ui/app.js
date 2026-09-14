@@ -1821,14 +1821,24 @@ const DQS = {
 
     // --- Discord Orbs Balance & Rewards Hub Modal ---
     setupOrbsModal() {
-        const orbsWidget = document.getElementById('hdr-orbs-widget');
+        const questsOrbsWidget = document.getElementById('quests-orbs-widget');
+        const popoutOrbsBtn = document.getElementById('btn-popout-orbs-hub');
         const orbsModal = document.getElementById('orbs-modal');
         const btnCloseOrbs = document.getElementById('btn-close-orbs-modal');
         const btnCloseFooter = document.getElementById('btn-close-orbs-footer');
         const btnFarmAll = document.getElementById('btn-farm-all-orbs');
 
-        if (orbsWidget) {
-            orbsWidget.addEventListener('click', () => this.openOrbsModal());
+        if (questsOrbsWidget) {
+            questsOrbsWidget.addEventListener('click', () => this.openOrbsModal());
+        }
+        if (popoutOrbsBtn) {
+            popoutOrbsBtn.addEventListener('click', () => {
+                const popout = document.getElementById('discord-profile-popout');
+                const backdrop = document.getElementById('popout-backdrop');
+                if (popout) popout.classList.add('hidden');
+                if (backdrop) backdrop.classList.add('hidden');
+                this.openOrbsModal();
+            });
         }
         if (btnCloseOrbs) {
             btnCloseOrbs.addEventListener('click', () => this.closeOrbsModal());
@@ -1883,9 +1893,20 @@ const DQS = {
         if (!window.pywebview?.api?.get_orbs_overview) return;
         try {
             const overview = await window.pywebview.api.get_orbs_overview();
+            const liveBalance = overview.live_orbs !== undefined ? overview.live_orbs : (overview.earned_orbs || 0);
+            const formattedLive = Number(liveBalance).toLocaleString('de-DE');
+
+            const questsCount = document.getElementById('quests-orbs-count');
+            if (questsCount) {
+                questsCount.innerText = formattedLive;
+            }
+            const popoutCount = document.getElementById('popout-orbs-count');
+            if (popoutCount) {
+                popoutCount.innerText = `${formattedLive} ORBS`;
+            }
             const hdrCount = document.getElementById('hdr-orbs-count');
             if (hdrCount) {
-                hdrCount.innerText = Number(overview.earned_orbs || 0).toLocaleString();
+                hdrCount.innerText = formattedLive;
             }
             const modal = document.getElementById('orbs-modal');
             if (modal && modal.style.display === 'flex') {
@@ -1906,10 +1927,15 @@ const DQS = {
         const statCount = document.getElementById('stat-orbs-quests-count');
         const questsList = document.getElementById('orbs-quests-list');
 
-        if (earnedCounter) earnedCounter.innerText = Number(overview.earned_orbs || 0).toLocaleString();
-        if (statEarned) statEarned.innerText = Number(overview.earned_orbs || 0).toLocaleString();
-        if (statOpen) statOpen.innerText = Number(overview.open_orbs || 0).toLocaleString();
-        if (statTotal) statTotal.innerText = Number(overview.total_orbs || 0).toLocaleString();
+        const liveBalance = overview.live_orbs !== undefined ? overview.live_orbs : (overview.earned_orbs || 0);
+        const formattedLive = Number(liveBalance).toLocaleString('de-DE');
+        const formattedOpen = Number(overview.open_orbs || 0).toLocaleString('de-DE');
+        const formattedTotal = Number(overview.total_orbs || 0).toLocaleString('de-DE');
+
+        if (earnedCounter) earnedCounter.innerText = formattedLive;
+        if (statEarned) statEarned.innerText = formattedLive;
+        if (statOpen) statOpen.innerText = formattedOpen;
+        if (statTotal) statTotal.innerText = formattedTotal;
         if (statCount) statCount.innerText = `${overview.completed_quests_count || 0} / ${overview.total_quests_count || 0}`;
 
         if (!questsList) return;
@@ -2069,7 +2095,7 @@ const DQS = {
             this._updateDownloadUrl = res.download_url;
             this._latestReleaseUrl = res.html_url || 'https://github.com/TentixTV/Discord-Quest-Spoofer/releases';
 
-            if (statCur) statCur.innerText = res.current_version || 'V6.2.0';
+            if (statCur) statCur.innerText = res.current_version || 'V6.2.1';
             if (statLatest) statLatest.innerText = res.latest_version || res.current_version;
             if (tagLatestSource) tagLatestSource.innerText = 'GitHub Live API';
 
@@ -2578,7 +2604,7 @@ const DQS = {
                 card.classList.remove('activity-active');
                 card.classList.add('activity-idle');
             }
-            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.2.0)';
+            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.2.1)';
             popState.innerText = 'Bereit für Quest-Simulation';
             popTimer.innerText = 'Status: Standby • Discord RPC aktiv';
         }

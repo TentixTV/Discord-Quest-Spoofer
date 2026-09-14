@@ -83,15 +83,6 @@
         </div>
 
         <div class="titlebar-right no-drag">
-            <!-- Discord Orbs Balance Pill Widget in Header -->
-            <div class="hdr-orbs-widget no-drag" id="hdr-orbs-widget" title="Discord Orbs Balance & Hub öffnen">
-                <img src="discord_orbs_animated.gif" alt="Orbs" class="hdr-orbs-gif" onerror="this.src='../discord_orbs_animated.gif'">
-                <div class="hdr-orbs-info">
-                    <span class="hdr-orbs-value" id="hdr-orbs-count">0</span>
-                    <span class="hdr-orbs-label">ORBS</span>
-                </div>
-            </div>
-
             <!-- User Profile Pill in Header -->
             <div id="header-user-pill" class="user-pill" title="Discord-Profil öffnen">
                 <div class="mini-avatar-wrap">
@@ -134,6 +125,17 @@
                     <span class="toolbar-desc">Wähle ein Spiel zum sofortigen Simulieren oder nutze den Express-Abschluss.</span>
                 </div>
                 <div class="toolbar-actions">
+                    <!-- Prominent Live Discord Orbs Widget in Quests Toolbar -->
+                    <div class="quests-orbs-widget" id="quests-orbs-widget" title="Discord Orbs Balance & Hub öffnen (Live Discord-Guthaben)">
+                        <img src="discord_orbs_animated.gif" alt="Orbs" class="quests-orbs-gif" onerror="this.src='../discord_orbs_animated.gif'">
+                        <div class="quests-orbs-info">
+                            <div class="quests-orbs-topline">
+                                <span class="quests-orbs-value" id="quests-orbs-count">0</span>
+                                <span class="quests-orbs-unit">ORBS</span>
+                            </div>
+                            <span class="quests-orbs-label">LIVE IN DISCORD</span>
+                        </div>
+                    </div>
                     <button class="btn btn-secondary" id="btn-refresh-quests">
                         <span id="ico-btn-refresh"></span> AKTUALISIEREN
                     </button>
@@ -357,7 +359,7 @@
 
             <div class="terminal-container card-3d">
                 <div class="terminal-logs" id="terminal-logs">
-                    <div class="log-line info">[DQS] GPU Engine & PyWebView Bridge initialisiert (Release V6.2.0)...</div>
+                    <div class="log-line info">[DQS] GPU Engine & PyWebView Bridge initialisiert (Release V6.2.1)...</div>
                     <div class="log-line success">[DQS] Authentifizierung bereit. 60 FPS Canvas aktiv.</div>
                 </div>
             </div>
@@ -416,13 +418,29 @@
                     </div>
                 </div>
 
+                <!-- Live Discord Orbs Card in Profile Popout -->
+                <div class="profile-section">
+                    <h5 class="section-title">DISCORD ORBS GUTHABEN</h5>
+                    <div class="profile-orbs-card" id="btn-popout-orbs-hub" title="Discord Orbs Hub öffnen">
+                        <img src="discord_orbs_animated.gif" alt="Orbs" class="profile-orbs-gif" onerror="this.src='../discord_orbs_animated.gif'">
+                        <div class="profile-orbs-info-col">
+                            <div class="profile-orbs-val-row">
+                                <span class="profile-orbs-num" id="popout-orbs-count">0</span>
+                                <span class="profile-orbs-label">ORBS (LIVE)</span>
+                            </div>
+                            <span class="profile-orbs-sub">Offizielles Discord-Guthaben • Klicke für Details</span>
+                        </div>
+                        <span class="profile-orbs-arrow">➔</span>
+                    </div>
+                </div>
+
                 <!-- Activity Card (Dynamic Live Activity) -->
                 <div class="profile-section">
                     <h5 class="section-title">AKTIVITÄT</h5>
                     <div class="activity-card activity-idle" id="profile-activity-card">
                         <div class="activity-game-icon-wrap" id="act-gamepad-icon"></div>
                         <div class="activity-details">
-                            <h4 class="activity-game-name" id="pop-act-game">DQS // Discord Quest Spoofer (V6.2.0)</h4>
+                            <h4 class="activity-game-name" id="pop-act-game">DQS // Discord Quest Spoofer (V6.2.1)</h4>
                             <p class="activity-state-sub" id="pop-act-state">Bereit für Quest-Simulation</p>
                             <span class="activity-timer" id="pop-act-timer">Status: Standby • Discord RPC aktiv</span>
                         </div>
@@ -438,7 +456,7 @@
                         <span id="ico-btn-copy-id"></span> NUTZER-ID KOPIEREN
                     </button>
                     <button class="btn btn-purple-glow btn-block" id="btn-open-github">
-                        <span id="ico-btn-github"></span> OFFIZIELLER GITHUB (V6.2.0)
+                        <span id="ico-btn-github"></span> OFFIZIELLER GITHUB (V6.2.1)
                     </button>
                     <div class="profile-action-row-split">
                         <button class="btn btn-secondary btn-half" id="btn-open-changelog">
@@ -534,14 +552,14 @@
                     <div class="update-stat-card">
                         <span class="stat-card-label">INSTALLIERTE VERSION</span>
                         <div class="stat-card-val-row">
-                            <span class="stat-card-val" id="stat-cur-ver">V6.2.0</span>
+                            <span class="stat-card-val" id="stat-cur-ver">V6.2.1</span>
                             <span class="stat-card-tag local">Lokal</span>
                         </div>
                     </div>
                     <div class="update-stat-card">
                         <span class="stat-card-label">GITHUB NEUESTE VERSION</span>
                         <div class="stat-card-val-row">
-                            <span class="stat-card-val" id="stat-latest-ver">V6.2.0</span>
+                            <span class="stat-card-val" id="stat-latest-ver">V6.2.1</span>
                             <span class="stat-card-tag latest" id="tag-latest-source">GitHub API</span>
                         </div>
                     </div>
@@ -560,7 +578,7 @@
                         <div class="update-author-info">
                             <img src="https://avatars.githubusercontent.com/u/95185365?v=4" alt="TentixTV" class="update-author-avatar" id="update-author-avatar">
                             <div class="update-author-meta">
-                                <h4 class="update-release-title" id="update-release-title">DQS // Discord Quest Spoofer - Release V6.2.0</h4>
+                                <h4 class="update-release-title" id="update-release-title">DQS // Discord Quest Spoofer - Release V6.2.1</h4>
                                 <span class="update-release-meta-txt" id="update-release-meta">Erstellt von <strong>@TentixTV</strong> • Veröffentlicht im September 2026</span>
                             </div>
                         </div>
@@ -624,7 +642,7 @@
         <div class="update-toast-content">
             <span class="update-toast-icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 9V4s3.03.55 4 2c1.08 1.62 0 5 0 5"/></svg></span>
             <div class="update-toast-text">
-                <strong>Neues Update verfügbar: <span id="toast-new-version">V6.2.0</span>!</strong>
+                <strong>Neues Update verfügbar: <span id="toast-new-version">V6.2.1</span>!</strong>
                 <span class="update-toast-sub">Klicke hier zum Anzeigen des Changelogs und Herunterladen.</span>
             </div>
         </div>
@@ -669,7 +687,7 @@
                     <img src="DQS.png" alt="DQS" class="modal-brand-icon" onerror="this.src='../DQS.png'">
                     <div>
                         <h3 class="license-modal-heading">DQS // LIZENZ & CREDITS</h3>
-                        <span class="license-modal-sub">RELEASE V6.2.0 • OPEN SOURCE INFORMATION</span>
+                        <span class="license-modal-sub">RELEASE V6.2.1 • OPEN SOURCE INFORMATION</span>
                     </div>
                 </div>
                 <div class="license-header-controls">
@@ -1142,12 +1160,12 @@ copies or substantial portions of the Software.</pre>
                         <img src="discord_orbs_animated.gif" alt="Animated Discord Orb" class="orbs-showcase-gif" onerror="this.src='../discord_orbs_animated.gif'">
                     </div>
                     <div class="orbs-hero-details">
-                        <div class="orbs-hero-tag">DEIN AKTIVES ORBS-GUTHABEN</div>
+                        <div class="orbs-hero-tag">ECHTES LIVE DISCORD-GUTHABEN</div>
                         <div class="orbs-huge-counter">
                             <span id="orbs-earned-counter">0</span> <span class="orbs-unit">ORBS</span>
                         </div>
                         <p class="orbs-hero-sub">
-                            Mit Discord Quests gesammelte Orbs für Avatar-Dekorationen, Profil-Effekte und exklusive Shop-Belohnungen.
+                            Live und in Echtzeit aus deinem Discord-Account synchronisiert. Gültig für Avatar-Dekorationen, Profil-Effekte und Shop-Belohnungen.
                         </p>
                     </div>
                 </div>
@@ -1155,11 +1173,11 @@ copies or substantial portions of the Software.</pre>
                 <!-- Statistics Grid -->
                 <div class="orbs-stats-grid">
                     <div class="orbs-stat-card">
-                        <span class="orbs-stat-label">GESAMMELTE ORBS</span>
+                        <span class="orbs-stat-label">LIVE DISCORD-GUTHABEN</span>
                         <span class="orbs-stat-val earned" id="stat-orbs-earned">0</span>
                     </div>
                     <div class="orbs-stat-card">
-                        <span class="orbs-stat-label">NOCH OFFEN</span>
+                        <span class="orbs-stat-label">NOCH OFFEN AUS QUESTS</span>
                         <span class="orbs-stat-val open" id="stat-orbs-open">0</span>
                     </div>
                     <div class="orbs-stat-card">
