@@ -1,8 +1,8 @@
 # UTF-8
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(6, 1, 2, 0),
-    prodvers=(6, 1, 2, 0),
+    filevers=(6, 2, 0, 0),
+    prodvers=(6, 2, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -17,13 +17,13 @@ VSVersionInfo(
           '040904B0',
           [
             StringStruct('CompanyName', 'T3X / TNTIX / Sandro'),
-            StringStruct('FileDescription', 'DQS by T3X - Discord Quest Spoofer Stealth Edition V6.1.2'),
-            StringStruct('FileVersion', '6.1.2.0'),
+            StringStruct('FileDescription', 'DQS by T3X - Discord Quest Spoofer Stealth Edition V6.2.0'),
+            StringStruct('FileVersion', '6.2.0.0'),
             StringStruct('InternalName', 'DQS'),
             StringStruct('LegalCopyright', 'Copyright (C) 2026 Sandro (T3X / TNTIX). All rights reserved.'),
             StringStruct('OriginalFilename', 'DQS.exe'),
             StringStruct('ProductName', 'Discord Quest Spoofer (DQS)'),
-            StringStruct('ProductVersion', '6.1.2.0')
+            StringStruct('ProductVersion', '6.2.0.0')
           ]
         )
       ]

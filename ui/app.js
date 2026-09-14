@@ -129,6 +129,7 @@ const DQS = {
         this.setupLicenseModal();
         this.setupTutorialModal();
         this.setupChangelogAndUpdateModals();
+        this.setupOrbsModal();
 
         // Load data from bridge
         await this.loadCurrentUser();
@@ -340,6 +341,7 @@ const DQS = {
         setHtml('ico-btn-enroll', I.quest);
         setHtml('ico-btn-autofarm', I.autofarm);
         setHtml('ico-hero-autofarm', I.autofarm);
+        setHtml('ico-btn-orbs-farm', I.autofarm);
         setHtml('ico-hero-play', I.play);
 
         setHtml('ico-hdr-videos', I.video);
@@ -940,6 +942,13 @@ const DQS = {
             console.error("Failed to load auto quest overview:", e);
         }
 
+        // Update Discord Orbs Balance & Hub
+        try {
+            await this.updateOrbsUI();
+        } catch (e) {
+            console.error("Failed to update Orbs UI:", e);
+        }
+
         this.renderQuestsList();
         this.renderVideosTab(this.cachedQuests);
     },
@@ -1063,6 +1072,38 @@ const DQS = {
         });
     },
 
+    createDynamicGameBadge(gameTitle) {
+        const safeTitle = (gameTitle || 'DISCORD QUEST').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180">
+            <defs>
+                <linearGradient id="bg-${encodeURIComponent(safeTitle).slice(0, 8)}" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#0b0f19"/>
+                    <stop offset="50%" stop-color="#1e293b"/>
+                    <stop offset="100%" stop-color="#090d16"/>
+                </linearGradient>
+                <filter id="glow-${encodeURIComponent(safeTitle).slice(0, 8)}" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="6" result="blur"/>
+                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                </filter>
+            </defs>
+            <rect width="320" height="180" fill="url(#bg-${encodeURIComponent(safeTitle).slice(0, 8)})" rx="12"/>
+            <circle cx="160" cy="68" r="42" fill="#5865F2" fill-opacity="0.12"/>
+            <circle cx="160" cy="68" r="32" fill="#38bdf8" fill-opacity="0.22" filter="url(#glow-${encodeURIComponent(safeTitle).slice(0, 8)})"/>
+            <g transform="translate(142, 50) scale(1.5)" fill="none" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="12" x2="10" y2="12"/>
+                <line x1="8" y1="10" x2="8" y2="14"/>
+                <line x1="15" y1="13" x2="15.01" y2="13"/>
+                <line x1="18" y1="11" x2="18.01" y2="11"/>
+                <rect x="2" y="6" width="20" height="12" rx="2"/>
+            </g>
+            <text x="160" y="130" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="14" text-anchor="middle" letter-spacing="0.5">${safeTitle.length > 24 ? safeTitle.substring(0, 22) + '...' : safeTitle}</text>
+            <text x="160" y="152" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="10" text-anchor="middle" letter-spacing="1">DISCORD DETECTABLE GAME</text>
+        </svg>
+        `.trim();
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    },
+
     createQuestCard(q) {
         const I = window.DQS_ICONS;
         const card = document.createElement('div');
@@ -1088,9 +1129,19 @@ const DQS = {
         const rewardName = q.primary_reward_name || q.rewards_text || '';
         const isMultiGame = Boolean(q.is_multi_game && q.supported_applications && q.supported_applications.length > 1);
 
-        // Tile source: Base64 first, fallback to HTTP/file
+        // Universal Multi-CDN Artwork Fallback Chain
         const b64Tile = window.DQS_EMBEDDED_ASSETS?.tiles?.[qid];
-        const tileSrc = b64Tile || `assets/quests/tiles/${qid}.png`;
+        const candidateUrls = [
+            b64Tile,
+            q.best_artwork_url,
+            q.hero_url,
+            q.tile_url,
+            q.game_cover_url,
+            q.game_icon_url,
+            `assets/quests/tiles/${qid}.png`
+        ].filter(Boolean);
+
+        const tileSrc = candidateUrls.length > 0 ? candidateUrls[0] : this.createDynamicGameBadge(gameTitle);
 
         // Animated Discord Orbs Logo
         const orbImgSrc = window.DQS_EMBEDDED_ASSETS?.animated_orb || 'assets/discord_orbs_animated.gif';
@@ -1176,7 +1227,7 @@ const DQS = {
 
         card.innerHTML = `
             <div class="quest-tile-wrap">
-                <img src="${tileSrc}" alt="${gameTitle}" class="quest-tile-img" onerror="if(window.DQS_EMBEDDED_ASSETS?.tiles?.['${qid}']) this.src=window.DQS_EMBEDDED_ASSETS.tiles['${qid}']; else this.src='DQS.png';">
+                <img src="${tileSrc}" alt="${gameTitle}" class="quest-tile-img" id="tile-img-${qid}">
             </div>
             <div class="quest-info-wrap">
                 <div class="quest-header-row">
@@ -1197,6 +1248,21 @@ const DQS = {
             </div>
             <div class="quest-actions-wrap" id="act-box-${qid}"></div>
         `;
+
+        // Wire image fallback sequence
+        const tileImg = card.querySelector('.quest-tile-img');
+        if (tileImg) {
+            let candidateIdx = 0;
+            tileImg.onerror = () => {
+                candidateIdx++;
+                if (candidateIdx < candidateUrls.length) {
+                    tileImg.src = candidateUrls[candidateIdx];
+                } else {
+                    tileImg.onerror = null;
+                    tileImg.src = this.createDynamicGameBadge(gameTitle);
+                }
+            };
+        }
 
         if (isMultiGame) {
             const multiSel = card.querySelector(`#multi-sel-${qid}`);
@@ -1753,6 +1819,136 @@ const DQS = {
         }
     },
 
+    // --- Discord Orbs Balance & Rewards Hub Modal ---
+    setupOrbsModal() {
+        const orbsWidget = document.getElementById('hdr-orbs-widget');
+        const orbsModal = document.getElementById('orbs-modal');
+        const btnCloseOrbs = document.getElementById('btn-close-orbs-modal');
+        const btnCloseFooter = document.getElementById('btn-close-orbs-footer');
+        const btnFarmAll = document.getElementById('btn-farm-all-orbs');
+
+        if (orbsWidget) {
+            orbsWidget.addEventListener('click', () => this.openOrbsModal());
+        }
+        if (btnCloseOrbs) {
+            btnCloseOrbs.addEventListener('click', () => this.closeOrbsModal());
+        }
+        if (btnCloseFooter) {
+            btnCloseFooter.addEventListener('click', () => this.closeOrbsModal());
+        }
+        if (orbsModal) {
+            orbsModal.addEventListener('click', (e) => {
+                if (e.target === orbsModal) this.closeOrbsModal();
+            });
+        }
+        if (btnFarmAll) {
+            btnFarmAll.addEventListener('click', async () => {
+                const openOrbsQuests = (this.cachedQuests || []).filter(q => (q.orb_count > 0) && !q.completed && !q.claimed);
+                if (openOrbsQuests.length === 0) {
+                    alert("Du hast bereits alle aktiven Orbs-Quests abgeschlossen! Belohnungen warten in Discord.");
+                    return;
+                }
+                this.closeOrbsModal();
+                this.switchTab('quests');
+                const btnStartAuto = document.getElementById('btn-start-auto-farm');
+                if (btnStartAuto && !this.autoFarmRunning) {
+                    btnStartAuto.click();
+                } else {
+                    alert(`Starte Bearbeitung von ${openOrbsQuests.length} offenen Orbs-Quests...`);
+                }
+            });
+        }
+    },
+
+    async openOrbsModal() {
+        const modal = document.getElementById('orbs-modal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        try {
+            if (window.pywebview?.api?.get_orbs_overview) {
+                const overview = await window.pywebview.api.get_orbs_overview();
+                this.updateOrbsModalUI(overview);
+            }
+        } catch (err) {
+            console.error("Failed to load orbs overview in modal:", err);
+        }
+    },
+
+    closeOrbsModal() {
+        const modal = document.getElementById('orbs-modal');
+        if (modal) modal.style.display = 'none';
+    },
+
+    async updateOrbsUI() {
+        if (!window.pywebview?.api?.get_orbs_overview) return;
+        try {
+            const overview = await window.pywebview.api.get_orbs_overview();
+            const hdrCount = document.getElementById('hdr-orbs-count');
+            if (hdrCount) {
+                hdrCount.innerText = Number(overview.earned_orbs || 0).toLocaleString();
+            }
+            const modal = document.getElementById('orbs-modal');
+            if (modal && modal.style.display === 'flex') {
+                this.updateOrbsModalUI(overview);
+            }
+        } catch (e) {
+            console.error("updateOrbsUI error:", e);
+        }
+    },
+
+    updateOrbsModalUI(overview) {
+        if (!overview) return;
+        const I = window.DQS_ICONS || {};
+        const earnedCounter = document.getElementById('orbs-earned-counter');
+        const statEarned = document.getElementById('stat-orbs-earned');
+        const statOpen = document.getElementById('stat-orbs-open');
+        const statTotal = document.getElementById('stat-orbs-total');
+        const statCount = document.getElementById('stat-orbs-quests-count');
+        const questsList = document.getElementById('orbs-quests-list');
+
+        if (earnedCounter) earnedCounter.innerText = Number(overview.earned_orbs || 0).toLocaleString();
+        if (statEarned) statEarned.innerText = Number(overview.earned_orbs || 0).toLocaleString();
+        if (statOpen) statOpen.innerText = Number(overview.open_orbs || 0).toLocaleString();
+        if (statTotal) statTotal.innerText = Number(overview.total_orbs || 0).toLocaleString();
+        if (statCount) statCount.innerText = `${overview.completed_quests_count || 0} / ${overview.total_quests_count || 0}`;
+
+        if (!questsList) return;
+        const orbsQuests = overview.quests || [];
+        if (orbsQuests.length === 0) {
+            questsList.innerHTML = `<div class="orbs-empty-state" style="padding:20px;text-align:center;color:#94a3b8;">Aktuell sind keine Quests mit Discord-Orbs verzeichnet.</div>`;
+            return;
+        }
+
+        const orbImgSrc = window.DQS_EMBEDDED_ASSETS?.animated_orb || 'assets/discord_orbs_animated.gif';
+
+        questsList.innerHTML = orbsQuests.map(q => {
+            const isDone = Boolean(q.completed || q.claimed);
+            const isClaimed = Boolean(q.claimed);
+            const isVideo = Boolean(q.is_video_task || String(q.task_type || '').includes('WATCH_VIDEO'));
+            const count = q.orb_count || 0;
+            const tileSrc = q.best_artwork_url || q.hero_url || q.tile_url || q.game_cover_url || q.game_icon_url || 'DQS.png';
+
+            return `
+                <div class="orbs-quest-row ${isDone ? 'done' : 'open'}">
+                    <img src="${tileSrc}" class="orbs-quest-thumb" alt="${q.game_title || 'Game'}" onerror="this.src='DQS.png'">
+                    <div class="orbs-quest-info">
+                        <span class="orbs-quest-title">${q.game_title || 'Discord Quest'}</span>
+                        <span class="orbs-quest-sub">${q.quest_name || (isVideo ? 'Video-Aufgabe' : 'Spielzeit-Aufgabe')}</span>
+                    </div>
+                    <div class="orbs-quest-pill ${isDone ? 'earned' : 'open'}">
+                        <img src="${orbImgSrc}" class="orbs-mini-gif" alt="Orb">
+                        <span>+${count} ORBS</span>
+                    </div>
+                    <div class="orbs-quest-status">
+                        ${isClaimed ? '<span class="status-pill claimed">EINGELÖST</span>' : 
+                          isDone ? '<span class="status-pill done">ERFÜLLT</span>' : 
+                          '<span class="status-pill open">OFFEN</span>'}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
     async openChangelogModal() {
         const modal = document.getElementById('changelog-modal');
         const listContainer = document.getElementById('changelog-content-list');
@@ -1873,7 +2069,7 @@ const DQS = {
             this._updateDownloadUrl = res.download_url;
             this._latestReleaseUrl = res.html_url || 'https://github.com/TentixTV/Discord-Quest-Spoofer/releases';
 
-            if (statCur) statCur.innerText = res.current_version || 'V6.1.2';
+            if (statCur) statCur.innerText = res.current_version || 'V6.2.0';
             if (statLatest) statLatest.innerText = res.latest_version || res.current_version;
             if (tagLatestSource) tagLatestSource.innerText = 'GitHub Live API';
 
@@ -2382,7 +2578,7 @@ const DQS = {
                 card.classList.remove('activity-active');
                 card.classList.add('activity-idle');
             }
-            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.1.2)';
+            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.2.0)';
             popState.innerText = 'Bereit für Quest-Simulation';
             popTimer.innerText = 'Status: Standby • Discord RPC aktiv';
         }

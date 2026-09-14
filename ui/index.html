@@ -83,6 +83,15 @@
         </div>
 
         <div class="titlebar-right no-drag">
+            <!-- Discord Orbs Balance Pill Widget in Header -->
+            <div class="hdr-orbs-widget no-drag" id="hdr-orbs-widget" title="Discord Orbs Balance & Hub öffnen">
+                <img src="discord_orbs_animated.gif" alt="Orbs" class="hdr-orbs-gif" onerror="this.src='../discord_orbs_animated.gif'">
+                <div class="hdr-orbs-info">
+                    <span class="hdr-orbs-value" id="hdr-orbs-count">0</span>
+                    <span class="hdr-orbs-label">ORBS</span>
+                </div>
+            </div>
+
             <!-- User Profile Pill in Header -->
             <div id="header-user-pill" class="user-pill" title="Discord-Profil öffnen">
                 <div class="mini-avatar-wrap">
@@ -348,7 +357,7 @@
 
             <div class="terminal-container card-3d">
                 <div class="terminal-logs" id="terminal-logs">
-                    <div class="log-line info">[DQS] GPU Engine & PyWebView Bridge initialisiert (Release V6.1.2)...</div>
+                    <div class="log-line info">[DQS] GPU Engine & PyWebView Bridge initialisiert (Release V6.2.0)...</div>
                     <div class="log-line success">[DQS] Authentifizierung bereit. 60 FPS Canvas aktiv.</div>
                 </div>
             </div>
@@ -413,7 +422,7 @@
                     <div class="activity-card activity-idle" id="profile-activity-card">
                         <div class="activity-game-icon-wrap" id="act-gamepad-icon"></div>
                         <div class="activity-details">
-                            <h4 class="activity-game-name" id="pop-act-game">DQS // Discord Quest Spoofer (V6.1.2)</h4>
+                            <h4 class="activity-game-name" id="pop-act-game">DQS // Discord Quest Spoofer (V6.2.0)</h4>
                             <p class="activity-state-sub" id="pop-act-state">Bereit für Quest-Simulation</p>
                             <span class="activity-timer" id="pop-act-timer">Status: Standby • Discord RPC aktiv</span>
                         </div>
@@ -429,7 +438,7 @@
                         <span id="ico-btn-copy-id"></span> NUTZER-ID KOPIEREN
                     </button>
                     <button class="btn btn-purple-glow btn-block" id="btn-open-github">
-                        <span id="ico-btn-github"></span> OFFIZIELLER GITHUB (V6.1.2)
+                        <span id="ico-btn-github"></span> OFFIZIELLER GITHUB (V6.2.0)
                     </button>
                     <div class="profile-action-row-split">
                         <button class="btn btn-secondary btn-half" id="btn-open-changelog">
@@ -525,14 +534,14 @@
                     <div class="update-stat-card">
                         <span class="stat-card-label">INSTALLIERTE VERSION</span>
                         <div class="stat-card-val-row">
-                            <span class="stat-card-val" id="stat-cur-ver">V6.1.2</span>
+                            <span class="stat-card-val" id="stat-cur-ver">V6.2.0</span>
                             <span class="stat-card-tag local">Lokal</span>
                         </div>
                     </div>
                     <div class="update-stat-card">
                         <span class="stat-card-label">GITHUB NEUESTE VERSION</span>
                         <div class="stat-card-val-row">
-                            <span class="stat-card-val" id="stat-latest-ver">V6.1.2</span>
+                            <span class="stat-card-val" id="stat-latest-ver">V6.2.0</span>
                             <span class="stat-card-tag latest" id="tag-latest-source">GitHub API</span>
                         </div>
                     </div>
@@ -551,8 +560,8 @@
                         <div class="update-author-info">
                             <img src="https://avatars.githubusercontent.com/u/95185365?v=4" alt="TentixTV" class="update-author-avatar" id="update-author-avatar">
                             <div class="update-author-meta">
-                                <h4 class="update-release-title" id="update-release-title">DQS // Discord Quest Spoofer - Release V6.1.2</h4>
-                                <span class="update-release-meta-txt" id="update-release-meta">Erstellt von <strong>@TentixTV</strong> • Veröffentlicht am 11. September 2026</span>
+                                <h4 class="update-release-title" id="update-release-title">DQS // Discord Quest Spoofer - Release V6.2.0</h4>
+                                <span class="update-release-meta-txt" id="update-release-meta">Erstellt von <strong>@TentixTV</strong> • Veröffentlicht im September 2026</span>
                             </div>
                         </div>
                         <div class="update-asset-pill" id="update-asset-pill">
@@ -613,7 +622,7 @@
     <!-- Update Notification Toast Banner (Top Notification) -->
     <div id="update-toast-banner" class="update-toast-banner hidden">
         <div class="update-toast-content">
-            <span class="update-toast-icon">🚀</span>
+            <span class="update-toast-icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 9V4s3.03.55 4 2c1.08 1.62 0 5 0 5"/></svg></span>
             <div class="update-toast-text">
                 <strong>Neues Update verfügbar: <span id="toast-new-version">V6.2.0</span>!</strong>
                 <span class="update-toast-sub">Klicke hier zum Anzeigen des Changelogs und Herunterladen.</span>
@@ -660,7 +669,7 @@
                     <img src="DQS.png" alt="DQS" class="modal-brand-icon" onerror="this.src='../DQS.png'">
                     <div>
                         <h3 class="license-modal-heading">DQS // LIZENZ & CREDITS</h3>
-                        <span class="license-modal-sub">RELEASE V6.1.2 • OPEN SOURCE INFORMATION</span>
+                        <span class="license-modal-sub">RELEASE V6.2.0 • OPEN SOURCE INFORMATION</span>
                     </div>
                 </div>
                 <div class="license-header-controls">
@@ -911,7 +920,7 @@ copies or substantial portions of the Software.</pre>
                             <!-- In-App Mockup Schematic -->
                             <div class="tut-schematic-box">
                                 <div class="schematic-reward-box">
-                                    <span class="schematic-toast-icon">🔔</span>
+                                    <span class="schematic-toast-icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
                                     <div class="schematic-toast-text">
                                         <strong>DQS // Quest Abgeschlossen!</strong>
                                         <span>100% erreicht • Belohnung bereit</span>
@@ -930,7 +939,7 @@ copies or substantial portions of the Software.</pre>
                     <div class="wait15-hero-card">
                         <div class="wait15-header-row">
                             <span class="wait15-badge-alert">WICHTIGE ERKLÄRUNG</span>
-                            <span class="wait15-timer-chip">⏳ 15 MINUTEN SPIELZEIT</span>
+                            <span class="wait15-timer-chip"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 15 MINUTEN SPIELZEIT</span>
                         </div>
                         <h3 class="wait15-headline">Warum muss man bei Spielen tatsächlich 15 Minuten warten?</h3>
                         <p class="wait15-lead">
@@ -990,7 +999,7 @@ copies or substantial portions of the Software.</pre>
                                 <div class="timeline-line active"></div>
                                 <div class="timeline-segment">
                                     <span class="tl-point highlight">15 Min</span>
-                                    <span class="tl-label highlight">100% & Fertig! 🎉</span>
+                                    <span class="tl-label highlight">100% & Fertig! <svg class="svg-icon" style="display:inline-block;width:14px;height:14px;vertical-align:-2px;color:var(--emerald);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34"/><path d="M18 4H6v7a6 6 0 0 0 12 0V4z"/></svg></span>
                                 </div>
                             </div>
                         </div>
@@ -1080,7 +1089,7 @@ copies or substantial portions of the Software.</pre>
                                 </p>
                                 
                                 <div class="friend-feedback-callout">
-                                    <span class="callout-icon">💬</span>
+                                    <span class="callout-icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
                                     <div class="callout-text">
                                         <strong>Direktes Feedback willkommen:</strong> Falls das automatische Senden aus irgendeinem Grund nicht klappt (z.B. wegen Discord-Captcha oder Privatsphäre-Filter), adde mich einfach manuell in Discord unter <code>tentix</code>. Ich nehme jedes Feedback & jeden Bugreport extrem gerne entgegen!
                                     </div>
@@ -1108,6 +1117,82 @@ copies or substantial portions of the Software.</pre>
 
             <div class="modal-footer tutorial-footer">
                 <button class="btn btn-secondary" id="btn-close-tutorial-modal-footer">SCHLIESSEN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= DISCORD ORBS BALANCE & REWARDS HUB MODAL ================= -->
+    <div id="orbs-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-dialog orbs-dialog">
+            <div class="modal-header orbs-modal-header">
+                <div class="orbs-header-title-wrap">
+                    <img src="discord_orbs_animated.gif" alt="Discord Orbs" class="orbs-modal-title-gif" onerror="this.src='../discord_orbs_animated.gif'">
+                    <div>
+                        <h3 class="modal-title">DISCORD ORBS BALANCE & HUB</h3>
+                        <span class="modal-sub">Guthaben, Quests-Übersicht & 1-Klick Auto-Farm</span>
+                    </div>
+                </div>
+                <button class="btn-modal-close" id="btn-close-orbs-modal">&times;</button>
+            </div>
+            <div class="modal-body orbs-modal-body">
+                <!-- Hero Card with Big Glowing Animated Orb -->
+                <div class="orbs-hero-showcase">
+                    <div class="orbs-orb-container">
+                        <div class="orbs-energy-ring"></div>
+                        <img src="discord_orbs_animated.gif" alt="Animated Discord Orb" class="orbs-showcase-gif" onerror="this.src='../discord_orbs_animated.gif'">
+                    </div>
+                    <div class="orbs-hero-details">
+                        <div class="orbs-hero-tag">DEIN AKTIVES ORBS-GUTHABEN</div>
+                        <div class="orbs-huge-counter">
+                            <span id="orbs-earned-counter">0</span> <span class="orbs-unit">ORBS</span>
+                        </div>
+                        <p class="orbs-hero-sub">
+                            Mit Discord Quests gesammelte Orbs für Avatar-Dekorationen, Profil-Effekte und exklusive Shop-Belohnungen.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Statistics Grid -->
+                <div class="orbs-stats-grid">
+                    <div class="orbs-stat-card">
+                        <span class="orbs-stat-label">GESAMMELTE ORBS</span>
+                        <span class="orbs-stat-val earned" id="stat-orbs-earned">0</span>
+                    </div>
+                    <div class="orbs-stat-card">
+                        <span class="orbs-stat-label">NOCH OFFEN</span>
+                        <span class="orbs-stat-val open" id="stat-orbs-open">0</span>
+                    </div>
+                    <div class="orbs-stat-card">
+                        <span class="orbs-stat-label">GESAMTPOTENZIAL</span>
+                        <span class="orbs-stat-val total" id="stat-orbs-total">0</span>
+                    </div>
+                    <div class="orbs-stat-card">
+                        <span class="orbs-stat-label">ORBS-QUESTS ERFÜLLT</span>
+                        <span class="orbs-stat-val" id="stat-orbs-quests-count">0 / 0</span>
+                    </div>
+                </div>
+
+                <!-- Action Banner -->
+                <div class="orbs-action-banner">
+                    <div class="orbs-action-info">
+                        <h5>Alle offenen Orbs auf einen Klick einsammeln</h5>
+                        <span>DQS schließt alle verfügbaren Orbs-Quests nacheinander vollautomatisch für dich ab.</span>
+                    </div>
+                    <button class="btn btn-emerald btn-glow orbs-farm-all-btn" id="btn-farm-all-orbs">
+                        <span id="ico-btn-orbs-farm"></span> ALLE OFFENEN ORBS FARMEN
+                    </button>
+                </div>
+
+                <!-- Orbs Quests Breakdown List -->
+                <div class="orbs-breakdown-section">
+                    <h5 class="orbs-breakdown-heading">VERFÜGBARE & ERLEDIGTE ORBS-QUESTS</h5>
+                    <div class="orbs-quests-list" id="orbs-quests-list">
+                        <!-- Dynamically populated via app.js -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer orbs-modal-footer">
+                <button class="btn btn-secondary" id="btn-close-orbs-footer">SCHLIESSEN</button>
             </div>
         </div>
     </div>
