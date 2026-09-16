@@ -124,12 +124,14 @@ const DQS = {
         this.setupQuestFilters();
         this.setupProfileDrawer();
         this.setupSimulator();
+        this.setupSimulatorSearch();
         this.setupConsoleTab();
         this.setupVideoModal();
         this.setupLicenseModal();
         this.setupTutorialModal();
         this.setupChangelogAndUpdateModals();
         this.setupOrbsModal();
+        this.initNotificationBadges();
 
         // Load data from bridge
         await this.loadCurrentUser();
@@ -155,9 +157,13 @@ const DQS = {
         setTimeout(() => this.checkForUpdates(false), 2500);
     },
 
-    // --- High-Fidelity V6 Sound Engine (Ambient Drone & Joy-Con Snap Click) ---
+    // --- V6.3.0 Atmospheric Cinema Sound Engine ---
     _audioCtx: null,
     _ambientAudio: null,
+    _synthNodes: [],
+    _masterFilter: null,
+    _ambientGain: null,
+
     getAudioCtx() {
         if (!this._audioCtx) {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -175,145 +181,272 @@ const DQS = {
         try {
             if (window.DQS_EMBEDDED_ASSETS?.startup_ambient) {
                 const aud = new Audio(window.DQS_EMBEDDED_ASSETS.startup_ambient);
-                aud.volume = 0.20; // 20% volume requested by user
+                aud.volume = 0.22;
                 aud.play().catch(() => {});
                 this._ambientAudio = aud;
                 return;
             }
         } catch (e) {}
 
-        // Web Audio API procedural synthesis fallback (20% volume)
+        // Rich Procedural Multi-Harmonic Atmospheric Drone with Lowpass Filter Sweep
         try {
             const ctx = this.getAudioCtx();
             if (!ctx) return;
             const now = ctx.currentTime;
-            const masterGain = ctx.createGain();
-            masterGain.gain.setValueAtTime(0.001, now);
-            masterGain.gain.exponentialRampToValueAtTime(0.10, now + 1.2);
-            masterGain.gain.setValueAtTime(0.10, now + Math.max(0.5, duration - 0.8));
-            masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-            masterGain.connect(ctx.destination);
 
+            // Master Filter for organic cinematic sweep
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(280, now);
+            filter.frequency.exponentialRampToValueAtTime(1800, now + duration * 0.85);
+            filter.Q.setValueAtTime(2.2, now);
+            filter.connect(ctx.destination);
+            this._masterFilter = filter;
+
+            const masterGain = ctx.createGain();
+            masterGain.gain.setValueAtTime(0.0001, now);
+            masterGain.gain.exponentialRampToValueAtTime(0.18, now + 1.4);
+            masterGain.gain.setValueAtTime(0.18, now + Math.max(0.5, duration - 1.0));
+            masterGain.connect(filter);
+            this._ambientGain = masterGain;
+
+            // Warm Sub-Bass Foundation (43.65Hz - F1)
             const sub = ctx.createOscillator();
             sub.type = 'sine';
-            sub.frequency.setValueAtTime(55, now);
-            sub.frequency.exponentialRampToValueAtTime(65, now + duration);
-            sub.connect(masterGain);
+            sub.frequency.setValueAtTime(43.65, now);
+            sub.frequency.linearRampToValueAtTime(48.99, now + duration);
+            const subGain = ctx.createGain();
+            subGain.gain.value = 0.45;
+            sub.connect(subGain);
+            subGain.connect(masterGain);
             sub.start(now);
-            sub.stop(now + duration);
+            sub.stop(now + duration + 2.5);
+            this._synthNodes.push(sub);
 
-            [110, 164.81, 220].forEach((f, idx) => {
-                const osc = ctx.createOscillator();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(f, now);
-                osc.frequency.linearRampToValueAtTime(f * 1.05, now + duration);
-                const g = ctx.createGain();
-                g.gain.value = 0.05 / (idx + 1);
-                osc.connect(g);
-                g.connect(masterGain);
-                osc.start(now);
-                osc.stop(now + duration);
+            // Detuned Cosmic Pad Chords: F, C, A, E (Fmaj7 / 9 atmospheric cluster)
+            const freqs = [87.31, 130.81, 174.61, 220.00, 329.63];
+            freqs.forEach((baseF, idx) => {
+                [-0.04, 0.04].forEach(detuneRatio => {
+                    const osc = ctx.createOscillator();
+                    osc.type = (idx % 2 === 0) ? 'sine' : 'triangle';
+                    const targetF = baseF * (1 + detuneRatio);
+                    osc.frequency.setValueAtTime(targetF, now);
+                    osc.frequency.linearRampToValueAtTime(targetF * 1.02, now + duration);
+
+                    const g = ctx.createGain();
+                    g.gain.value = (0.07 / (idx + 1));
+                    osc.connect(g);
+                    g.connect(masterGain);
+
+                    osc.start(now);
+                    osc.stop(now + duration + 2.5);
+                    this._synthNodes.push(osc);
+                });
             });
-        } catch (err) {}
+
+            // Shimmer / Stardust LFO modulation
+            const lfo = ctx.createOscillator();
+            lfo.type = 'sine';
+            lfo.frequency.value = 0.8;
+            const lfoGain = ctx.createGain();
+            lfoGain.gain.value = 180;
+            lfo.connect(lfoGain);
+            lfoGain.connect(filter.frequency);
+            lfo.start(now);
+            lfo.stop(now + duration + 2.5);
+            this._synthNodes.push(lfo);
+
+        } catch (err) {
+            console.warn('Audio ambient synthesis notice:', err);
+        }
     },
 
-    playTransitionClick() {
+    playTransitionCrescendo() {
+        const ctx = this.getAudioCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        // Smooth crossfade out of existing ambient drone over 1.4s (NO ABRUPT CUTOFF)
+        if (this._ambientGain) {
+            try {
+                this._ambientGain.gain.setValueAtTime(this._ambientGain.gain.value, now);
+                this._ambientGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.4);
+            } catch (e) {}
+        }
         if (this._ambientAudio) {
             try {
-                this._ambientAudio.pause();
-                this._ambientAudio = null;
+                let vol = this._ambientAudio.volume;
+                const fader = setInterval(() => {
+                    vol = Math.max(0, vol - 0.02);
+                    this._ambientAudio.volume = vol;
+                    if (vol <= 0.01) {
+                        clearInterval(fader);
+                        this._ambientAudio.pause();
+                        this._ambientAudio = null;
+                    }
+                }, 40);
             } catch (e) {}
         }
 
-        // 1. Try embedded high-end UI aerodynamic swoosh sound
+        // Cinematic High-Pass Air Swoosh + Resonant Cmaj9 Resolution Chime
         try {
-            if (window.DQS_EMBEDDED_ASSETS?.transition_click) {
-                const click = new Audio(window.DQS_EMBEDDED_ASSETS.transition_click);
-                click.volume = 0.82;
-                click.play().catch(() => {});
-                return;
-            }
-        } catch (e) {}
+            // 1. Deep Sub-Boom & Aerodynamic Glide (180Hz -> 36Hz)
+            const whooshOsc = ctx.createOscillator();
+            whooshOsc.type = 'sine';
+            whooshOsc.frequency.setValueAtTime(180, now);
+            whooshOsc.frequency.exponentialRampToValueAtTime(36, now + 0.65);
 
-        // 2. Procedural Aerodynamic UI Swoosh Fallback (~400ms)
-        try {
-            const ctx = this.getAudioCtx();
-            if (!ctx) return;
-            const now = ctx.currentTime;
+            const whooshGain = ctx.createGain();
+            whooshGain.gain.setValueAtTime(0.001, now);
+            whooshGain.gain.exponentialRampToValueAtTime(0.38, now + 0.12);
+            whooshGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.85);
 
-            // Warm body sweep glide
-            const osc = ctx.createOscillator();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(130, now);
-            osc.frequency.exponentialRampToValueAtTime(280, now + 0.14);
-            osc.frequency.exponentialRampToValueAtTime(140, now + 0.38);
+            whooshOsc.connect(whooshGain);
+            whooshGain.connect(ctx.destination);
+            whooshOsc.start(now);
+            whooshOsc.stop(now + 0.90);
 
-            const g = ctx.createGain();
-            g.gain.setValueAtTime(0.001, now);
-            g.gain.exponentialRampToValueAtTime(0.45, now + 0.12);
-            g.gain.exponentialRampToValueAtTime(0.0001, now + 0.40);
+            // 2. Crystalline Cosmic Chime Harmonic Resolution (C5, G5, B5, E6, G6)
+            const chimeNotes = [523.25, 783.99, 987.77, 1318.51, 1567.98];
+            chimeNotes.forEach((f, idx) => {
+                const chime = ctx.createOscillator();
+                chime.type = 'sine';
+                chime.frequency.setValueAtTime(f, now + idx * 0.035);
 
-            osc.connect(g);
-            g.connect(ctx.destination);
-            osc.start(now);
-            osc.stop(now + 0.42);
+                const cGain = ctx.createGain();
+                cGain.gain.setValueAtTime(0.0001, now + idx * 0.035);
+                cGain.gain.exponentialRampToValueAtTime(0.14 / (idx + 1), now + idx * 0.035 + 0.04);
+                cGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+
+                chime.connect(cGain);
+                cGain.connect(ctx.destination);
+                chime.start(now + idx * 0.035);
+                chime.stop(now + 1.3);
+            });
         } catch (e) {}
     },
 
-    // --- Startup Splash Screen Animation (Random 4 - 12 Seconds) ---
+    // --- Startup Splash Screen Animation (Atmospheric Cinema Transition) ---
     runStartupSplash() {
         const splash = document.getElementById('dqs-startup-splash');
         const bar = document.getElementById('splash-progress-bar');
         const status = document.getElementById('splash-status-text');
+        const subTelemetry = document.getElementById('splash-sub-telemetry');
         const root = document.getElementById('app-root');
         if (!splash || !bar || !status) return;
 
-        // Random duration between 4000ms and 12000ms (4 - 12 Sekunden immer unterschiedlich)
-        const totalDuration = Math.floor(Math.random() * (12000 - 4000 + 1)) + 4000;
+        // Random duration between 4200ms and 9500ms
+        const totalDuration = Math.floor(Math.random() * (9500 - 4200 + 1)) + 4200;
         let elapsed = 0;
-        const intervalMs = 60;
+        const intervalMs = 50;
 
-        // Play subtle atmospheric startup soundscape
+        // Play cinema-grade atmospheric ambient
         this.playStartupAmbient(totalDuration / 1000);
 
-        const getStatusText = (pct) => {
-            if (pct < 16) return 'INITIALISIERE QUANTUM KERN-SYSTEME...';
-            if (pct < 34) return 'LADE DISCORD QUEST ENGINE (V6)...';
-            if (pct < 52) return 'LOKALISIERE DETECTABLE GAMES & PROZESSE...';
-            if (pct < 70) return 'SYNCHRONISIERE DISCORD RPC & HEARTBEATS...';
-            if (pct < 86) return 'VERIFIZIERE SICHERHEITS-SCHUTZ & LOKALE TOKEN...';
-            if (pct < 98) return 'FINALE KALIBRIERUNG DES CLIENTS...';
-            return 'SYSTEM BEREIT - POPPING UP...';
-        };
+        const stages = [
+            { pct: 15, title: 'INITIALISIERE QUANTUM KERN-SYSTEME...', sub: '[RUST STEALTH CORE] • [WIN32 NAMED PIPES ACTIVE]' },
+            { pct: 34, title: 'LADE DISCORD QUEST ENGINE (V6.3.0)...', sub: '[KERNEL HOOK] • [RPC STEALTH CLOAK ENGAGED]' },
+            { pct: 54, title: 'SYNCHRONISIERE 24.198 DETECTABLE GAMES...', sub: '[CACHE SYNC] • [STEAM & DISCORD ASSETS READY]' },
+            { pct: 72, title: 'KALIBRIERUNG DISCORD HEARTBEATS & RPC...', sub: '[IPC HANDSHAKE] • [LATENCY: 0.12ms]' },
+            { pct: 88, title: 'VERIFIZIERE TOKEN-SCHUTZ & INTEGRITÄT...', sub: '[SECURITY] • [ZERO-LEAK RUNTIME VERIFIED]' },
+            { pct: 98, title: 'FINALE ATMOSPHÄRISCHE HARMONIE...', sub: '[CROSSFADE READY] • [DISPENSING TO VIEWPORT]' },
+            { pct: 100, title: 'WILLKOMMEN BEI DQS V6.3.0 - READY...', sub: '[ULTIMATE EDITION ACTIVE]' }
+        ];
+
+        const audioBars = document.querySelectorAll('.splash-audio-visualizer .audio-bar');
 
         const timer = setInterval(() => {
             elapsed += intervalMs;
             const progressRatio = Math.min(1.0, elapsed / totalDuration);
-            // Ease-out cubic curve for natural, organic high-tech loading feel
             const easedRatio = 1 - Math.pow(1 - progressRatio, 3);
             const currentPct = Math.min(100, Math.round(easedRatio * 100));
 
             if (bar) bar.style.width = `${currentPct}%`;
-            if (status) status.innerText = getStatusText(currentPct);
+
+            const currentStage = stages.find(s => currentPct <= s.pct) || stages[stages.length - 1];
+            if (status) status.innerText = currentStage.title;
+            if (subTelemetry) subTelemetry.innerText = currentStage.sub;
+
+            // Randomize visualizer heights to dance dynamically with the audio
+            if (audioBars.length > 0 && Math.random() > 0.3) {
+                audioBars.forEach(b => {
+                    const h = Math.floor(Math.random() * 20) + 4;
+                    b.style.height = `${h}px`;
+                });
+            }
 
             if (elapsed >= totalDuration) {
                 clearInterval(timer);
                 if (bar) bar.style.width = '100%';
-                if (status) status.innerText = 'SYSTEM BEREIT - POPPING UP...';
+                if (status) status.innerText = 'WILLKOMMEN BEI DQS V6.3.0 - POPPING UP...';
+                if (subTelemetry) subTelemetry.innerText = '[ULTIMATE EDITION ACTIVE]';
 
                 setTimeout(() => {
-                    // Play the satisfying Joy-Con snap click right at popup!
-                    this.playTransitionClick();
+                    // Trigger harmonic cinema crescendo with smooth crossfade
+                    this.playTransitionCrescendo();
                     if (splash) splash.classList.add('splash-pop-exit');
                     if (root) root.classList.add('app-pop-enter');
                     setTimeout(() => {
                         if (splash && splash.parentNode) {
                             splash.parentNode.removeChild(splash);
                         }
-                    }, 600);
-                }, 200);
+                    }, 850);
+                }, 120);
             }
         }, intervalMs);
+    },
+
+    // --- Notification Ping Badges (First-Launch & Changelogs) ---
+    initNotificationBadges() {
+        const brandPing = document.getElementById('first-launch-ping-dot');
+        const brandTrigger = document.getElementById('app-logo-trigger');
+        const profilePing = document.getElementById('profile-changelog-ping-dot');
+        const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
+        const currentVersion = '6.3.0';
+
+        // 1. First-Launch Yellow Ping Dot on Top-Left App Icon (ALWAYS after install / first launch)
+        const hasSeenFirstLaunch = localStorage.getItem('dqs_first_launch_seen');
+        if (!hasSeenFirstLaunch) {
+            if (brandPing) brandPing.classList.remove('hidden');
+        } else {
+            if (brandPing) brandPing.classList.add('hidden');
+        }
+
+        if (brandTrigger) {
+            brandTrigger.addEventListener('click', () => {
+                localStorage.setItem('dqs_first_launch_seen', 'true');
+                if (brandPing) {
+                    brandPing.style.transition = 'opacity 0.3s ease';
+                    brandPing.style.opacity = '0';
+                    setTimeout(() => brandPing.classList.add('hidden'), 300);
+                }
+            });
+        }
+
+        // 2. Unread Changelog Yellow Ping Dot (Top-Right Profile Corner + Changelog Button)
+        const lastReadVer = localStorage.getItem('dqs_read_changelog_ver');
+        if (lastReadVer !== currentVersion) {
+            if (profilePing) profilePing.classList.remove('hidden');
+            if (btnChangelogPing) btnChangelogPing.classList.remove('hidden');
+        } else {
+            if (profilePing) profilePing.classList.add('hidden');
+            if (btnChangelogPing) btnChangelogPing.classList.add('hidden');
+        }
+    },
+
+    markChangelogAsRead() {
+        const profilePing = document.getElementById('profile-changelog-ping-dot');
+        const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
+        localStorage.setItem('dqs_read_changelog_ver', '6.3.0');
+
+        [profilePing, btnChangelogPing].forEach(el => {
+            if (el) {
+                el.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+                el.style.opacity = '0';
+                el.style.transform = 'scale(0.4)';
+                setTimeout(() => el.classList.add('hidden'), 350);
+            }
+        });
     },
 
     // --- Inject Vector SVGs (100% Emoji-free) ---
@@ -1074,31 +1207,68 @@ const DQS = {
 
     createDynamicGameBadge(gameTitle) {
         const safeTitle = (gameTitle || 'DISCORD QUEST').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const initials = safeTitle.split(/\s+/).map(w => w[0]).join('').substring(0, 3).toUpperCase() || 'DQS';
+        const seed = Array.from(safeTitle).reduce((acc, c) => acc + c.charCodeAt(0), 0);
+        const hues = [
+            ['#6366f1', '#38bdf8', '#10b981'],
+            ['#ec4899', '#8b5cf6', '#3b82f6'],
+            ['#f59e0b', '#ef4444', '#8b5cf6'],
+            ['#10b981', '#06b6d4', '#3b82f6'],
+            ['#8b5cf6', '#d946ef', '#06b6d4']
+        ];
+        const theme = hues[seed % hues.length];
+
         const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 338" width="600" height="338">
             <defs>
-                <linearGradient id="bg-${encodeURIComponent(safeTitle).slice(0, 8)}" x1="0%" y1="0%" x2="100%" y2="100%">
+                <linearGradient id="bgG_${seed}" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stop-color="#0b0f19"/>
-                    <stop offset="50%" stop-color="#1e293b"/>
-                    <stop offset="100%" stop-color="#090d16"/>
+                    <stop offset="50%" stop-color="#111827"/>
+                    <stop offset="100%" stop-color="#070a12"/>
                 </linearGradient>
-                <filter id="glow-${encodeURIComponent(safeTitle).slice(0, 8)}" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="6" result="blur"/>
+                <linearGradient id="neonG_${seed}" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="${theme[0]}"/>
+                    <stop offset="50%" stop-color="${theme[1]}"/>
+                    <stop offset="100%" stop-color="${theme[2]}"/>
+                </linearGradient>
+                <linearGradient id="cardBorderG_${seed}" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="${theme[0]}" stop-opacity="0.85"/>
+                    <stop offset="100%" stop-color="${theme[1]}" stop-opacity="0.25"/>
+                </linearGradient>
+                <pattern id="circuitGrid_${seed}" width="28" height="28" patternUnits="userSpaceOnUse">
+                    <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                    <circle cx="0" cy="0" r="1.5" fill="${theme[0]}" fill-opacity="0.25"/>
+                </pattern>
+                <filter id="glowF_${seed}" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="8" result="blur"/>
                     <feComposite in="SourceGraphic" in2="blur" operator="over"/>
                 </filter>
             </defs>
-            <rect width="320" height="180" fill="url(#bg-${encodeURIComponent(safeTitle).slice(0, 8)})" rx="12"/>
-            <circle cx="160" cy="68" r="42" fill="#5865F2" fill-opacity="0.12"/>
-            <circle cx="160" cy="68" r="32" fill="#38bdf8" fill-opacity="0.22" filter="url(#glow-${encodeURIComponent(safeTitle).slice(0, 8)})"/>
-            <g transform="translate(142, 50) scale(1.5)" fill="none" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="6" y1="12" x2="10" y2="12"/>
-                <line x1="8" y1="10" x2="8" y2="14"/>
-                <line x1="15" y1="13" x2="15.01" y2="13"/>
-                <line x1="18" y1="11" x2="18.01" y2="11"/>
-                <rect x="2" y="6" width="20" height="12" rx="2"/>
+            <rect width="600" height="338" fill="url(#bgG_${seed})" rx="16"/>
+            <rect width="600" height="338" fill="url(#circuitGrid_${seed})" rx="16"/>
+            <rect x="1.5" y="1.5" width="597" height="335" fill="none" stroke="url(#cardBorderG_${seed})" stroke-width="3" rx="15"/>
+
+            <!-- Ambient Glow Spheres -->
+            <circle cx="120" cy="110" r="90" fill="${theme[0]}" fill-opacity="0.2" filter="url(#glowF_${seed})"/>
+            <circle cx="480" cy="220" r="110" fill="${theme[1]}" fill-opacity="0.16" filter="url(#glowF_${seed})"/>
+
+            <!-- Hexagonal Gaming Badge Embellishment -->
+            <polygon points="300,75 355,107 355,170 300,202 245,170 245,107" fill="#0f172a" stroke="url(#neonG_${seed})" stroke-width="2.5" filter="url(#glowF_${seed})"/>
+            <text x="300" y="148" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="28" text-anchor="middle" letter-spacing="2">${initials}</text>
+
+            <!-- Gamepad Graphic silhouette below initials -->
+            <g transform="translate(285, 172) scale(1.2)" fill="none" stroke="${theme[1]}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="0" y="2" width="24" height="13" rx="3"/>
+                <line x1="4" y1="8" x2="8" y2="8"/>
+                <line x1="6" y1="6" x2="6" y2="10"/>
+                <circle cx="16" cy="7" r="0.75" fill="${theme[1]}"/>
+                <circle cx="19" cy="9" r="0.75" fill="${theme[1]}"/>
             </g>
-            <text x="160" y="130" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="14" text-anchor="middle" letter-spacing="0.5">${safeTitle.length > 24 ? safeTitle.substring(0, 22) + '...' : safeTitle}</text>
-            <text x="160" y="152" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="10" text-anchor="middle" letter-spacing="1">DISCORD DETECTABLE GAME</text>
+
+            <!-- Title and Subtitle -->
+            <text x="300" y="252" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="21" text-anchor="middle" letter-spacing="0.5">${safeTitle.length > 30 ? safeTitle.substring(0, 28) + '...' : safeTitle}</text>
+            <rect x="180" y="272" width="240" height="24" rx="12" fill="rgba(16,185,129,0.14)" stroke="rgba(16,185,129,0.4)" stroke-width="1"/>
+            <text x="300" y="288" fill="#34d399" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="10.5" text-anchor="middle" letter-spacing="1.5">DISCORD VERIFIED GAME</text>
         </svg>
         `.trim();
         return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
@@ -1985,6 +2155,7 @@ const DQS = {
 
         listContainer.innerHTML = `<div style="padding:24px;text-align:center;color:#94a3b8;"><span style="display:inline-block;animation:spin 1s linear infinite;margin-right:8px;">${I.gear || ''}</span> Lade Live-Changelog von GitHub...</div>`;
         modal.classList.remove('hidden');
+        this.markChangelogAsRead();
 
         try {
             const data = await window.pywebview?.api?.get_changelog();
@@ -2095,7 +2266,7 @@ const DQS = {
             this._updateDownloadUrl = res.download_url;
             this._latestReleaseUrl = res.html_url || 'https://github.com/TentixTV/Discord-Quest-Spoofer/releases';
 
-            if (statCur) statCur.innerText = res.current_version || 'V6.2.1';
+            if (statCur) statCur.innerText = res.current_version || 'V6.3.0';
             if (statLatest) statLatest.innerText = res.latest_version || res.current_version;
             if (tagLatestSource) tagLatestSource.innerText = 'GitHub Live API';
 
@@ -2312,17 +2483,26 @@ const DQS = {
 
     // --- Simulator & Auto-Presets ---
     setupSimulator() {
-        document.getElementById('sim-preset-select').addEventListener('change', (e) => {
-            const val = e.target.value;
-            const preset = this.presets.find(p => p.app_id === val);
-            if (preset) {
-                document.getElementById('sim-input-title').value = preset.title;
-                document.getElementById('sim-input-exe').value = preset.exe;
-                document.getElementById('sim-input-appid').value = preset.app_id;
-            }
-        });
+        const presetSelect = document.getElementById('sim-preset-select');
+        if (presetSelect) {
+            presetSelect.addEventListener('change', (e) => {
+                const val = e.target.value;
+                const preset = this.presets.find(p => p.app_id === val);
+                if (preset) {
+                    const inpTitle = document.getElementById('sim-input-title');
+                    const inpExe = document.getElementById('sim-input-exe');
+                    const inpAppId = document.getElementById('sim-input-appid');
+                    if (inpTitle) inpTitle.value = preset.title;
+                    if (inpExe) inpExe.value = preset.exe;
+                    if (inpAppId) inpAppId.value = preset.app_id;
+                    const searchInput = document.getElementById('sim-search-input');
+                    if (searchInput) searchInput.value = preset.title;
+                    this.updateSimulatorPreview(preset);
+                }
+            });
+        }
 
-        document.getElementById('btn-start-sim').addEventListener('click', async () => {
+        document.getElementById('btn-start-sim')?.addEventListener('click', async () => {
             const title = document.getElementById('sim-input-title').value.trim();
             const exe = document.getElementById('sim-input-exe').value.trim();
             const appid = document.getElementById('sim-input-appid').value.trim();
@@ -2333,10 +2513,187 @@ const DQS = {
             }
         });
 
-        document.getElementById('btn-stop-sim').addEventListener('click', async () => {
+        document.getElementById('btn-stop-sim')?.addEventListener('click', async () => {
             await window.pywebview.api.stop_simulation();
             this.updateSimUI(false);
         });
+    },
+
+    setupSimulatorSearch() {
+        const searchInput = document.getElementById('sim-search-input');
+        const clearBtn = document.getElementById('btn-sim-search-clear');
+        const dropdown = document.getElementById('sim-search-dropdown');
+        const inputTitle = document.getElementById('sim-input-title');
+        const inputExe = document.getElementById('sim-input-exe');
+        const inputAppId = document.getElementById('sim-input-appid');
+        if (!searchInput || !dropdown) return;
+
+        let debounceTimer = null;
+
+        const performSearch = async (val) => {
+            const query = (val || '').trim();
+            if (!query) {
+                dropdown.innerHTML = '';
+                dropdown.classList.add('hidden');
+                if (clearBtn) clearBtn.classList.add('hidden');
+                return;
+            }
+            if (clearBtn) clearBtn.classList.remove('hidden');
+
+            let results = [];
+            if (window.pywebview?.api?.search_games) {
+                results = await window.pywebview.api.search_games(query, 14);
+            } else {
+                const qLower = query.toLowerCase();
+                results = (this.presets || []).filter(p => 
+                    p.name.toLowerCase().includes(qLower) || 
+                    (p.exe && p.exe.toLowerCase().includes(qLower)) || 
+                    p.app_id.includes(query)
+                );
+            }
+
+            if (!results || results.length === 0) {
+                const cleanExe = query.toLowerCase().replace(/[^a-z0-9]/g, '_') + '.exe';
+                dropdown.innerHTML = `
+                    <div class="sim-search-item custom-match" data-id="1205090671527071784" data-title="${query}" data-exe="${cleanExe}">
+                        <img src="DQS.png" class="sim-search-item-art" alt="Art">
+                        <div class="sim-search-item-info">
+                            <div class="sim-search-item-name">${query}</div>
+                            <div class="sim-search-item-sub">Prozess: ${cleanExe} • Neues Spiel simulieren</div>
+                        </div>
+                        <span class="sim-search-item-badge" style="background: rgba(99,102,241,0.2); color: #818cf8;">BENUTZERDEFINIERT</span>
+                    </div>
+                `;
+                dropdown.classList.remove('hidden');
+            } else {
+                dropdown.innerHTML = results.map(r => {
+                    const cover = r.game_cover_url || r.game_icon_url || 'DQS.png';
+                    const exe = r.exe || (r.executables && r.executables[0]) || 'Game.exe';
+                    const isVerified = Boolean(r.verified !== false);
+                    return `
+                        <div class="sim-search-item ${!isVerified ? 'custom-match' : ''}" data-id="${r.id || r.app_id}" data-title="${r.name || r.title}" data-exe="${exe}" data-cover="${cover}">
+                            <img src="${cover}" class="sim-search-item-art" alt="Cover" onerror="this.src='DQS.png'">
+                            <div class="sim-search-item-info">
+                                <div class="sim-search-item-name">${r.name || r.title}</div>
+                                <div class="sim-search-item-sub">Exe: ${exe} • ID: ${r.id || r.app_id}</div>
+                            </div>
+                            <span class="sim-search-item-badge ${isVerified ? '' : 'custom'}">${isVerified ? 'VERIFIZIERT' : 'SPOOF'}</span>
+                        </div>
+                    `;
+                }).join('');
+                dropdown.classList.remove('hidden');
+            }
+
+            dropdown.querySelectorAll('.sim-search-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const id = item.dataset.id;
+                    const title = item.dataset.title;
+                    const exe = item.dataset.exe;
+                    const cover = item.dataset.cover || 'DQS.png';
+
+                    if (inputTitle) inputTitle.value = title;
+                    if (inputExe) inputExe.value = exe;
+                    if (inputAppId) inputAppId.value = id;
+                    searchInput.value = title;
+
+                    const select = document.getElementById('sim-preset-select');
+                    if (select) {
+                        const optExists = Array.from(select.options).some(o => o.value === id);
+                        if (optExists) select.value = id;
+                    }
+
+                    this.updateSimulatorPreview({
+                        app_id: id,
+                        title: title,
+                        name: title,
+                        exe: exe,
+                        game_cover_url: cover,
+                        verified: !item.classList.contains('custom-match')
+                    });
+
+                    dropdown.classList.add('hidden');
+                });
+            });
+        };
+
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => performSearch(e.target.value), 160);
+        });
+
+        searchInput.addEventListener('focus', () => {
+            if (searchInput.value.trim().length > 0) {
+                performSearch(searchInput.value);
+            }
+        });
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                dropdown.innerHTML = '';
+                dropdown.classList.add('hidden');
+                clearBtn.classList.add('hidden');
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        if (inputTitle) {
+            inputTitle.addEventListener('input', () => {
+                const titleVal = inputTitle.value.trim();
+                const exeVal = inputExe ? inputExe.value.trim() : (titleVal.toLowerCase().replace(/[^a-z0-9]/g, '_') + '.exe');
+                const appIdVal = inputAppId ? inputAppId.value.trim() : '1205090671527071784';
+                this.updateSimulatorPreview({
+                    app_id: appIdVal,
+                    title: titleVal || 'Game Simulation',
+                    name: titleVal || 'Game Simulation',
+                    exe: exeVal,
+                    game_cover_url: null
+                });
+            });
+        }
+    },
+
+    updateSimulatorPreview(gameInfo) {
+        if (!gameInfo) return;
+        const banner = document.getElementById('sim-game-preview-banner');
+        const backdrop = document.getElementById('sim-preview-backdrop');
+        const coverImg = document.getElementById('sim-preview-cover');
+        const titleEl = document.getElementById('sim-preview-title');
+        const tagVer = document.getElementById('sim-tag-verified');
+        const tagExe = document.getElementById('sim-tag-exe');
+        const tagAppId = document.getElementById('sim-tag-appid');
+
+        const title = gameInfo.title || gameInfo.name || 'Spiel-Simulation';
+        const exe = gameInfo.exe || 'Game.exe';
+        const appId = gameInfo.app_id || gameInfo.id || '1205090671527071784';
+        const cover = gameInfo.game_cover_url || gameInfo.game_icon_url || this.createDynamicGameBadge(title);
+
+        if (titleEl) titleEl.innerText = title;
+        if (tagExe) tagExe.innerText = exe;
+        if (tagAppId) tagAppId.innerText = `ID: ${appId}`;
+        if (tagVer) {
+            tagVer.innerHTML = gameInfo.verified !== false ? `<span class="tag-icon">✔</span> VERIFIZIERT` : `<span class="tag-icon">⚡</span> CUSTOM APP`;
+            tagVer.className = gameInfo.verified !== false ? 'sim-tag verified' : 'sim-tag custom';
+        }
+
+        if (coverImg) {
+            coverImg.src = cover;
+            coverImg.onerror = () => {
+                coverImg.onerror = null;
+                coverImg.src = this.createDynamicGameBadge(title);
+            };
+        }
+        if (backdrop) {
+            backdrop.style.backgroundImage = `url("${cover}")`;
+        }
+        if (banner) {
+            banner.style.display = 'block';
+        }
     },
 
     async loadPresets() {
@@ -2345,13 +2702,19 @@ const DQS = {
         this.presets = presets || [];
 
         const select = document.getElementById('sim-preset-select');
-        select.innerHTML = '';
-        this.presets.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.app_id;
-            opt.innerText = `${p.name} (${p.category})`;
-            select.appendChild(opt);
-        });
+        if (select) {
+            select.innerHTML = '';
+            this.presets.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.app_id;
+                opt.innerText = `${p.name} (${p.category})`;
+                select.appendChild(opt);
+            });
+        }
+
+        if (this.presets.length > 0) {
+            this.updateSimulatorPreview(this.presets[0]);
+        }
     },
 
     simulateQuest(appId, gameTitle, customExe) {
@@ -2604,9 +2967,9 @@ const DQS = {
                 card.classList.remove('activity-active');
                 card.classList.add('activity-idle');
             }
-            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.2.1)';
+            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.3.0)';
             popState.innerText = 'Bereit für Quest-Simulation';
-            popTimer.innerText = 'Status: Standby • Discord RPC aktiv';
+            popTimer.innerText = 'Status: Standby • Discord RPC & Rust Core aktiv';
         }
     },
 

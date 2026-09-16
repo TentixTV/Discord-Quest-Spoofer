@@ -1,15 +1,15 @@
-# 🎮 DQS // Discord Quest Spoofer (Release V6.0.0)
+# 🎮 DQS // Discord Quest Spoofer (Release V6.3.0 — Die Edition des Jahres)
 > **Projekt von Sandro (T3X / TNTIX)**  
 > 🔗 GitHub: [https://github.com/TentixTV/Discord-Quest-Spoofer](https://github.com/TentixTV/Discord-Quest-Spoofer)  
-> 🚀 Neuestes Release: [https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.0.0](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.0.0)
+> 🚀 Neuestes Release: [https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.3.0](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.3.0)
 
 ---
 
-## 📥 Download (Release V6.0.0)
+## 📥 Download (Release V6.3.0)
 
 | Datei | Was ist das? | Download |
 | :--- | :--- | :--- |
-| **`DQS_Installer.exe`** | Der 1-Klick Installer (haut DQS auf deinen PC, macht Desktop-Icon & Startmenü fertig) | [⬇️ DQS_Installer.exe](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/download/V6.0.0/DQS_Installer.exe) |
+| **`DQS_Installer.exe`** | Der 1-Klick Installer (haut DQS auf deinen PC, macht Desktop-Icon & Startmenü fertig) | [⬇️ DQS_Installer.exe](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/download/V6.3.0/DQS_Installer.exe) |
 
 > ℹ️ *Info:* Die `DQS.exe` selbst landet durch den Installer ganz normal in deinem Benutzerordner (`%LOCALAPPDATA%\Programs\Discord Quest Spoofer`).
 
@@ -32,31 +32,22 @@ Das Tool simuliert Discord gegenüber einfach, dass du das Game zockst, schickt 
 
 ---
 
-## ✨ Was DQS V6.0.0 alles kann:
+## ✨ Was DQS V6.3.0 alles kann ("Die Edition des Jahres"):
 
-- 🔔 **Native Windows Toast Benachrichtigungen**:
-  - Sobald eine Quest zu 100% erfüllt ist oder der Express-Abschluss fertig ist, schickt DQS dir eine native Windows-Desktop-Benachrichtigung mit Spieltitel und Belohnungsdetails.
-- 🎵 **High-Tech Audio & Sound Engine**:
-  - Atmosphärischer Ambient-Hintergrundsound während des Startup Splash Screens (4–12 Sekunden dynamisch).
-  - Mechanischer Joy-Con Einrast-Klick (Snap Click) im exakten Moment des App-Popups.
-- 🌑 **Stealth Obsidian Monochrome Look**:
-  - Komplettes High-Contrast Design in Obsidian Schwarz (`#050608`), Titan Silber und Diamant Weiß – exakt gematcht auf das `DQS.png` App-Icon.
-  - Klare, farbige Funktionsbuttons (Grün für Start/Claim, Rot für Stop, Blau/Cyan für Express) für beste Bedienbarkeit.
-  - Monochromer 3D Partikel-Sternenhimmel im Hintergrund.
-- 🔍 **Universelle Lokale Account-Erkennung**:
-  - Scannt und erkennt automatisch aktive Discord-Accounts auf jedem PC – egal ob Discord Desktop Clients (Discord, Canary, PTB, Dev, Lightcord) oder Browser (Chrome, Brave, Edge, Opera, Opera GX, Vivaldi, Yandex) über alle Profile (`Default`, `Profile 1..5`).
-- 🎁 **Belohnungen aller Art mitnehmen**:
-  - 💎 **Discord Orbs**: Mit 60-FPS Orbs-Icon.
-  - 🎭 **Avatar-Dekos**: Dauerhaft direkt in dein Discord-Profil freischalten.
-  - ⚔️ **Ingame Items & Codes**: Freischalt-Codes für Spiele landen direkt in der Zwischenablage.
-- 📱 **Handy-Quests (Mobile Simulation)**:
-  - Quests, die die Discord Mobile-App verlangen (`WATCH_VIDEO_ON_MOBILE`), werden mit echten Android-Headern simuliert.
-- ⚡ **Video-Quests in 5 Sekunden**:
-  - Echte Video-Quests lassen sich per Express-Button in 5s abschließen.
-- 🎮 **Über 24.000 Games in der Datenbank**:
-  - DQS synchronisiert sich mit Discords offizieller Spiele-Datenbank. Erkennt jedes Quest-Game automatisch und startet den richtigen Prozessnamen.
-- 🎲 **Multi-Game Quests**:
-  - Bei Quests mit Spiele-Paketen (z.B. Capcom Bundles) kannst du dir das Game im Dropdown aussuchen.
+- 🦀 **Nativer Rust Stealth Core (`crates/dqs-native-core`)**:
+  - Extrem OP und rasend schnell! Direkter Win32 Process Cloaker, Named-Pipe Kernel-Client für `\\.\pipe\discord-ipc-*` und Sub-Millisekunden-Suchindex für alle 24.000+ Games in 100% purem Rust.
+- 🎵 **Atmosphärischer Cinema-Startup-Soundscape**:
+  - Epischer Web Audio Synthesizer mit warmen Subbässen, schwebenden Ambient-Pads und seidenweichem, organischem Übergang ohne plötzliche Schnitte oder Knacksen.
+- 🌌 **Holographischer Stardust Splash Screen**:
+  - Spektakuläre animierte Quantum-Ringe, rotierende Gyro-Segmente, Lichtreflex-Sheen und dynamischer Echtzeit-Audio-Equalizer während des Bootens.
+- 🔍 **Universal Simulator Live-Suche**:
+  - Echtes Live-Suchfeld direkt bei den simulierten Spielen! Tippe beliebige Namen wie Fortnite, Helldivers 2, Genshin, GTA oder eigene Exe-Namen ein – sofortige Erkennung und Autovervollständigung.
+- 🖼️ **Cinematic High-Resolution Game Artwork**:
+  - Gestochen scharfe Steam Capsule 616x353 & Library-Hero Artworks sowie offizielle Discord-Store Cover im Simulator-Monitor und auf allen Quest-Karten statt verpixelter Bilder.
+- 🟡 **Interaktive Notification Ping Badges**:
+  - Strahlend gelbe Radar-Ping-Punkte links oben am App-Icon beim ersten Start nach der Installation, sowie oben rechts am Profil und beim Changelog bei neuen Updates.
+- 💎 **Live Discord Orbs Guthaben**:
+  - Fragt über den internen Discord-Endpunkt `/users/@me/virtual-currency/balance` dein reales Guthaben in Echtzeit ab.
 - 🔒 **PyArmor Bytecode-Verschlüsselung**:
   - Vollständiger Schutz des Quellcodes durch PyArmor-Verschlüsselung.
 

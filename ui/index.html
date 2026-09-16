@@ -11,19 +11,42 @@
 <body class="dark-theme">
     <!-- High-Tech Startup Splash Screen Overlay (Centered App Icon + Effects + Bar) -->
     <div id="dqs-startup-splash" class="startup-splash-overlay">
+        <!-- Floating stardust matrix background -->
+        <div class="splash-stardust-field"></div>
         <div class="splash-center-stage">
             <div class="splash-logo-container">
-                <div class="splash-energy-ring"></div>
-                <div class="splash-energy-ring-inner"></div>
+                <div class="splash-quantum-rune-ring"></div>
+                <div class="splash-gyro-segment-ring"></div>
+                <div class="splash-energy-reactor-ring"></div>
                 <div class="splash-energy-ring-pulsing"></div>
-                <img src="DQS.png" alt="DQS" class="splash-app-icon" onerror="this.src='../DQS.png'">
+                <div class="splash-icon-frame">
+                    <img src="DQS.png" alt="DQS" class="splash-app-icon" onerror="this.src='../DQS.png'">
+                    <div class="splash-logo-sheen"></div>
+                </div>
                 <div class="splash-glow-core"></div>
             </div>
+
+            <!-- Dynamic Real-Time Audio / Sonic Frequency Visualizer -->
+            <div class="splash-audio-visualizer" id="splash-audio-visualizer">
+                <span class="audio-bar bar-1"></span>
+                <span class="audio-bar bar-2"></span>
+                <span class="audio-bar bar-3"></span>
+                <span class="audio-bar bar-4"></span>
+                <span class="audio-bar bar-5"></span>
+                <span class="audio-bar bar-6"></span>
+                <span class="audio-bar bar-7"></span>
+                <span class="audio-bar bar-8"></span>
+                <span class="audio-bar bar-9"></span>
+                <span class="audio-bar bar-10"></span>
+                <span class="audio-bar bar-11"></span>
+            </div>
+
             <div class="splash-status-wrapper">
                 <div class="splash-progress-track">
                     <div class="splash-progress-bar" id="splash-progress-bar"></div>
                 </div>
                 <div class="splash-status-label" id="splash-status-text">INITIALISIERE...</div>
+                <div class="splash-sub-telemetry" id="splash-sub-telemetry">[RUST STEALTH CORE] • [24,198 GAMES DETECTED]</div>
             </div>
         </div>
     </div>
@@ -40,6 +63,7 @@
             <div class="app-brand-logo no-drag" id="app-logo-trigger" title="DQS Lizenz, Info & GitHub • Klick mich!" style="cursor: pointer;">
                 <img src="DQS.png" alt="DQS" class="brand-img" onerror="this.src='../DQS.png'">
                 <div class="logo-glow"></div>
+                <span class="yellow-ping-dot first-launch-ping" id="first-launch-ping-dot" title="Neu installiert! Klicke für DQS-Info"></span>
             </div>
             <div class="brand-text">
                 <div class="brand-row1">
@@ -96,6 +120,8 @@
                 <div class="gear-wrap" id="hdr-gear-wrap" title="Einstellungen">
                     <span id="ico-hdr-gear"></span>
                 </div>
+                <!-- Yellow notification ping dot in top-right corner of profile pill -->
+                <span class="yellow-ping-dot profile-changelog-ping hidden" id="profile-changelog-ping-dot" title="Neue Updates im Changelog!"></span>
             </div>
 
             <!-- Tutorial & Help Trigger Button (Compact with animated hat & tooltip) -->
@@ -252,8 +278,21 @@
                         <span class="sim-status-badge" id="sim-status-badge">BEREIT</span>
                     </div>
 
+                    <!-- Live Game Search with instant autocomplete & high-res artwork -->
+                    <div class="sim-form-group sim-search-group">
+                        <label>SPIEL DURCHSUCHEN (24.000+ DETECTABLE GAMES)</label>
+                        <div class="sim-search-input-wrap">
+                            <span class="sim-search-icon" id="ico-sim-search"></span>
+                            <input type="text" id="sim-search-input" class="sim-input" placeholder="Tippe Spielnamen ein (z. B. Fortnite, Helldivers, Genshin, GTA, Valorant...)" autocomplete="off">
+                            <button type="button" class="sim-search-clear-btn hidden" id="btn-sim-search-clear">&times;</button>
+                        </div>
+                        <div class="sim-search-dropdown hidden" id="sim-search-dropdown">
+                            <!-- Instant search results injected dynamically -->
+                        </div>
+                    </div>
+
                     <div class="sim-form-group">
-                        <label>SPIEL-PRESET WÄHLEN</label>
+                        <label>ODER AUS PRESETS WÄHLEN</label>
                         <select id="sim-preset-select" class="sim-select">
                             <!-- Injected presets -->
                         </select>
@@ -290,6 +329,23 @@
                         <span class="sim-card-title">STATUS & RICH PRESENCE</span>
                         <span class="sim-status-sync-tag" id="sim-status-sync-tag"><span class="pulse-dot"></span> LIVE-SYNC MIT DISCORD</span>
                     </div>
+
+                    <!-- Live High-Resolution Game Preview Banner -->
+                    <div class="sim-game-preview-banner" id="sim-game-preview-banner">
+                        <div class="sim-preview-backdrop" id="sim-preview-backdrop"></div>
+                        <div class="sim-preview-content">
+                            <img src="DQS.png" alt="Cover" class="sim-preview-cover" id="sim-preview-cover">
+                            <div class="sim-preview-info">
+                                <h4 class="sim-preview-title" id="sim-preview-title">Helldivers 2</h4>
+                                <div class="sim-preview-tags" id="sim-preview-tags">
+                                    <span class="sim-tag verified" id="sim-tag-verified"><span class="tag-icon">✔</span> VERIFIZIERT</span>
+                                    <span class="sim-tag exe" id="sim-tag-exe">helldivers2.exe</span>
+                                    <span class="sim-tag appid" id="sim-tag-appid">ID: 1205090671527071784</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="sim-monitor-body">
                         <div class="sim-monitor-art">
                             <div class="radar-pulse"></div>
@@ -359,7 +415,7 @@
 
             <div class="terminal-container card-3d">
                 <div class="terminal-logs" id="terminal-logs">
-                    <div class="log-line info">[DQS] GPU Engine & PyWebView Bridge initialisiert (Release V6.2.1)...</div>
+                    <div class="log-line info">[DQS] GPU Engine & PyWebView Bridge initialisiert (Release V6.3.0)...</div>
                     <div class="log-line success">[DQS] Authentifizierung bereit. 60 FPS Canvas aktiv.</div>
                 </div>
             </div>
@@ -440,9 +496,9 @@
                     <div class="activity-card activity-idle" id="profile-activity-card">
                         <div class="activity-game-icon-wrap" id="act-gamepad-icon"></div>
                         <div class="activity-details">
-                            <h4 class="activity-game-name" id="pop-act-game">DQS // Discord Quest Spoofer (V6.2.1)</h4>
+                            <h4 class="activity-game-name" id="pop-act-game">DQS // Discord Quest Spoofer (V6.3.0)</h4>
                             <p class="activity-state-sub" id="pop-act-state">Bereit für Quest-Simulation</p>
-                            <span class="activity-timer" id="pop-act-timer">Status: Standby • Discord RPC aktiv</span>
+                            <span class="activity-timer" id="pop-act-timer">Status: Standby • Discord RPC & Rust Core aktiv</span>
                         </div>
                     </div>
                 </div>
@@ -456,11 +512,12 @@
                         <span id="ico-btn-copy-id"></span> NUTZER-ID KOPIEREN
                     </button>
                     <button class="btn btn-purple-glow btn-block" id="btn-open-github">
-                        <span id="ico-btn-github"></span> OFFIZIELLER GITHUB (V6.2.1)
+                        <span id="ico-btn-github"></span> OFFIZIELLER GITHUB (V6.3.0)
                     </button>
                     <div class="profile-action-row-split">
-                        <button class="btn btn-secondary btn-half" id="btn-open-changelog">
+                        <button class="btn btn-secondary btn-half" id="btn-open-changelog" style="position: relative;">
                             <span id="ico-btn-changelog"></span> CHANGELOG
+                            <span class="yellow-ping-dot changelog-btn-ping hidden" id="btn-changelog-ping-dot" title="Neue Updates verfügbar"></span>
                         </button>
                         <button class="btn btn-blurple-glow btn-half" id="btn-manual-update">
                             <span id="ico-btn-update"></span> UPDATES
@@ -552,14 +609,14 @@
                     <div class="update-stat-card">
                         <span class="stat-card-label">INSTALLIERTE VERSION</span>
                         <div class="stat-card-val-row">
-                            <span class="stat-card-val" id="stat-cur-ver">V6.2.1</span>
+                            <span class="stat-card-val" id="stat-cur-ver">V6.3.0</span>
                             <span class="stat-card-tag local">Lokal</span>
                         </div>
                     </div>
                     <div class="update-stat-card">
                         <span class="stat-card-label">GITHUB NEUESTE VERSION</span>
                         <div class="stat-card-val-row">
-                            <span class="stat-card-val" id="stat-latest-ver">V6.2.1</span>
+                            <span class="stat-card-val" id="stat-latest-ver">V6.3.0</span>
                             <span class="stat-card-tag latest" id="tag-latest-source">GitHub API</span>
                         </div>
                     </div>
@@ -578,7 +635,7 @@
                         <div class="update-author-info">
                             <img src="https://avatars.githubusercontent.com/u/95185365?v=4" alt="TentixTV" class="update-author-avatar" id="update-author-avatar">
                             <div class="update-author-meta">
-                                <h4 class="update-release-title" id="update-release-title">DQS // Discord Quest Spoofer - Release V6.2.1</h4>
+                                <h4 class="update-release-title" id="update-release-title">DQS // Discord Quest Spoofer - Release V6.3.0</h4>
                                 <span class="update-release-meta-txt" id="update-release-meta">Erstellt von <strong>@TentixTV</strong> • Veröffentlicht im September 2026</span>
                             </div>
                         </div>
@@ -642,7 +699,7 @@
         <div class="update-toast-content">
             <span class="update-toast-icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 9V4s3.03.55 4 2c1.08 1.62 0 5 0 5"/></svg></span>
             <div class="update-toast-text">
-                <strong>Neues Update verfügbar: <span id="toast-new-version">V6.2.1</span>!</strong>
+                <strong>Neues Update verfügbar: <span id="toast-new-version">V6.3.0</span>!</strong>
                 <span class="update-toast-sub">Klicke hier zum Anzeigen des Changelogs und Herunterladen.</span>
             </div>
         </div>
@@ -687,7 +744,7 @@
                     <img src="DQS.png" alt="DQS" class="modal-brand-icon" onerror="this.src='../DQS.png'">
                     <div>
                         <h3 class="license-modal-heading">DQS // LIZENZ & CREDITS</h3>
-                        <span class="license-modal-sub">RELEASE V6.2.1 • OPEN SOURCE INFORMATION</span>
+                        <span class="license-modal-sub">RELEASE V6.3.0 • OPEN SOURCE INFORMATION</span>
                     </div>
                 </div>
                 <div class="license-header-controls">

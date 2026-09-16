@@ -1,0 +1,16 @@
+﻿[package]
+name = "dqs-native-core"
+version = "6.3.0"
+edition = "2021"
+authors = ["Sandro (TentixTV) <liesesandro4@gmail.com>"]
+description = "DQS Ultra-Fast Native Stealth Spoofer & Discord Named-Pipe IPC Engine in Rust"
+license = "MIT"
+
+[dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
