@@ -1383,6 +1383,9 @@ const DQS = {
         if (isMultiGame) {
             const multiSel = card.querySelector(`#multi-sel-${qid}`);
             if (multiSel) {
+                if (!q.selected_app && q.supported_applications && q.supported_applications.length > 0) {
+                    q.selected_app = q.supported_applications[0];
+                }
                 multiSel.addEventListener('change', (e) => {
                     const chosenId = e.target.value;
                     const found = q.supported_applications.find(a => a.id === chosenId);

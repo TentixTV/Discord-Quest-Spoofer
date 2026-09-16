@@ -18,7 +18,18 @@ const BANNER: &str = "DQS Native Stealth Core Engine (Rust x86_64)";
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        print_usage();
+        let exe_title = env::current_exe()
+            .ok()
+            .and_then(|p| p.file_stem().map(|s| s.to_string_lossy().to_string()))
+            .unwrap_or_else(|| "Game Simulation".to_string());
+        run_dummy_loop(&exe_title);
+        return;
+    }
+
+    // Check for --title or -t flags anywhere in the argument list
+    if let Some(pos) = args.iter().position(|a| a == "--title" || a == "-t") {
+        let title = args.get(pos + 1).map(|s| s.as_str()).unwrap_or("Game Simulation");
+        run_dummy_loop(title);
         return;
     }
 
@@ -61,10 +72,29 @@ fn main() {
             run_stealth_process_simulation(app_id, game_title, exe_name);
         }
         _ => {
-            eprintln!("Unknown command: {}", args[1]);
-            print_usage();
-            std::process::exit(1);
+            // When invoked as a copied/renamed game executable with arbitrary args
+            let title = args.get(1).map(|s| s.as_str()).unwrap_or("Game Simulation");
+            run_dummy_loop(title);
         }
+    }
+}
+
+fn run_dummy_loop(title: &str) {
+    #[cfg(windows)]
+    {
+        use std::ffi::OsStr;
+        use std::os::windows::ffi::OsStrExt;
+        let wide: Vec<u16> = OsStr::new(title).encode_wide().chain(std::iter::once(0)).collect();
+        extern "system" {
+            fn SetConsoleTitleW(lpConsoleTitle: *const u16) -> i32;
+        }
+        unsafe {
+            SetConsoleTitleW(wide.as_ptr());
+        }
+    }
+    println!("[DQS-NATIVE] Simulated game process active for '{}' (PID: {})", title, std::process::id());
+    loop {
+        thread::sleep(Duration::from_secs(3600));
     }
 }
 
@@ -76,6 +106,7 @@ fn print_usage() {
     println!("  search <query> <cache_path> [limit]       Sub-millisecond game search");
     println!("  ipc <client_id> <activity_title> [state]  Direct kernel named-pipe IPC");
     println!("  simulate <app_id> <game_title> <exe_name> Stealth process runner");
+    println!("  --title <title>                           Run dummy game process with title");
 }
 
 /// Ultra-fast native string search through the detectable games JSON cache
