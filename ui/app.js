@@ -158,7 +158,7 @@ const DQS = {
         setTimeout(() => this.checkForUpdates(false), 2500);
     },
 
-    // --- V6.3.0 Atmospheric Cinema Sound Engine ---
+    // --- V6.3.1 Atmospheric Cinema Sound Engine ---
     _audioCtx: null,
     _ambientAudio: null,
     _synthNodes: [],
@@ -205,8 +205,8 @@ const DQS = {
 
             const masterGain = ctx.createGain();
             masterGain.gain.setValueAtTime(0.0001, now);
-            masterGain.gain.exponentialRampToValueAtTime(0.16, now + 1.2);
-            masterGain.gain.setValueAtTime(0.16, now + Math.max(0.5, duration - 1.2));
+            masterGain.gain.exponentialRampToValueAtTime(0.04, now + 1.2);
+            masterGain.gain.setValueAtTime(0.04, now + Math.max(0.5, duration - 1.2));
             masterGain.connect(filter);
             this._ambientGain = masterGain;
 
@@ -216,7 +216,7 @@ const DQS = {
             sub.frequency.setValueAtTime(36.0, now);
             sub.frequency.linearRampToValueAtTime(48.0, now + duration);
             const subGain = ctx.createGain();
-            subGain.gain.value = 0.5;
+            subGain.gain.value = 0.25;
             sub.connect(subGain);
             subGain.connect(masterGain);
             sub.start(now);
@@ -234,7 +234,7 @@ const DQS = {
                     osc.frequency.linearRampToValueAtTime(targetF * 1.015, now + duration);
 
                     const g = ctx.createGain();
-                    g.gain.value = (0.055 / (idx + 1));
+                    g.gain.value = (0.015 / (idx + 1));
                     osc.connect(g);
                     g.connect(masterGain);
 
@@ -249,7 +249,7 @@ const DQS = {
             lfo.type = 'sine';
             lfo.frequency.value = 0.45;
             const lfoGain = ctx.createGain();
-            lfoGain.gain.value = 160;
+            lfoGain.gain.value = 80;
             lfo.connect(lfoGain);
             lfoGain.connect(filter.frequency);
             lfo.start(now);
@@ -266,57 +266,19 @@ const DQS = {
         if (!ctx) return;
         const now = ctx.currentTime;
 
-        // Smooth crossfade out of existing ambient drone over 1.6s without pop or abrupt stop
+        // Smoothly fade out ambient drone without pop, cut, or sudden noise
         if (this._ambientGain) {
             try {
                 this._ambientGain.gain.setValueAtTime(this._ambientGain.gain.value, now);
-                this._ambientGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);
+                this._ambientGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
             } catch (e) {}
         }
         if (this._masterFilter) {
             try {
                 this._masterFilter.frequency.setValueAtTime(this._masterFilter.frequency.value, now);
-                this._masterFilter.frequency.exponentialRampToValueAtTime(150, now + 1.6);
+                this._masterFilter.frequency.exponentialRampToValueAtTime(120, now + 0.6);
             } catch (e) {}
         }
-
-        // Seamless glide & celestial chime resolution
-        try {
-            // 1. Aerodynamic Glide Swoosh (160Hz -> 42Hz)
-            const glideOsc = ctx.createOscillator();
-            glideOsc.type = 'sine';
-            glideOsc.frequency.setValueAtTime(160, now);
-            glideOsc.frequency.exponentialRampToValueAtTime(42, now + 0.85);
-
-            const glideGain = ctx.createGain();
-            glideGain.gain.setValueAtTime(0.001, now);
-            glideGain.gain.exponentialRampToValueAtTime(0.32, now + 0.12);
-            glideGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.0);
-
-            glideOsc.connect(glideGain);
-            glideGain.connect(ctx.destination);
-            glideOsc.start(now);
-            glideOsc.stop(now + 1.1);
-
-            // 2. Pristine C-Major-9 Resolution Chime (C5, E5, G5, B5, D6, G6)
-            const chimeNotes = [523.25, 659.25, 783.99, 987.77, 1174.66, 1567.98];
-            chimeNotes.forEach((f, idx) => {
-                const noteTime = now + idx * 0.04;
-                const chime = ctx.createOscillator();
-                chime.type = 'sine';
-                chime.frequency.setValueAtTime(f, noteTime);
-
-                const cGain = ctx.createGain();
-                cGain.gain.setValueAtTime(0.0001, noteTime);
-                cGain.gain.exponentialRampToValueAtTime(0.13 / (idx + 1), noteTime + 0.04);
-                cGain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 2.0);
-
-                chime.connect(cGain);
-                cGain.connect(ctx.destination);
-                chime.start(noteTime);
-                chime.stop(noteTime + 2.1);
-            });
-        } catch (e) {}
     },
 
     // --- Startup Splash Screen Animation (Atmospheric Cinema Transition) ---
@@ -338,12 +300,12 @@ const DQS = {
 
         const stages = [
             { pct: 15, title: 'INITIALISIERE 4D TESSERACT-SYSTEME...', sub: '[4D HYPERCUBE ACTIVE] • [RUST NATIVE ENGINE]' },
-            { pct: 34, title: 'LADE DISCORD QUEST ENGINE (V6.3.0)...', sub: '[KERNEL HOOK] • [RPC STEALTH CLOAK ENGAGED]' },
+            { pct: 34, title: 'LADE DISCORD QUEST ENGINE (V6.3.1)...', sub: '[KERNEL HOOK] • [RPC STEALTH CLOAK ENGAGED]' },
             { pct: 54, title: 'SYNCHRONISIERE 24.323 DETECTABLE GAMES...', sub: '[CACHE SYNC] • [STEAM & DISCORD ASSETS READY]' },
             { pct: 72, title: 'KALIBRIERUNG DISCORD HEARTBEATS & RPC...', sub: '[IPC HANDSHAKE] • [LATENCY: 0.12ms]' },
             { pct: 88, title: 'VERIFIZIERE TOKEN-SCHUTZ & INTEGRITÄT...', sub: '[SECURITY] • [ZERO-LEAK RUNTIME VERIFIED]' },
             { pct: 98, title: 'FINALE ATMOSPHÄRISCHE HARMONIE...', sub: '[CROSSFADE READY] • [DISPENSING TO VIEWPORT]' },
-            { pct: 100, title: 'WILLKOMMEN BEI DQS V6.3.0 - READY...', sub: '[ULTIMATE EDITION ACTIVE]' }
+            { pct: 100, title: 'WILLKOMMEN BEI DQS V6.3.1 - READY...', sub: '[ULTIMATE EDITION ACTIVE]' }
         ];
 
         const timer = setInterval(() => {
@@ -361,7 +323,7 @@ const DQS = {
             if (elapsed >= totalDuration) {
                 clearInterval(timer);
                 if (bar) bar.style.width = '100%';
-                if (status) status.innerText = 'WILLKOMMEN BEI DQS V6.3.0 - POPPING UP...';
+                if (status) status.innerText = 'WILLKOMMEN BEI DQS V6.3.1 - POPPING UP...';
                 if (subTelemetry) subTelemetry.innerText = '[ULTIMATE EDITION ACTIVE]';
 
                 setTimeout(() => {
@@ -385,7 +347,7 @@ const DQS = {
         const brandTrigger = document.getElementById('app-logo-trigger');
         const profilePing = document.getElementById('profile-changelog-ping-dot');
         const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
-        const currentVersion = '6.3.0';
+        const currentVersion = '6.3.1';
 
         // 1. First-Launch Yellow Ping Dot on Top-Left App Icon (ALWAYS after install / first launch)
         const hasSeenFirstLaunch = localStorage.getItem('dqs_first_launch_seen');
@@ -420,7 +382,7 @@ const DQS = {
     markChangelogAsRead() {
         const profilePing = document.getElementById('profile-changelog-ping-dot');
         const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
-        localStorage.setItem('dqs_read_changelog_ver', '6.3.0');
+        localStorage.setItem('dqs_read_changelog_ver', '6.3.1');
 
         [profilePing, btnChangelogPing].forEach(el => {
             if (el) {
@@ -1570,6 +1532,11 @@ const DQS = {
 
     // --- Live Sync HUD Control Methods ---
     setupLiveSyncHUD() {
+        const hud = document.getElementById('mobile-sync-hud');
+        if (hud) {
+            hud.style.display = 'none';
+            hud.classList.add('hidden');
+        }
         const closeBtn = document.getElementById('btn-close-sync-hud');
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
@@ -1581,13 +1548,15 @@ const DQS = {
     showLiveSyncHUD(opts = {}) {
         const hud = document.getElementById('mobile-sync-hud');
         if (!hud) return;
-        this.updateLiveSyncHUD(opts);
+        hud.style.display = 'block';
         hud.classList.remove('hidden', 'hud-hiding');
+        this.updateLiveSyncHUD(opts);
     },
 
     updateLiveSyncHUD(opts = {}) {
         const hud = document.getElementById('mobile-sync-hud');
         if (!hud) return;
+        hud.style.display = 'block';
         hud.classList.remove('hidden', 'hud-hiding');
 
         const badge = document.getElementById('sync-hud-badge');
@@ -1624,6 +1593,7 @@ const DQS = {
         setTimeout(() => {
             hud.classList.remove('hud-hiding');
             hud.classList.add('hidden');
+            hud.style.display = 'none';
         }, 350);
     },
 
@@ -2396,7 +2366,7 @@ const DQS = {
             this._updateDownloadUrl = res.download_url;
             this._latestReleaseUrl = res.html_url || 'https://github.com/TentixTV/Discord-Quest-Spoofer/releases';
 
-            if (statCur) statCur.innerText = res.current_version || 'V6.3.0';
+            if (statCur) statCur.innerText = res.current_version || 'V6.3.1';
             if (statLatest) statLatest.innerText = res.latest_version || res.current_version;
             if (tagLatestSource) tagLatestSource.innerText = 'GitHub Live API';
 
@@ -3107,7 +3077,7 @@ const DQS = {
                 card.classList.remove('activity-active');
                 card.classList.add('activity-idle');
             }
-            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.3.0)';
+            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.3.1)';
             popState.innerText = 'Bereit für Quest-Simulation';
             popTimer.innerText = 'Status: Standby • Discord RPC & Rust Core aktiv';
         }

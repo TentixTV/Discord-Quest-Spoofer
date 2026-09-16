@@ -1,4 +1,4 @@
-﻿//! DQS Native Stealth Core Engine (Rust 6.3.0)
+//! DQS Native Stealth Core Engine (Rust 6.3.1)
 //! High-performance native process spoofer, named-pipe Discord IPC accelerator,
 //! and sub-millisecond detectable games search index.
 //!
@@ -12,7 +12,7 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-const VERSION: &str = "6.3.0";
+const VERSION: &str = "6.3.1";
 const BANNER: &str = "DQS Native Stealth Core Engine (Rust x86_64)";
 
 fn main() {
@@ -47,7 +47,7 @@ fn main() {
             }
             let client_id = &args[2];
             let title = &args[3];
-            let state = args.get(4).map(|s| s.as_str()).unwrap_or("DQS V6.3.0 Native Engine Active");
+            let state = args.get(4).map(|s| s.as_str()).unwrap_or("DQS V6.3.1 Native Engine Active");
             run_ipc_heartbeat(client_id, title, state);
         }
         "simulate" => {
@@ -186,7 +186,7 @@ fn run_ipc_heartbeat(client_id: &str, title: &str, state_msg: &str) {
 
     // Step 2: Set Activity (Opcode 1)
     let activity_payload = format!(
-        r#"{{"cmd":"SET_ACTIVITY","args":{{"pid":{},"activity":{{"details":"{}","state":"{}","timestamps":{{"start":{}}},"assets":{{"large_image":"default_asset","large_text":"DQS V6.3.0"}}}}}},"nonce":"{}"}}"#,
+        r#"{{"cmd":"SET_ACTIVITY","args":{{"pid":{},"activity":{{"details":"{}","state":"{}","timestamps":{{"start":{}}},"assets":{{"large_image":"default_asset","large_text":"DQS V6.3.1"}}}}}},"nonce":"{}"}}"#,
         current_pid, title, state_msg, now, now
     );
 

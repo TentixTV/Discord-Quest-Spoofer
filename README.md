@@ -1,15 +1,15 @@
 # 🎮 DQS // Discord Quest Spoofer
 > **Projekt von Sandro (T3X / TNTIX)**  
 > 🔗 GitHub: [https://github.com/TentixTV/Discord-Quest-Spoofer](https://github.com/TentixTV/Discord-Quest-Spoofer)  
-> 🚀 Neuestes Release: [https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.3.0](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.3.0)
+> 🚀 Neuestes Release: [https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.3.1](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.3.1)
 
 ---
 
-## 📥 Download (Release V6.3.0)
+## 📥 Download (Release V6.3.1)
 
 | Datei | Was ist das? | Download |
 | :--- | :--- | :--- |
-| **`DQS_Installer.exe`** | Der 1-Klick Installer (haut DQS auf deinen PC, macht Desktop-Icon & Startmenü fertig) | [⬇️ DQS_Installer.exe](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/download/V6.3.0/DQS_Installer.exe) |
+| **`DQS_Installer.exe`** | Der 1-Klick Installer (haut DQS auf deinen PC, macht Desktop-Icon & Startmenü fertig) | [⬇️ DQS_Installer.exe](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/download/V6.3.1/DQS_Installer.exe) |
 
 > ℹ️ *Info:* Die `DQS.exe` selbst landet durch den Installer ganz normal in deinem Benutzerordner (`%LOCALAPPDATA%\Programs\Discord Quest Spoofer`).
 
@@ -34,7 +34,7 @@ Das Tool simuliert Discord gegenüber, dass du das Game zockst, schickt die echt
 
 ## 🚀 Wie benutze ich das?
 
-1. Lad dir die **`DQS_Installer.exe`** aus dem [Releases-Tab](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.3.0) runter.
+1. Lad dir die **`DQS_Installer.exe`** aus dem [Releases-Tab](https://github.com/TentixTV/Discord-Quest-Spoofer/releases/tag/V6.3.1) runter.
 2. Installer kurz durchklicken (legt Verknüpfung auf deinem Desktop an).
 3. DQS starten.
 4. Account auswählen (dein lokaler Account wird sofort erkannt).
