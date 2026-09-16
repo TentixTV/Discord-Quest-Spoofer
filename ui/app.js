@@ -130,7 +130,7 @@ const DQS = {
         this.setupLicenseModal();
         this.setupTutorialModal();
         this.setupChangelogAndUpdateModals();
-        this.setupOrbsModal();
+        this.setupOrbsLinks();
         this.initNotificationBadges();
 
         // Load data from bridge
@@ -178,82 +178,81 @@ const DQS = {
     },
 
     playStartupAmbient(duration = 8) {
-        try {
-            if (window.DQS_EMBEDDED_ASSETS?.startup_ambient) {
-                const aud = new Audio(window.DQS_EMBEDDED_ASSETS.startup_ambient);
-                aud.volume = 0.22;
-                aud.play().catch(() => {});
-                this._ambientAudio = aud;
-                return;
-            }
-        } catch (e) {}
-
-        // Rich Procedural Multi-Harmonic Atmospheric Drone with Lowpass Filter Sweep
+        // High-End Procedural Cinema Cyber Soundscape (Zero External Pop/Cutoff)
         try {
             const ctx = this.getAudioCtx();
             if (!ctx) return;
             const now = ctx.currentTime;
 
-            // Master Filter for organic cinematic sweep
+            // Stop any lingering previous synth nodes
+            if (this._synthNodes && this._synthNodes.length > 0) {
+                this._synthNodes.forEach(n => {
+                    try { n.stop(); } catch (e) {}
+                    try { n.disconnect(); } catch (e) {}
+                });
+                this._synthNodes = [];
+            }
+
+            // Master Filter for warm, organic cinematic power-up
             const filter = ctx.createBiquadFilter();
             filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(280, now);
-            filter.frequency.exponentialRampToValueAtTime(1800, now + duration * 0.85);
-            filter.Q.setValueAtTime(2.2, now);
+            filter.frequency.setValueAtTime(220, now);
+            filter.frequency.exponentialRampToValueAtTime(2400, now + duration * 0.9);
+            filter.Q.setValueAtTime(1.8, now);
             filter.connect(ctx.destination);
             this._masterFilter = filter;
 
             const masterGain = ctx.createGain();
             masterGain.gain.setValueAtTime(0.0001, now);
-            masterGain.gain.exponentialRampToValueAtTime(0.18, now + 1.4);
-            masterGain.gain.setValueAtTime(0.18, now + Math.max(0.5, duration - 1.0));
+            masterGain.gain.exponentialRampToValueAtTime(0.16, now + 1.2);
+            masterGain.gain.setValueAtTime(0.16, now + Math.max(0.5, duration - 1.2));
             masterGain.connect(filter);
             this._ambientGain = masterGain;
 
-            // Warm Sub-Bass Foundation (43.65Hz - F1)
+            // 1. Warm Sub-Bass Reactor Foundation (36Hz -> 48Hz)
             const sub = ctx.createOscillator();
             sub.type = 'sine';
-            sub.frequency.setValueAtTime(43.65, now);
-            sub.frequency.linearRampToValueAtTime(48.99, now + duration);
+            sub.frequency.setValueAtTime(36.0, now);
+            sub.frequency.linearRampToValueAtTime(48.0, now + duration);
             const subGain = ctx.createGain();
-            subGain.gain.value = 0.45;
+            subGain.gain.value = 0.5;
             sub.connect(subGain);
             subGain.connect(masterGain);
             sub.start(now);
-            sub.stop(now + duration + 2.5);
+            sub.stop(now + duration + 3.0);
             this._synthNodes.push(sub);
 
-            // Detuned Cosmic Pad Chords: F, C, A, E (Fmaj7 / 9 atmospheric cluster)
-            const freqs = [87.31, 130.81, 174.61, 220.00, 329.63];
-            freqs.forEach((baseF, idx) => {
-                [-0.04, 0.04].forEach(detuneRatio => {
+            // 2. Cyber Ethereal Harmonizer Pad Chords (D2, A2, D3, F#3, A3, C#4)
+            const chordFreqs = [73.42, 110.00, 146.83, 185.00, 220.00, 277.18];
+            chordFreqs.forEach((baseF, idx) => {
+                [-0.035, 0.035].forEach(detuneRatio => {
                     const osc = ctx.createOscillator();
                     osc.type = (idx % 2 === 0) ? 'sine' : 'triangle';
                     const targetF = baseF * (1 + detuneRatio);
                     osc.frequency.setValueAtTime(targetF, now);
-                    osc.frequency.linearRampToValueAtTime(targetF * 1.02, now + duration);
+                    osc.frequency.linearRampToValueAtTime(targetF * 1.015, now + duration);
 
                     const g = ctx.createGain();
-                    g.gain.value = (0.07 / (idx + 1));
+                    g.gain.value = (0.055 / (idx + 1));
                     osc.connect(g);
                     g.connect(masterGain);
 
                     osc.start(now);
-                    osc.stop(now + duration + 2.5);
+                    osc.stop(now + duration + 3.0);
                     this._synthNodes.push(osc);
                 });
             });
 
-            // Shimmer / Stardust LFO modulation
+            // 3. Shimmer Spatial LFO modulation
             const lfo = ctx.createOscillator();
             lfo.type = 'sine';
-            lfo.frequency.value = 0.8;
+            lfo.frequency.value = 0.45;
             const lfoGain = ctx.createGain();
-            lfoGain.gain.value = 180;
+            lfoGain.gain.value = 160;
             lfo.connect(lfoGain);
             lfoGain.connect(filter.frequency);
             lfo.start(now);
-            lfo.stop(now + duration + 2.5);
+            lfo.stop(now + duration + 3.0);
             this._synthNodes.push(lfo);
 
         } catch (err) {
@@ -266,62 +265,55 @@ const DQS = {
         if (!ctx) return;
         const now = ctx.currentTime;
 
-        // Smooth crossfade out of existing ambient drone over 1.4s (NO ABRUPT CUTOFF)
+        // Smooth crossfade out of existing ambient drone over 1.6s without pop or abrupt stop
         if (this._ambientGain) {
             try {
                 this._ambientGain.gain.setValueAtTime(this._ambientGain.gain.value, now);
-                this._ambientGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.4);
+                this._ambientGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);
             } catch (e) {}
         }
-        if (this._ambientAudio) {
+        if (this._masterFilter) {
             try {
-                let vol = this._ambientAudio.volume;
-                const fader = setInterval(() => {
-                    vol = Math.max(0, vol - 0.02);
-                    this._ambientAudio.volume = vol;
-                    if (vol <= 0.01) {
-                        clearInterval(fader);
-                        this._ambientAudio.pause();
-                        this._ambientAudio = null;
-                    }
-                }, 40);
+                this._masterFilter.frequency.setValueAtTime(this._masterFilter.frequency.value, now);
+                this._masterFilter.frequency.exponentialRampToValueAtTime(150, now + 1.6);
             } catch (e) {}
         }
 
-        // Cinematic High-Pass Air Swoosh + Resonant Cmaj9 Resolution Chime
+        // Seamless glide & celestial chime resolution
         try {
-            // 1. Deep Sub-Boom & Aerodynamic Glide (180Hz -> 36Hz)
-            const whooshOsc = ctx.createOscillator();
-            whooshOsc.type = 'sine';
-            whooshOsc.frequency.setValueAtTime(180, now);
-            whooshOsc.frequency.exponentialRampToValueAtTime(36, now + 0.65);
+            // 1. Aerodynamic Glide Swoosh (160Hz -> 42Hz)
+            const glideOsc = ctx.createOscillator();
+            glideOsc.type = 'sine';
+            glideOsc.frequency.setValueAtTime(160, now);
+            glideOsc.frequency.exponentialRampToValueAtTime(42, now + 0.85);
 
-            const whooshGain = ctx.createGain();
-            whooshGain.gain.setValueAtTime(0.001, now);
-            whooshGain.gain.exponentialRampToValueAtTime(0.38, now + 0.12);
-            whooshGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.85);
+            const glideGain = ctx.createGain();
+            glideGain.gain.setValueAtTime(0.001, now);
+            glideGain.gain.exponentialRampToValueAtTime(0.32, now + 0.12);
+            glideGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.0);
 
-            whooshOsc.connect(whooshGain);
-            whooshGain.connect(ctx.destination);
-            whooshOsc.start(now);
-            whooshOsc.stop(now + 0.90);
+            glideOsc.connect(glideGain);
+            glideGain.connect(ctx.destination);
+            glideOsc.start(now);
+            glideOsc.stop(now + 1.1);
 
-            // 2. Crystalline Cosmic Chime Harmonic Resolution (C5, G5, B5, E6, G6)
-            const chimeNotes = [523.25, 783.99, 987.77, 1318.51, 1567.98];
+            // 2. Pristine C-Major-9 Resolution Chime (C5, E5, G5, B5, D6, G6)
+            const chimeNotes = [523.25, 659.25, 783.99, 987.77, 1174.66, 1567.98];
             chimeNotes.forEach((f, idx) => {
+                const noteTime = now + idx * 0.04;
                 const chime = ctx.createOscillator();
                 chime.type = 'sine';
-                chime.frequency.setValueAtTime(f, now + idx * 0.035);
+                chime.frequency.setValueAtTime(f, noteTime);
 
                 const cGain = ctx.createGain();
-                cGain.gain.setValueAtTime(0.0001, now + idx * 0.035);
-                cGain.gain.exponentialRampToValueAtTime(0.14 / (idx + 1), now + idx * 0.035 + 0.04);
-                cGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+                cGain.gain.setValueAtTime(0.0001, noteTime);
+                cGain.gain.exponentialRampToValueAtTime(0.13 / (idx + 1), noteTime + 0.04);
+                cGain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 2.0);
 
                 chime.connect(cGain);
                 cGain.connect(ctx.destination);
-                chime.start(now + idx * 0.035);
-                chime.stop(now + 1.3);
+                chime.start(noteTime);
+                chime.stop(noteTime + 2.1);
             });
         } catch (e) {}
     },
@@ -335,7 +327,7 @@ const DQS = {
         const root = document.getElementById('app-root');
         if (!splash || !bar || !status) return;
 
-        // Random duration between 4200ms and 9500ms
+        // Duration between 4200ms and 9500ms
         const totalDuration = Math.floor(Math.random() * (9500 - 4200 + 1)) + 4200;
         let elapsed = 0;
         const intervalMs = 50;
@@ -344,16 +336,14 @@ const DQS = {
         this.playStartupAmbient(totalDuration / 1000);
 
         const stages = [
-            { pct: 15, title: 'INITIALISIERE QUANTUM KERN-SYSTEME...', sub: '[RUST STEALTH CORE] • [WIN32 NAMED PIPES ACTIVE]' },
+            { pct: 15, title: 'INITIALISIERE 4D TESSERACT-SYSTEME...', sub: '[4D HYPERCUBE ACTIVE] • [RUST NATIVE ENGINE]' },
             { pct: 34, title: 'LADE DISCORD QUEST ENGINE (V6.3.0)...', sub: '[KERNEL HOOK] • [RPC STEALTH CLOAK ENGAGED]' },
-            { pct: 54, title: 'SYNCHRONISIERE 24.198 DETECTABLE GAMES...', sub: '[CACHE SYNC] • [STEAM & DISCORD ASSETS READY]' },
+            { pct: 54, title: 'SYNCHRONISIERE 24.323 DETECTABLE GAMES...', sub: '[CACHE SYNC] • [STEAM & DISCORD ASSETS READY]' },
             { pct: 72, title: 'KALIBRIERUNG DISCORD HEARTBEATS & RPC...', sub: '[IPC HANDSHAKE] • [LATENCY: 0.12ms]' },
             { pct: 88, title: 'VERIFIZIERE TOKEN-SCHUTZ & INTEGRITÄT...', sub: '[SECURITY] • [ZERO-LEAK RUNTIME VERIFIED]' },
             { pct: 98, title: 'FINALE ATMOSPHÄRISCHE HARMONIE...', sub: '[CROSSFADE READY] • [DISPENSING TO VIEWPORT]' },
             { pct: 100, title: 'WILLKOMMEN BEI DQS V6.3.0 - READY...', sub: '[ULTIMATE EDITION ACTIVE]' }
         ];
-
-        const audioBars = document.querySelectorAll('.splash-audio-visualizer .audio-bar');
 
         const timer = setInterval(() => {
             elapsed += intervalMs;
@@ -366,14 +356,6 @@ const DQS = {
             const currentStage = stages.find(s => currentPct <= s.pct) || stages[stages.length - 1];
             if (status) status.innerText = currentStage.title;
             if (subTelemetry) subTelemetry.innerText = currentStage.sub;
-
-            // Randomize visualizer heights to dance dynamically with the audio
-            if (audioBars.length > 0 && Math.random() > 0.3) {
-                audioBars.forEach(b => {
-                    const h = Math.floor(Math.random() * 20) + 4;
-                    b.style.height = `${h}px`;
-                });
-            }
 
             if (elapsed >= totalDuration) {
                 clearInterval(timer);
@@ -1989,74 +1971,44 @@ const DQS = {
         }
     },
 
-    // --- Discord Orbs Balance & Rewards Hub Modal ---
-    setupOrbsModal() {
+    // --- Discord Orbs Link & Live Counter ---
+    setupOrbsLinks() {
         const questsOrbsWidget = document.getElementById('quests-orbs-widget');
         const popoutOrbsBtn = document.getElementById('btn-popout-orbs-hub');
-        const orbsModal = document.getElementById('orbs-modal');
-        const btnCloseOrbs = document.getElementById('btn-close-orbs-modal');
-        const btnCloseFooter = document.getElementById('btn-close-orbs-footer');
-        const btnFarmAll = document.getElementById('btn-farm-all-orbs');
+        const hdrOrbsChip = document.getElementById('hdr-orbs-chip');
+
+        const handleOrbsClick = () => {
+            const popout = document.getElementById('discord-profile-popout');
+            const backdrop = document.getElementById('popout-backdrop');
+            if (popout) popout.classList.add('hidden');
+            if (backdrop) backdrop.classList.add('hidden');
+            this.openDiscordOrbsHub();
+        };
 
         if (questsOrbsWidget) {
-            questsOrbsWidget.addEventListener('click', () => this.openOrbsModal());
+            questsOrbsWidget.addEventListener('click', handleOrbsClick);
         }
         if (popoutOrbsBtn) {
-            popoutOrbsBtn.addEventListener('click', () => {
-                const popout = document.getElementById('discord-profile-popout');
-                const backdrop = document.getElementById('popout-backdrop');
-                if (popout) popout.classList.add('hidden');
-                if (backdrop) backdrop.classList.add('hidden');
-                this.openOrbsModal();
-            });
+            popoutOrbsBtn.addEventListener('click', handleOrbsClick);
         }
-        if (btnCloseOrbs) {
-            btnCloseOrbs.addEventListener('click', () => this.closeOrbsModal());
-        }
-        if (btnCloseFooter) {
-            btnCloseFooter.addEventListener('click', () => this.closeOrbsModal());
-        }
-        if (orbsModal) {
-            orbsModal.addEventListener('click', (e) => {
-                if (e.target === orbsModal) this.closeOrbsModal();
-            });
-        }
-        if (btnFarmAll) {
-            btnFarmAll.addEventListener('click', async () => {
-                const openOrbsQuests = (this.cachedQuests || []).filter(q => (q.orb_count > 0) && !q.completed && !q.claimed);
-                if (openOrbsQuests.length === 0) {
-                    alert("Du hast bereits alle aktiven Orbs-Quests abgeschlossen! Belohnungen warten in Discord.");
-                    return;
-                }
-                this.closeOrbsModal();
-                this.switchTab('quests');
-                const btnStartAuto = document.getElementById('btn-start-auto-farm');
-                if (btnStartAuto && !this.autoFarmRunning) {
-                    btnStartAuto.click();
-                } else {
-                    alert(`Starte Bearbeitung von ${openOrbsQuests.length} offenen Orbs-Quests...`);
-                }
-            });
+        if (hdrOrbsChip) {
+            hdrOrbsChip.addEventListener('click', handleOrbsClick);
         }
     },
 
-    async openOrbsModal() {
-        const modal = document.getElementById('orbs-modal');
-        if (!modal) return;
-        modal.style.display = 'flex';
+    async openDiscordOrbsHub() {
         try {
-            if (window.pywebview?.api?.get_orbs_overview) {
-                const overview = await window.pywebview.api.get_orbs_overview();
-                this.updateOrbsModalUI(overview);
+            if (window.pywebview?.api?.open_discord_orbs_hub) {
+                const res = await window.pywebview.api.open_discord_orbs_hub();
+                if (res && res.success) return;
             }
+            window.open('discord://-/quest-home', '_blank');
         } catch (err) {
-            console.error("Failed to load orbs overview in modal:", err);
+            console.warn("Failed to open Discord Orbs Hub:", err);
+            try {
+                window.open('discord://-/quest-home', '_blank');
+            } catch (_) {}
         }
-    },
-
-    closeOrbsModal() {
-        const modal = document.getElementById('orbs-modal');
-        if (modal) modal.style.display = 'none';
     },
 
     async updateOrbsUI() {
@@ -2078,71 +2030,9 @@ const DQS = {
             if (hdrCount) {
                 hdrCount.innerText = formattedLive;
             }
-            const modal = document.getElementById('orbs-modal');
-            if (modal && modal.style.display === 'flex') {
-                this.updateOrbsModalUI(overview);
-            }
         } catch (e) {
             console.error("updateOrbsUI error:", e);
         }
-    },
-
-    updateOrbsModalUI(overview) {
-        if (!overview) return;
-        const I = window.DQS_ICONS || {};
-        const earnedCounter = document.getElementById('orbs-earned-counter');
-        const statEarned = document.getElementById('stat-orbs-earned');
-        const statOpen = document.getElementById('stat-orbs-open');
-        const statTotal = document.getElementById('stat-orbs-total');
-        const statCount = document.getElementById('stat-orbs-quests-count');
-        const questsList = document.getElementById('orbs-quests-list');
-
-        const liveBalance = overview.live_orbs !== undefined ? overview.live_orbs : (overview.earned_orbs || 0);
-        const formattedLive = Number(liveBalance).toLocaleString('de-DE');
-        const formattedOpen = Number(overview.open_orbs || 0).toLocaleString('de-DE');
-        const formattedTotal = Number(overview.total_orbs || 0).toLocaleString('de-DE');
-
-        if (earnedCounter) earnedCounter.innerText = formattedLive;
-        if (statEarned) statEarned.innerText = formattedLive;
-        if (statOpen) statOpen.innerText = formattedOpen;
-        if (statTotal) statTotal.innerText = formattedTotal;
-        if (statCount) statCount.innerText = `${overview.completed_quests_count || 0} / ${overview.total_quests_count || 0}`;
-
-        if (!questsList) return;
-        const orbsQuests = overview.quests || [];
-        if (orbsQuests.length === 0) {
-            questsList.innerHTML = `<div class="orbs-empty-state" style="padding:20px;text-align:center;color:#94a3b8;">Aktuell sind keine Quests mit Discord-Orbs verzeichnet.</div>`;
-            return;
-        }
-
-        const orbImgSrc = window.DQS_EMBEDDED_ASSETS?.animated_orb || 'assets/discord_orbs_animated.gif';
-
-        questsList.innerHTML = orbsQuests.map(q => {
-            const isDone = Boolean(q.completed || q.claimed);
-            const isClaimed = Boolean(q.claimed);
-            const isVideo = Boolean(q.is_video_task || String(q.task_type || '').includes('WATCH_VIDEO'));
-            const count = q.orb_count || 0;
-            const tileSrc = q.best_artwork_url || q.hero_url || q.tile_url || q.game_cover_url || q.game_icon_url || 'DQS.png';
-
-            return `
-                <div class="orbs-quest-row ${isDone ? 'done' : 'open'}">
-                    <img src="${tileSrc}" class="orbs-quest-thumb" alt="${q.game_title || 'Game'}" onerror="this.src='DQS.png'">
-                    <div class="orbs-quest-info">
-                        <span class="orbs-quest-title">${q.game_title || 'Discord Quest'}</span>
-                        <span class="orbs-quest-sub">${q.quest_name || (isVideo ? 'Video-Aufgabe' : 'Spielzeit-Aufgabe')}</span>
-                    </div>
-                    <div class="orbs-quest-pill ${isDone ? 'earned' : 'open'}">
-                        <img src="${orbImgSrc}" class="orbs-mini-gif" alt="Orb">
-                        <span>+${count} ORBS</span>
-                    </div>
-                    <div class="orbs-quest-status">
-                        ${isClaimed ? '<span class="status-pill claimed">EINGELÖST</span>' : 
-                          isDone ? '<span class="status-pill done">ERFÜLLT</span>' : 
-                          '<span class="status-pill open">OFFEN</span>'}
-                    </div>
-                </div>
-            `;
-        }).join('');
     },
 
     async openChangelogModal() {
