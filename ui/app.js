@@ -127,6 +127,7 @@ const DQS = {
         this.setupSimulatorSearch();
         this.setupConsoleTab();
         this.setupVideoModal();
+        this.setupLiveSyncHUD();
         this.setupLicenseModal();
         this.setupTutorialModal();
         this.setupChangelogAndUpdateModals();
@@ -493,6 +494,7 @@ const DQS = {
         setHtml('ico-modal-video', I.video);
         setHtml('btn-close-video-modal', I.close);
         setHtml('ico-modal-express', I.autofarm);
+        setHtml('ico-modal-sim', I.play || I.gamepad);
 
         // License & Security Modal
         setHtml('ico-license-warn-de', I.shield);
@@ -1476,7 +1478,7 @@ const DQS = {
                     btnVid.className = 'btn btn-secondary';
                     btnVid.innerHTML = `${I.video} VIDEO ANSCHAUEN`;
                     btnVid.onclick = () => {
-                        this.openVideoModal(qid, gameTitle, questName, videoUrl, targetSeconds);
+                        this.openVideoModal(qid, gameTitle, questName, videoUrl, targetSeconds, true, isMobile, q);
                     };
                     actBox.appendChild(btnVid);
                 }
@@ -1499,7 +1501,7 @@ const DQS = {
                     btnTrailer.className = 'btn btn-trailer-watch';
                     btnTrailer.innerHTML = `${I.video} TRAILER`;
                     btnTrailer.onclick = () => {
-                        this.openVideoModal(qid, gameTitle, `${questName} (Trailer)`, q.trailer_url, 30);
+                        this.openVideoModal(qid, gameTitle, `${questName} (Trailer)`, q.trailer_url, 30, false, false, q);
                     };
                     actBox.appendChild(btnTrailer);
                 }
@@ -1522,11 +1524,22 @@ const DQS = {
         return card;
     },
 
-    // --- Interactive Moving Express Quest Completer ---
+    // --- Interactive Moving Express Quest Completer & Live Sync ---
     startExpressQuest(qid, targetSeconds = 30, gameTitle = '', isMobile = false) {
         const I = window.DQS_ICONS;
         this.activeExpressVideoTitle = gameTitle ? `Video: ${gameTitle}` : 'Express Video Stream';
+        this.activeExpressQuestId = qid;
         this.updateProfileActivity(false, null, 0);
+
+        const devName = isMobile ? 'Google Pixel 8 (Android 14)' : 'Discord Desktop (Windows 11)';
+        this.showLiveSyncHUD({
+            device: devName,
+            isMobile: isMobile,
+            statusTitle: isMobile ? 'LIVE DISCORD ANDROID SYNC' : 'LIVE DISCORD API SYNC',
+            statusText: `[${devName}] Initialisiere verschlüsselte Verbindung für "${gameTitle || 'Quest'}"...`,
+            percent: 5,
+            status: 'CONNECTING'
+        });
 
         const fillQuest = document.getElementById(`fill-quest-${qid}`);
         const valQuest = document.getElementById(`val-quest-${qid}`);
@@ -1535,79 +1548,229 @@ const DQS = {
         const valBuffer = document.getElementById(`val-buffer-${qid}`);
         const btnExp = document.getElementById(`btn-exp-${qid}`) || document.getElementById(`exp-btn-${qid}`);
 
-        if (btnExp && btnExp.disabled) return;
         if (btnExp) {
             btnExp.disabled = true;
             btnExp.classList.add('btn-glow');
+            btnExp.innerHTML = `${I.autofarm} SYNC LÄUFT...`;
         }
 
-        if (fillQuest) fillQuest.classList.add('express-animating');
+        if (fillQuest) {
+            fillQuest.classList.add('express-animating');
+            fillQuest.style.width = '8%';
+        }
         if (trackQuest) trackQuest.classList.add('express-active');
-        if (fillBuffer) fillBuffer.classList.add('express-animating');
+        if (fillBuffer) {
+            fillBuffer.classList.add('express-animating');
+            fillBuffer.style.width = '8%';
+        }
 
         // Call backend completion asynchronously with isMobile
         window.pywebview?.api?.complete_video_quest(qid, targetSeconds, isMobile);
+    },
 
-        let elapsed = 0;
-        const totalDuration = 4500; // 4.5 seconds for complete visual cycle
-        const intervalMs = 150;
-        const startPercent = fillQuest ? parseFloat(fillQuest.style.width) || 0 : 0;
+    // --- Live Sync HUD Control Methods ---
+    setupLiveSyncHUD() {
+        const closeBtn = document.getElementById('btn-close-sync-hud');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.hideLiveSyncHUD();
+            });
+        }
+    },
 
-        const timer = setInterval(() => {
-            elapsed += intervalMs;
-            const progressRatio = Math.min(1.0, elapsed / totalDuration);
-            // Ease-out cubic curve
-            const easedRatio = 1 - Math.pow(1 - progressRatio, 3);
-            const currentPct = Math.min(100, Math.round(startPercent + (100 - startPercent) * easedRatio));
-            const remSec = Math.max(1, Math.ceil((totalDuration - elapsed) / 1000));
+    showLiveSyncHUD(opts = {}) {
+        const hud = document.getElementById('mobile-sync-hud');
+        if (!hud) return;
+        this.updateLiveSyncHUD(opts);
+        hud.classList.remove('hidden', 'hud-hiding');
+    },
 
-            if (fillQuest) fillQuest.style.width = `${currentPct}%`;
-            if (valQuest) {
-                valQuest.innerText = `FORTSCHRITT: ${currentPct}% (ca. ${remSec}s)...`;
+    updateLiveSyncHUD(opts = {}) {
+        const hud = document.getElementById('mobile-sync-hud');
+        if (!hud) return;
+        hud.classList.remove('hidden', 'hud-hiding');
+
+        const badge = document.getElementById('sync-hud-badge');
+        const iconEl = document.getElementById('sync-device-icon');
+        const nameEl = document.getElementById('sync-device-name');
+        const titleEl = document.getElementById('sync-status-title');
+        const questEl = document.getElementById('sync-quest-name');
+        const fillEl = document.getElementById('sync-progress-fill');
+        const pctEl = document.getElementById('sync-pct-text');
+
+        if (opts.device && nameEl) nameEl.innerText = opts.device;
+        if (iconEl) iconEl.innerText = opts.isMobile ? '📱' : '💻';
+        if (badge) {
+            badge.className = `sync-device-badge ${opts.isMobile ? 'badge-android' : 'badge-desktop'}`;
+        }
+        if (opts.statusTitle && titleEl) titleEl.innerText = opts.statusTitle;
+        if (opts.statusText && questEl) questEl.innerText = opts.statusText;
+        if (opts.percent !== undefined) {
+            const p = Math.min(100, Math.max(0, Math.round(opts.percent)));
+            if (fillEl) fillEl.style.width = `${p}%`;
+            if (pctEl) pctEl.innerText = `${p}%`;
+        }
+        if (opts.status === 'SUCCESS' && fillEl) {
+            fillEl.classList.add('completed');
+        } else if (fillEl) {
+            fillEl.classList.remove('completed');
+        }
+    },
+
+    hideLiveSyncHUD() {
+        const hud = document.getElementById('mobile-sync-hud');
+        if (!hud || hud.classList.contains('hidden')) return;
+        hud.classList.add('hud-hiding');
+        setTimeout(() => {
+            hud.classList.remove('hud-hiding');
+            hud.classList.add('hidden');
+        }, 350);
+    },
+
+    handleExpressProgress(data) {
+        const I = window.DQS_ICONS;
+        if (!data) return;
+
+        let qid, percent, status, statusText, device, isMobile, gameTitle;
+        if (typeof data === 'object') {
+            qid = String(data.quest_id || '');
+            percent = typeof data.percent === 'number' ? data.percent : 0;
+            status = data.status || 'SYNCING';
+            statusText = data.status_text || '';
+            device = data.device || (data.is_mobile ? 'Google Pixel 8 (Android 14)' : 'Discord Desktop (Windows 11)');
+            isMobile = Boolean(data.is_mobile);
+            gameTitle = data.game_title || '';
+        } else {
+            qid = String(arguments[0] || '');
+            percent = Number(arguments[1]) || 0;
+            status = percent >= 100 ? 'SUCCESS' : 'SYNCING';
+            statusText = `Sende Video-Fortschritt (${percent}%)...`;
+            device = 'Google Pixel 8 (Android 14)';
+            isMobile = true;
+        }
+
+        const pctRounded = Math.min(100, Math.max(0, Math.round(percent)));
+
+        let statusTitle = isMobile ? 'LIVE DISCORD ANDROID SYNC' : 'LIVE DISCORD API SYNC';
+        if (status === 'SUCCESS' || pctRounded >= 100) {
+            statusTitle = '✓ DISCORD SYNC ERFOLGREICH';
+        } else if (status === 'GAME_QUEST') {
+            statusTitle = '🎮 SPIEL-SIMULATION GESTARTET';
+        } else if (status === 'ERROR') {
+            statusTitle = '⚠️ SYNC-FEHLER';
+        }
+
+        this.updateLiveSyncHUD({
+            device,
+            isMobile,
+            statusTitle,
+            statusText: statusText || `${gameTitle}: ${pctRounded}%`,
+            percent: pctRounded,
+            status
+        });
+
+        const fillQuest = document.getElementById(`fill-quest-${qid}`);
+        const valQuest = document.getElementById(`val-quest-${qid}`);
+        const fillBuffer = document.getElementById(`fill-buffer-${qid}`);
+        const valBuffer = document.getElementById(`val-buffer-${qid}`);
+        const btnExp = document.getElementById(`btn-exp-${qid}`) || document.getElementById(`exp-btn-${qid}`);
+
+        if (fillQuest) {
+            fillQuest.style.width = `${pctRounded}%`;
+            if (pctRounded >= 100) {
+                fillQuest.classList.remove('express-animating');
+                fillQuest.classList.add('completed');
             }
-            if (valBuffer) {
-                valBuffer.innerText = `BUFFER: SYNCHRONISIERT (${currentPct}%)`;
+        }
+        if (valQuest) {
+            if (status === 'SUCCESS' || pctRounded >= 100) {
+                valQuest.innerText = `100% - QUEST ERFÜLLT!`;
+                valQuest.classList.add('completed');
+            } else if (status === 'GAME_QUEST') {
+                valQuest.innerText = `GAME-TRAILER: SIMULATION AKTIV`;
+            } else if (status === 'ERROR') {
+                valQuest.innerText = `FEHLER BEI SYNC`;
+            } else {
+                valQuest.innerText = `FORTSCHRITT: ${pctRounded}% (${isMobile ? 'Pixel 8' : 'Desktop'})`;
             }
-            if (btnExp) {
-                btnExp.innerHTML = `${I.autofarm} EXPRESS LÄUFT... (${remSec}s)`;
+        }
+        if (fillBuffer) fillBuffer.style.width = `${pctRounded}%`;
+        if (valBuffer) {
+            valBuffer.innerText = `BUFFER: ${pctRounded}% (${isMobile ? 'MOBIL' : 'DESKTOP'})`;
+        }
+        if (btnExp) {
+            if (status === 'SUCCESS' || pctRounded >= 100) {
+                btnExp.innerHTML = `${I.check} ERFOLGREICH!`;
+                btnExp.className = 'btn btn-claimed';
+                btnExp.disabled = false;
+            } else if (status === 'GAME_QUEST') {
+                btnExp.innerHTML = `${I.gamepad} SIMULATION GESTARTET`;
+                btnExp.className = 'btn btn-emerald';
+                btnExp.disabled = false;
+            } else if (status === 'ERROR') {
+                btnExp.innerHTML = `FEHLER BEI SYNC`;
+                btnExp.disabled = false;
+            } else {
+                btnExp.innerHTML = `${I.autofarm} SYNC: ${pctRounded}%`;
             }
+        }
 
-            if (elapsed >= totalDuration) {
-                clearInterval(timer);
-                if (fillQuest) {
-                    fillQuest.style.width = '100%';
-                    fillQuest.classList.remove('express-animating');
-                    fillQuest.classList.add('completed');
-                }
-                if (valQuest) {
-                    valQuest.innerText = `100% - QUEST ERFÜLLT!`;
-                    valQuest.classList.add('completed');
-                }
-                if (valBuffer) {
-                    valBuffer.innerText = `SYNCHRONISIERT (100%)`;
-                }
-                if (btnExp) {
-                    btnExp.innerHTML = `${I.check} ERFOLGREICH!`;
-                    btnExp.className = 'btn btn-claimed';
-                }
-
-                this.activeExpressVideoTitle = null;
+        if (status === 'SUCCESS' || pctRounded >= 100) {
+            this.activeExpressVideoTitle = null;
+            this.activeExpressQuestId = null;
+            window.pywebview?.api?.play_success_sound();
+            setTimeout(() => {
+                this.refreshQuests();
+            }, 1200);
+            setTimeout(() => {
+                this.hideLiveSyncHUD();
+            }, 4500);
+        } else if (status === 'GAME_QUEST') {
+            this.activeExpressVideoTitle = null;
+            this.activeExpressQuestId = null;
+            setTimeout(() => {
                 this.pollSimStatus();
+                this.refreshQuests();
+            }, 1000);
+            setTimeout(() => {
+                this.hideLiveSyncHUD();
+            }, 4000);
+        } else if (status === 'ERROR') {
+            this.activeExpressVideoTitle = null;
+            this.activeExpressQuestId = null;
+            setTimeout(() => {
+                this.hideLiveSyncHUD();
+            }, 5000);
+        }
+    },
 
-                // Play notification
-                window.pywebview?.api?.play_success_sound();
-
-                setTimeout(() => {
-                    this.refreshQuests();
-                }, 1200);
-            }
-        }, intervalMs);
+    handleGameSimulationStarted(questId, appId, gameTitle) {
+        this.updateLiveSyncHUD({
+            device: 'Discord Desktop (Windows 11)',
+            isMobile: false,
+            statusTitle: '🎮 SPIEL-SIMULATION GESTARTET',
+            statusText: `Trailer erkannt: Win32 Heartbeat-Simulation für "${gameTitle}" aktiv.`,
+            percent: 100,
+            status: 'GAME_QUEST'
+        });
+        this.pollSimStatus();
+        setTimeout(() => {
+            this.refreshQuests();
+        }, 1000);
+        setTimeout(() => {
+            this.hideLiveSyncHUD();
+        }, 4000);
     },
 
     // --- 720p HD Video Player Modal ---
     setupVideoModal() {
         const modal = document.getElementById('video-modal');
         const closeBtn = document.getElementById('btn-close-video-modal');
+        const pillMobile = document.getElementById('btn-pill-mobile');
+        const pillDesktop = document.getElementById('btn-pill-desktop');
+        const btnExp = document.getElementById('btn-modal-express-finish');
+        const btnSim = document.getElementById('btn-modal-sim-start');
+
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
                 this.closeVideoModal();
@@ -1620,25 +1783,101 @@ const DQS = {
                 }
             });
         }
+
+        if (pillMobile && pillDesktop) {
+            pillMobile.addEventListener('click', () => {
+                this.videoModalIsMobile = true;
+                pillMobile.classList.add('active');
+                pillDesktop.classList.remove('active');
+                if (btnExp) {
+                    const I = window.DQS_ICONS;
+                    btnExp.innerHTML = `${I.autofarm} 📱 MOBIL ABSCHLIESSEN (5s)`;
+                }
+            });
+
+            pillDesktop.addEventListener('click', () => {
+                this.videoModalIsMobile = false;
+                pillDesktop.classList.add('active');
+                pillMobile.classList.remove('active');
+                if (btnExp) {
+                    const I = window.DQS_ICONS;
+                    btnExp.innerHTML = `${I.autofarm} ⚡ EXPRESS-ABSCHLUSS (5s)`;
+                }
+            });
+        }
+
+        if (btnExp) {
+            btnExp.addEventListener('click', () => {
+                if (!this.currentModalQuest) return;
+                const { qid, gameTitle, targetSec } = this.currentModalQuest;
+                const isMobile = Boolean(this.videoModalIsMobile);
+                this.closeVideoModal();
+                this.startExpressQuest(qid, targetSec || 30, gameTitle, isMobile);
+            });
+        }
+
+        if (btnSim) {
+            btnSim.addEventListener('click', () => {
+                if (!this.currentModalQuest) return;
+                const { qid, gameTitle, questObj } = this.currentModalQuest;
+                this.closeVideoModal();
+                const targetAppId = questObj?.selected_app?.id || questObj?.required_app_id || questObj?.app_id || '';
+                const targetTitle = questObj?.selected_app?.name || questObj?.required_game_name || questObj?.sim_game_title || gameTitle;
+                const targetExe = questObj?.selected_app?.exe || questObj?.required_exe || '';
+                this.simulateQuest(targetAppId, targetTitle, targetExe);
+            });
+        }
     },
 
-    openVideoModal(qid, gameTitle, questName, videoUrl, targetSec) {
+    openVideoModal(qid, gameTitle, questName, videoUrl, targetSec = 30, isVideoTask = true, isMobile = false, questObj = null) {
         const modal = document.getElementById('video-modal');
         const titleEl = document.getElementById('video-modal-title');
         const videoEl = document.getElementById('discord-video-player');
+        const statusText = document.getElementById('video-modal-status-text');
+        const deviceSelector = document.getElementById('video-device-selector');
         const btnExp = document.getElementById('btn-modal-express-finish');
+        const btnSim = document.getElementById('btn-modal-sim-start');
+        const pillMobile = document.getElementById('btn-pill-mobile');
+        const pillDesktop = document.getElementById('btn-pill-desktop');
+        const I = window.DQS_ICONS;
 
         if (!modal || !videoEl) return;
 
-        titleEl.innerText = `${gameTitle} - ${questName} (720p HD Stream)`;
+        this.currentModalQuest = { qid, gameTitle, questName, videoUrl, targetSec, isVideoTask, isMobile, questObj };
+        this.videoModalIsMobile = Boolean(isMobile);
+
+        if (isVideoTask) {
+            titleEl.innerText = `${gameTitle} - ${questName} (720p HD Stream)`;
+            if (statusText) statusText.innerText = 'DISCORD CDN 720P STREAM AKTIV';
+            if (deviceSelector) deviceSelector.classList.remove('hidden');
+            if (btnExp) {
+                btnExp.classList.remove('hidden');
+                btnExp.innerHTML = `${I.autofarm} ${this.videoModalIsMobile ? '📱 MOBIL ABSCHLIESSEN (5s)' : '⚡ EXPRESS-ABSCHLUSS (5s)'}`;
+            }
+            if (btnSim) btnSim.classList.add('hidden');
+
+            if (this.videoModalIsMobile) {
+                pillMobile?.classList.add('active');
+                pillDesktop?.classList.remove('active');
+            } else {
+                pillDesktop?.classList.add('active');
+                pillMobile?.classList.remove('active');
+            }
+        } else {
+            // Game Quest Trailer
+            titleEl.innerText = `${gameTitle} - Offizieller HD Trailer`;
+            if (statusText) statusText.innerText = 'SPIEL-QUEST TRAILER • DISCORD STREAM';
+            if (deviceSelector) deviceSelector.classList.add('hidden');
+            if (btnExp) btnExp.classList.add('hidden');
+            if (btnSim) {
+                btnSim.classList.remove('hidden');
+                btnSim.innerHTML = `${I.gamepad} IM SIMULATOR STARTEN`;
+            }
+        }
+
         videoEl.src = videoUrl;
         videoEl.currentTime = 0;
         videoEl.play().catch(() => {});
-
-        btnExp.onclick = () => {
-            this.closeVideoModal();
-            this.startExpressQuest(qid, targetSec || 30, gameTitle);
-        };
 
         modal.classList.remove('hidden');
     },
@@ -1651,6 +1890,7 @@ const DQS = {
             videoEl.src = '';
         }
         if (modal) modal.classList.add('hidden');
+        this.currentModalQuest = null;
     },
 
     // --- License & Security Modal (T3X / Sandro) ---
@@ -2342,7 +2582,7 @@ const DQS = {
                                 ${I.play} TRAILER ANSEHEN
                             </button>
                         ` : ''}
-                        <button class="btn btn-emerald" onclick="DQS.simulateQuest('${q.app_id}', '${gameTitle}')">
+                        <button class="btn btn-emerald" id="sim-btn-${qid}">
                             ${I.gamepad} IM SIMULATOR STARTEN
                         </button>
                     `}
@@ -2353,7 +2593,7 @@ const DQS = {
                 const vidBtn = card.querySelector(`#vid-play-${qid}`);
                 if (vidBtn) {
                     vidBtn.onclick = () => {
-                        this.openVideoModal(qid, gameTitle, questName, videoUrl, targetSec);
+                        this.openVideoModal(qid, gameTitle, questName, videoUrl, targetSec, isVideoTask, isMobile, q);
                     };
                 }
             }
@@ -2362,6 +2602,16 @@ const DQS = {
                 if (expBtn) {
                     expBtn.onclick = () => {
                         this.startExpressQuest(qid, targetSec, gameTitle, isMobile);
+                    };
+                }
+            } else {
+                const simBtn = card.querySelector(`#sim-btn-${qid}`);
+                if (simBtn) {
+                    simBtn.onclick = () => {
+                        const targetAppId = q.selected_app?.id || q.required_app_id || q.app_id || '';
+                        const targetTitle = q.selected_app?.name || q.required_game_name || q.sim_game_title || gameTitle;
+                        const targetExe = q.selected_app?.exe || q.required_exe || '';
+                        this.simulateQuest(targetAppId, targetTitle, targetExe);
                     };
                 }
             }
@@ -3077,6 +3327,18 @@ window.onFarmProgress = function(pInfo) {
     if (pInfo && pInfo.quest_id && window.DQS) {
         DQS.refreshQuests(true);
     }
+};
+
+window.onExpressProgress = function(data, p2) {
+    if (typeof data === 'string' && typeof p2 === 'number') {
+        window.DQS?.handleExpressProgress({ quest_id: data, percent: p2 });
+    } else {
+        window.DQS?.handleExpressProgress(data);
+    }
+};
+
+window.onGameSimulationStarted = function(questId, appId, gameTitle) {
+    window.DQS?.handleGameSimulationStarted(questId, appId, gameTitle);
 };
 
 // Start when PyWebView is ready (guaranteed single execution)

@@ -162,6 +162,34 @@
 
     <!-- Main Application Viewport -->
     <main id="app-viewport">
+        <!-- Live Sync & Mobile Emulation HUD Banner -->
+        <div id="mobile-sync-hud" class="mobile-sync-hud hidden">
+            <div class="sync-hud-glow"></div>
+            <div class="sync-hud-inner">
+                <div class="sync-hud-left">
+                    <div class="sync-device-badge badge-android" id="sync-hud-badge">
+                        <span class="device-icon" id="sync-device-icon">📱</span>
+                        <span class="device-name" id="sync-device-name">GOOGLE PIXEL 8 • ANDROID 14</span>
+                    </div>
+                    <div class="sync-status-indicator">
+                        <span class="sync-pulse-dot"></span>
+                        <span class="sync-status-title" id="sync-status-title">LIVE DISCORD ANDROID SYNC</span>
+                    </div>
+                </div>
+                <div class="sync-hud-center">
+                    <div class="sync-quest-name" id="sync-quest-name">Sende verschlüsselte Super-Properties...</div>
+                    <div class="sync-progress-bar-wrap">
+                        <div class="sync-progress-bar-fill" id="sync-progress-fill" style="width: 0%;"></div>
+                        <div class="sync-progress-shine"></div>
+                    </div>
+                </div>
+                <div class="sync-hud-right">
+                    <span class="sync-pct-text" id="sync-pct-text">0%</span>
+                    <button class="sync-hud-close" id="btn-close-sync-hud" title="Ausblenden">✕</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 1. TAB: QUESTS -->
         <section id="tab-quests" class="tab-view active">
             <div class="view-toolbar">
@@ -741,14 +769,33 @@
                 <div class="video-frame-container">
                     <video id="discord-video-player" controls autoplay playsinline></video>
                 </div>
+
+                <!-- Device Emulation Mode Switcher inside modal -->
+                <div class="video-device-selector" id="video-device-selector">
+                    <span class="selector-label">EMULATIONS-GERÄT:</span>
+                    <div class="selector-pills">
+                        <button class="device-pill-btn active" id="btn-pill-mobile" type="button">
+                            <span class="pill-icon">📱</span> GOOGLE PIXEL 8 (ANDROID 14)
+                        </button>
+                        <button class="device-pill-btn" id="btn-pill-desktop" type="button">
+                            <span class="pill-icon">💻</span> DISCORD DESKTOP CLIENT
+                        </button>
+                    </div>
+                </div>
+
                 <div class="video-modal-bottom-bar">
                     <div class="video-live-pill">
                         <span class="pulsing-dot-cyan"></span>
                         <span id="video-modal-status-text">DISCORD CDN 720P STREAM AKTIV</span>
                     </div>
-                    <button class="btn btn-cyan btn-lg" id="btn-modal-express-finish">
-                        <span id="ico-modal-express"></span> EXPRESS-ABSCHLUSS (5s)
-                    </button>
+                    <div class="video-modal-actions-wrap">
+                        <button class="btn btn-cyan btn-lg" id="btn-modal-express-finish">
+                            <span id="ico-modal-express"></span> EXPRESS-ABSCHLUSS (5s)
+                        </button>
+                        <button class="btn btn-emerald btn-lg hidden" id="btn-modal-sim-start">
+                            <span id="ico-modal-sim"></span> IM SIMULATOR STARTEN
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
