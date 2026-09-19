@@ -1456,7 +1456,7 @@ const DQS = {
                     const targetAppId = q.selected_app?.id || q.required_app_id || appId;
                     const targetTitle = q.selected_app?.name || q.required_game_name || q.sim_game_title || gameTitle;
                     const targetExe = q.selected_app?.exe || q.required_exe || '';
-                    this.simulateQuest(targetAppId, targetTitle, targetExe);
+                    this.simulateQuest(targetAppId, targetTitle, targetExe, qid);
                 };
                 actBox.appendChild(btnSim);
 
@@ -1797,7 +1797,7 @@ const DQS = {
                 const targetAppId = questObj?.selected_app?.id || questObj?.required_app_id || questObj?.app_id || '';
                 const targetTitle = questObj?.selected_app?.name || questObj?.required_game_name || questObj?.sim_game_title || gameTitle;
                 const targetExe = questObj?.selected_app?.exe || questObj?.required_exe || '';
-                this.simulateQuest(targetAppId, targetTitle, targetExe);
+                this.simulateQuest(targetAppId, targetTitle, targetExe, qid);
             });
         }
     },
@@ -2584,7 +2584,7 @@ const DQS = {
                         const targetAppId = q.selected_app?.id || q.required_app_id || q.app_id || '';
                         const targetTitle = q.selected_app?.name || q.required_game_name || q.sim_game_title || gameTitle;
                         const targetExe = q.selected_app?.exe || q.required_exe || '';
-                        this.simulateQuest(targetAppId, targetTitle, targetExe);
+                        this.simulateQuest(targetAppId, targetTitle, targetExe, qid);
                     };
                 }
             }
@@ -2619,10 +2619,12 @@ const DQS = {
             const title = document.getElementById('sim-input-title').value.trim();
             const exe = document.getElementById('sim-input-exe').value.trim();
             const appid = document.getElementById('sim-input-appid').value.trim();
+            const qid = this._pendingSimQuestId || null;
+            this._pendingSimQuestId = null;
 
-            const res = await window.pywebview.api.start_simulation(appid, title, exe);
+            const res = await window.pywebview.api.start_simulation(appid, title, exe, qid);
             if (res && res.success) {
-                this.updateSimUI(true, title);
+                this.updateSimUI(true, title, 0, res);
             }
         });
 
@@ -2830,11 +2832,14 @@ const DQS = {
         }
     },
 
-    simulateQuest(appId, gameTitle, customExe) {
+    simulateQuest(appId, gameTitle, customExe, questId = null) {
         this.switchTab('simulator');
 
-        // Match preset
-        let matched = this.presets.find(p => String(p.app_id) === String(appId) || p.name.toLowerCase().includes(gameTitle.toLowerCase()) || gameTitle.toLowerCase().includes(p.name.toLowerCase()));
+        // Match preset by exact appId first, then title
+        let matched = this.presets.find(p => String(p.app_id) === String(appId));
+        if (!matched && gameTitle) {
+            matched = this.presets.find(p => p.name.toLowerCase().includes(gameTitle.toLowerCase()) || gameTitle.toLowerCase().includes(p.name.toLowerCase()));
+        }
         if (!matched) {
             for (const q of (this.cachedQuests || [])) {
                 const found = (q.supported_applications || []).find(a => String(a.id) === String(appId));
@@ -2850,7 +2855,7 @@ const DQS = {
         }
 
         const finalExe = customExe || (matched ? matched.exe : (gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '_') + '.exe'));
-        const finalTitle = matched ? matched.title : gameTitle;
+        const finalTitle = gameTitle || (matched ? matched.title : 'Game Simulation');
         const finalAppId = appId || (matched ? matched.app_id : '1205090671527071784');
 
         if (matched && document.getElementById('sim-preset-select')) {
@@ -2859,6 +2864,8 @@ const DQS = {
         document.getElementById('sim-input-title').value = finalTitle;
         document.getElementById('sim-input-exe').value = finalExe;
         document.getElementById('sim-input-appid').value = finalAppId;
+
+        this._pendingSimQuestId = questId;
 
         // Auto start simulation
         document.getElementById('btn-start-sim').click();
@@ -2890,7 +2897,9 @@ const DQS = {
         const curSec = (st && typeof st.current_seconds === 'number' && st.current_seconds > 0)
             ? st.current_seconds
             : elapsedSec;
-        const pct = Math.min(100, Math.max(0, (curSec / tgtSec) * 100));
+        const pct = (st && typeof st.progress_percent === 'number')
+            ? st.progress_percent
+            : Math.min(100, Math.max(0, (curSec / tgtSec) * 100));
 
         if (running) {
             this._standaloneSimRunning = true;
@@ -2915,7 +2924,8 @@ const DQS = {
                 simSyncTag.style.color = '#38bdf8';
             }
             if (simFill) {
-                simFill.style.width = `${pct.toFixed(1)}%`;
+                const fillPct = Math.min(100, Math.max(pct > 0 ? 0.5 : 0, pct));
+                simFill.style.width = `${fillPct.toFixed(1)}%`;
                 simFill.classList.add('active-glow');
                 if (pct >= 100) simFill.classList.add('completed');
                 else simFill.classList.remove('completed');
@@ -2923,13 +2933,14 @@ const DQS = {
             const cm = String(Math.floor(curSec / 60)).padStart(2, '0');
             const cs = String(curSec % 60).padStart(2, '0');
             const tm = String(Math.floor(tgtSec / 60)).padStart(2, '0');
+            const displayPct = pct >= 10 ? `${Math.round(pct)}%` : (pct > 0 ? `${pct.toFixed(1)}%` : '0%');
 
             if (simVal) {
                 if (pct >= 100) {
                     simVal.innerText = '100% - QUEST ERFÜLLT! (BELOHNUNG IN DISCORD BEREIT)';
                     simVal.classList.add('completed');
                 } else {
-                    simVal.innerText = `${cm}:${cs} / ${tm}:00 MIN. (${pct.toFixed(0)}%)`;
+                    simVal.innerText = `${cm}:${cs} / ${tm}:00 MIN. (${displayPct})`;
                     simVal.classList.remove('completed');
                 }
             }
@@ -2938,29 +2949,8 @@ const DQS = {
                     simStatus.innerText = 'STATUS: 100% ERREICHT • BELOHNUNG IM DISCORD QUESTS-TAB ABHOLBAR';
                     simStatus.style.color = 'var(--emerald)';
                 } else {
-                    simStatus.innerText = `STATUS: LIVE-SYNC AKTIV • FORTSCHRITT: ${cm}:${cs} / ${tm}:00 MIN. (${pct.toFixed(0)}%)`;
+                    simStatus.innerText = `STATUS: LIVE-SYNC AKTIV • FORTSCHRITT: ${cm}:${cs} / ${tm}:00 MIN. (${displayPct})`;
                     simStatus.style.color = '#38bdf8';
-                }
-            }
-
-            // Live-Sync progress in Quests Tab simultaneously
-            if (st && st.quest_id) {
-                const qFill = document.getElementById(`fill-quest-${st.quest_id}`);
-                const qVal = document.getElementById(`val-quest-${st.quest_id}`);
-                if (qFill) {
-                    qFill.style.width = `${pct}%`;
-                    qFill.classList.add('active-glow');
-                    if (pct >= 100) qFill.classList.add('completed');
-                }
-                if (qVal) {
-                    const cm = Math.floor(curSec / 60);
-                    const tm = Math.round(tgtSec / 60);
-                    if (pct >= 100) {
-                        qVal.innerText = `${tm}/${tm} MIN. (100%) - QUEST ERFÜLLT!`;
-                        qVal.classList.add('completed');
-                    } else {
-                        qVal.innerText = `${cm}/${tm} MIN. (${Math.round(pct)}%)`;
-                    }
                 }
             }
         } else {
@@ -2993,28 +2983,37 @@ const DQS = {
             }
         }
 
-        // Live Sync Quest Cards in Quests Tab
+        // Live Sync Quest Cards in Quests Tab for all matching applications
         if (this.cachedQuests && this.cachedQuests.length > 0) {
             this.cachedQuests.forEach(q => {
-                const qid = q.id;
+                const qid = String(q.id);
                 const actBox = document.getElementById(`act-box-${qid}`);
                 const card = actBox ? actBox.closest('.quest-card') : null;
                 const fill = document.getElementById(`fill-quest-${qid}`);
                 const val = document.getElementById(`val-quest-${qid}`);
 
                 const isThisActive = running && (
-                    (st?.quest_id && st.quest_id === qid) ||
-                    (st?.app_id && (String(q.app_id) === String(st.app_id) || q.supported_applications?.some(a => String(a.id) === String(st.app_id))))
+                    (st?.quest_id && String(st.quest_id) === qid) ||
+                    (st?.app_id && (
+                        String(q.app_id) === String(st.app_id) ||
+                        String(q.required_app_id) === String(st.app_id) ||
+                        q.supported_applications?.some(a => String(a.id) === String(st.app_id))
+                    ))
                 );
 
                 if (isThisActive) {
                     if (card) card.classList.add('live-synced-active');
                     const qTgt = q.target_seconds || 900;
-                    const qCur = Math.min(qTgt, (q.current_seconds || 0) + elapsedSec);
-                    const qPct = Math.min(100, Math.max(0, Math.round((qCur / qTgt) * 100)));
+                    const qCur = (st && typeof st.current_seconds === 'number' && String(st.quest_id) === qid)
+                        ? st.current_seconds
+                        : Math.min(qTgt, (q.current_seconds || 0) + elapsedSec);
+                    const qPct = (st && typeof st.progress_percent === 'number' && String(st.quest_id) === qid)
+                        ? st.progress_percent
+                        : Math.min(100, Math.max(0, (qCur / qTgt) * 100));
 
+                    const fillPct = Math.min(100, Math.max(qPct > 0 ? 0.5 : 0, qPct));
                     if (fill) {
-                        fill.style.width = `${qPct}%`;
+                        fill.style.width = `${fillPct.toFixed(1)}%`;
                         fill.classList.add('express-animating');
                         if (qPct >= 100) fill.classList.add('completed');
                     }
@@ -3025,14 +3024,15 @@ const DQS = {
                             val.innerText = `${curM}/${tgtM} MIN. (100%) - QUEST ERFÜLLT!`;
                             val.classList.add('completed');
                         } else {
-                            val.innerText = `${curM}/${tgtM} MIN. (${qPct}%) - LIVE GESYNCT`;
+                            const cardDisplayPct = qPct >= 10 ? `${Math.round(qPct)}%` : (qPct > 0 ? `${qPct.toFixed(1)}%` : '0%');
+                            val.innerText = `${curM}/${tgtM} MIN. (${cardDisplayPct}) - LIVE GESYNCT`;
                             val.classList.add('live-sync');
                         }
                     }
                 } else {
-                    if (card) card.classList.remove('live-synced-active');
-                    if (val) val.classList.remove('live-sync');
-                    if (fill && !fill.classList.contains('buffer')) fill.classList.remove('express-animating');
+                    if (card && !card.classList.contains('farm-active')) card.classList.remove('live-synced-active');
+                    if (val && !val.classList.contains('farm-sync')) val.classList.remove('live-sync');
+                    if (fill && !fill.classList.contains('buffer') && !fill.classList.contains('farm-fill')) fill.classList.remove('express-animating');
                 }
             });
         }
@@ -3207,7 +3207,9 @@ window.onAutoQuestProgress = function(pInfo) {
 
     const curQuest = document.getElementById('live-current-quest');
     if (curQuest) {
-        curQuest.innerText = `Aktuell: [${pInfo.current_index}/${pInfo.total_count}] ${pInfo.game_title} (${pInfo.progress_percent.toFixed(0)}%)`;
+        const pVal = typeof pInfo.progress_percent === 'number' ? pInfo.progress_percent : 0;
+        const displayPct = pVal >= 10 ? Math.round(pVal) : (pVal > 0 ? pVal.toFixed(1) : 0);
+        curQuest.innerText = `Aktuell: [${pInfo.current_index}/${pInfo.total_count}] ${pInfo.game_title} (${displayPct}%)`;
     }
 
     const liveRem = document.getElementById('live-rem-val');
@@ -3297,8 +3299,46 @@ window.onAutoQuestStopped = function() {
 };
 
 window.onFarmProgress = function(pInfo) {
-    if (pInfo && pInfo.quest_id && window.DQS) {
-        DQS.refreshQuests(true);
+    if (!pInfo || !pInfo.quest_id) return;
+    const qid = String(pInfo.quest_id);
+    const pct = typeof pInfo.progress_percent === 'number' ? pInfo.progress_percent : 0;
+    const curSec = pInfo.current_seconds || 0;
+    const tgtSec = pInfo.target_seconds || 900;
+    const curM = Math.floor(curSec / 60);
+    const tgtM = Math.round(tgtSec / 60);
+
+    const fill = document.getElementById(`fill-quest-${qid}`);
+    const val = document.getElementById(`val-quest-${qid}`);
+    const card = fill ? fill.closest('.quest-card') : null;
+
+    if (card) card.classList.add('live-synced-active', 'farm-active');
+    if (fill) {
+        const fillPct = Math.min(100, Math.max(pct > 0 ? 0.5 : 0, pct));
+        fill.style.width = `${fillPct.toFixed(1)}%`;
+        fill.classList.add('active-glow', 'express-animating', 'farm-fill');
+        if (pct >= 100) fill.classList.add('completed');
+    }
+    if (val) {
+        val.classList.add('live-sync', 'farm-sync');
+        if (pct >= 100) {
+            val.innerText = `${tgtM}/${tgtM} MIN. (100%) - QUEST ERFÜLLT!`;
+            val.classList.add('completed');
+        } else {
+            const displayPct = pct >= 10 ? `${Math.round(pct)}%` : (pct > 0 ? `${pct.toFixed(1)}%` : '0%');
+            val.innerText = `${curM}/${tgtM} MIN. (${displayPct}) - LIVE GESYNCT`;
+        }
+    }
+
+    if (window.DQS && window.DQS.cachedQuests) {
+        const q = window.DQS.cachedQuests.find(item => String(item.id) === qid);
+        if (q) {
+            q.current_seconds = curSec;
+            q.progress_percent = pct;
+            if (pct >= 100) {
+                q.completed = true;
+                q.duration_text = '(Erfüllt)';
+            }
+        }
     }
 };
 
