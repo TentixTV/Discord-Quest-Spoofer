@@ -6658,6 +6658,97 @@ body {
     font-style: italic;
 }
 
+/* --- Circular Animated Checkmark for 'Alle Quests annehmen' --- */
+#btn-enroll-all {
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.enroll-anim-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    animation: enrollFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.enroll-checkmark-svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+    overflow: visible;
+    flex-shrink: 0;
+}
+
+.enroll-checkmark-circle {
+    stroke-dasharray: 145;
+    stroke-dashoffset: 145;
+    stroke-width: 3.2;
+    stroke-miterlimit: 10;
+    stroke: #34d399;
+    fill: rgba(16, 185, 129, 0.12);
+    animation: enrollStroke 0.45s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.enroll-checkmark-check {
+    stroke-dasharray: 45;
+    stroke-dashoffset: 45;
+    stroke: #34d399;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    animation: enrollCheck 0.35s cubic-bezier(0.65, 0, 0.45, 1) 0.3s forwards;
+}
+
+.enroll-anim-label {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: #34d399;
+}
+
+@keyframes enrollStroke {
+    0% {
+        stroke-dashoffset: 145;
+    }
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes enrollCheck {
+    0% {
+        stroke-dashoffset: 45;
+    }
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes enrollFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.btn-enrolling-active {
+    background: rgba(16, 185, 129, 0.18) !important;
+    border-color: rgba(16, 185, 129, 0.65) !important;
+    color: #34d399 !important;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.35) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-enrolling-fadeout {
+    opacity: 0 !important;
+    transform: scale(0.95) !important;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
 
 
 

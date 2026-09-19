@@ -300,12 +300,12 @@ const DQS = {
 
         const stages = [
             { pct: 15, title: 'INITIALISIERE 4D TESSERACT-SYSTEME...', sub: '[4D HYPERCUBE ACTIVE] • [RUST NATIVE ENGINE]' },
-            { pct: 34, title: 'LADE DISCORD QUEST ENGINE (V6.3.412)...', sub: '[KERNEL HOOK] • [RPC STEALTH CLOAK ENGAGED]' },
+            { pct: 34, title: 'LADE DISCORD QUEST ENGINE (V6.3.413)...', sub: '[KERNEL HOOK] • [RPC STEALTH CLOAK ENGAGED]' },
             { pct: 54, title: 'SYNCHRONISIERE 24.323 DETECTABLE GAMES...', sub: '[CACHE SYNC] • [STEAM & DISCORD ASSETS READY]' },
             { pct: 72, title: 'KALIBRIERUNG DISCORD HEARTBEATS & RPC...', sub: '[IPC HANDSHAKE] • [LATENCY: 0.12ms]' },
             { pct: 88, title: 'VERIFIZIERE TOKEN-SCHUTZ & INTEGRITÄT...', sub: '[SECURITY] • [ZERO-LEAK RUNTIME VERIFIED]' },
             { pct: 98, title: 'FINALE ATMOSPHÄRISCHE HARMONIE...', sub: '[CROSSFADE READY] • [DISPENSING TO VIEWPORT]' },
-            { pct: 100, title: 'WILLKOMMEN BEI DQS V6.3.412 - READY...', sub: '[ULTIMATE EDITION ACTIVE]' }
+            { pct: 100, title: 'WILLKOMMEN BEI DQS V6.3.413 - READY...', sub: '[ULTIMATE EDITION ACTIVE]' }
         ];
 
         const timer = setInterval(() => {
@@ -323,7 +323,7 @@ const DQS = {
             if (elapsed >= totalDuration) {
                 clearInterval(timer);
                 if (bar) bar.style.width = '100%';
-                if (status) status.innerText = 'WILLKOMMEN BEI DQS V6.3.412 - POPPING UP...';
+                if (status) status.innerText = 'WILLKOMMEN BEI DQS V6.3.413 - POPPING UP...';
                 if (subTelemetry) subTelemetry.innerText = '[ULTIMATE EDITION ACTIVE]';
 
                 setTimeout(() => {
@@ -347,7 +347,7 @@ const DQS = {
         const brandTrigger = document.getElementById('app-logo-trigger');
         const profilePing = document.getElementById('profile-changelog-ping-dot');
         const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
-        const currentVersion = '6.3.412';
+        const currentVersion = '6.3.413';
 
         // 1. First-Launch Yellow Ping Dot on Top-Left App Icon (ALWAYS after install / first launch)
         const hasSeenFirstLaunch = localStorage.getItem('dqs_first_launch_seen');
@@ -381,7 +381,7 @@ const DQS = {
         const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
         if (profilePing) profilePing.classList.add('hidden');
         if (btnChangelogPing) btnChangelogPing.classList.add('hidden');
-        localStorage.setItem('dqs_read_changelog_ver', '6.3.412');
+        localStorage.setItem('dqs_read_changelog_ver', '6.3.413');
 
         [profilePing, btnChangelogPing].forEach(el => {
             if (el) {
@@ -2434,7 +2434,7 @@ const DQS = {
             this._updateDownloadUrl = res.download_url;
             this._latestReleaseUrl = res.html_url || 'https://github.com/TentixTV/Discord-Quest-Spoofer/releases';
 
-            if (statCur) statCur.innerText = res.current_version || 'V6.3.412';
+            if (statCur) statCur.innerText = res.current_version || 'V6.3.413';
             if (statLatest) statLatest.innerText = res.latest_version || res.current_version;
             if (tagLatestSource) tagLatestSource.innerText = 'GitHub Live API';
 
@@ -3080,10 +3080,12 @@ const DQS = {
                 if (isThisActive) {
                     if (card) card.classList.add('live-synced-active');
                     const qTgt = q.target_seconds || 900;
-                    const qCur = (st && typeof st.current_seconds === 'number' && String(st.quest_id) === qid)
+                    const isMatchedSimQuest = st && (String(st.quest_id) === qid || (!st.quest_id && isThisActive));
+                    const baseSec = (typeof q.initial_seconds === 'number') ? q.initial_seconds : ((typeof q.discord_actual_seconds === 'number') ? q.discord_actual_seconds : (q.current_seconds || 0));
+                    const qCur = (isMatchedSimQuest && typeof st.current_seconds === 'number')
                         ? st.current_seconds
-                        : Math.min(qTgt, (q.current_seconds || 0) + elapsedSec);
-                    const qPct = (st && typeof st.progress_percent === 'number' && String(st.quest_id) === qid)
+                        : Math.min(qTgt, baseSec + elapsedSec);
+                    const qPct = (isMatchedSimQuest && typeof st.progress_percent === 'number')
                         ? st.progress_percent
                         : Math.min(100, Math.max(0, (qCur / qTgt) * 100));
 
@@ -3156,7 +3158,7 @@ const DQS = {
                 card.classList.remove('activity-active');
                 card.classList.add('activity-idle');
             }
-            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.3.412)';
+            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.3.413)';
             popState.innerText = 'Bereit für Quest-Simulation';
             popTimer.innerText = 'Status: Standby • Discord RPC & Rust Core aktiv';
         }
@@ -3187,10 +3189,25 @@ const DQS = {
         const btnEnrollAll = document.getElementById('btn-enroll-all');
         if (btnEnrollAll) {
             btnEnrollAll.onclick = async () => {
+                if (btnEnrollAll.disabled) return;
                 btnEnrollAll.disabled = true;
                 const origHtml = btnEnrollAll.innerHTML;
-                btnEnrollAll.innerHTML = `${I.check} ALLE ANGENOMMEN!`;
-                btnEnrollAll.classList.add('btn-emerald');
+
+                // Smooth fade transition into circular animated checkmark
+                btnEnrollAll.classList.add('btn-enrolling-fadeout');
+                setTimeout(() => {
+                    btnEnrollAll.innerHTML = `
+                        <div class="enroll-anim-wrapper">
+                            <svg class="enroll-checkmark-svg" viewBox="0 0 52 52">
+                                <circle class="enroll-checkmark-circle" cx="26" cy="26" r="23" fill="none"/>
+                                <path class="enroll-checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                            </svg>
+                            <span class="enroll-anim-label">ALLE ANGENOMMEN!</span>
+                        </div>
+                    `;
+                    btnEnrollAll.classList.remove('btn-enrolling-fadeout');
+                    btnEnrollAll.classList.add('btn-enrolling-active');
+                }, 150);
 
                 // Optimistically mark all open quests as enrolled in memory & re-render cards immediately
                 if (this.cachedQuests && Array.isArray(this.cachedQuests)) {
@@ -3208,12 +3225,16 @@ const DQS = {
                     console.error("Enroll all error:", e);
                 }
 
+                // Smooth fade back to original state
                 setTimeout(() => {
-                    btnEnrollAll.disabled = false;
-                    btnEnrollAll.innerHTML = origHtml;
-                    btnEnrollAll.classList.remove('btn-emerald');
-                    this.refreshQuests(true);
-                }, 1800);
+                    btnEnrollAll.classList.add('btn-enrolling-fadeout');
+                    setTimeout(() => {
+                        btnEnrollAll.disabled = false;
+                        btnEnrollAll.innerHTML = origHtml;
+                        btnEnrollAll.classList.remove('btn-enrolling-active', 'btn-enrolling-fadeout');
+                        this.refreshQuests(true);
+                    }, 250);
+                }, 2000);
             };
         }
 

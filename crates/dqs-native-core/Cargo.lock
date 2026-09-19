@@ -4,4 +4,4 @@ version = 4
 
 [[package]]
 name = "dqs-native-core"
-version = "6.3.412"
+version = "6.3.413"
