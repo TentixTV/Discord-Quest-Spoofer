@@ -2832,7 +2832,7 @@ const DQS = {
         }
     },
 
-    simulateQuest(appId, gameTitle, customExe, questId = null) {
+    async simulateQuest(appId, gameTitle, customExe, questId = null) {
         this.switchTab('simulator');
 
         // Match preset by exact appId first, then title
@@ -2854,15 +2854,26 @@ const DQS = {
             }
         }
 
-        const finalExe = customExe || (matched ? matched.exe : (gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '_') + '.exe'));
-        const finalTitle = gameTitle || (matched ? matched.title : 'Game Simulation');
-        const finalAppId = appId || (matched ? matched.app_id : '1205090671527071784');
+        let finalExe = customExe || (matched ? matched.exe : '');
+        let finalTitle = gameTitle || (matched ? matched.title : 'Game Simulation');
+        let finalAppId = appId || (matched ? matched.app_id : '');
+
+        // Resolve official detectable game if exe not already matched
+        if ((!finalExe || finalExe === 'Game.exe') && window.pywebview?.api?.resolve_game) {
+            try {
+                const res = await window.pywebview.api.resolve_game(finalAppId, finalTitle);
+                if (res && res.exe) {
+                    finalExe = res.exe;
+                    if (res.title) finalTitle = res.title;
+                }
+            } catch (e) {}
+        }
 
         if (matched && document.getElementById('sim-preset-select')) {
             document.getElementById('sim-preset-select').value = matched.app_id;
         }
         document.getElementById('sim-input-title').value = finalTitle;
-        document.getElementById('sim-input-exe').value = finalExe;
+        document.getElementById('sim-input-exe').value = finalExe || (gameTitle ? gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '_') + '.exe' : 'Game.exe');
         document.getElementById('sim-input-appid').value = finalAppId;
 
         this._pendingSimQuestId = questId;

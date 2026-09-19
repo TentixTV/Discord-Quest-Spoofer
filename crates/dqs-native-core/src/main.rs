@@ -84,19 +84,89 @@ fn run_dummy_loop(title: &str) {
     {
         use std::ffi::OsStr;
         use std::os::windows::ffi::OsStrExt;
-        let wide: Vec<u16> = OsStr::new(title).encode_wide().chain(std::iter::once(0)).collect();
+        use std::ptr::null_mut;
+
+        let wide_title: Vec<u16> = OsStr::new(title).encode_wide().chain(std::iter::once(0)).collect();
+        let class_name: Vec<u16> = OsStr::new("Static").encode_wide().chain(std::iter::once(0)).collect();
+
         extern "system" {
             fn SetConsoleTitleW(lpConsoleTitle: *const u16) -> i32;
+            fn CreateWindowExW(
+                dwExStyle: u32,
+                lpClassName: *const u16,
+                lpWindowName: *const u16,
+                dwStyle: u32,
+                X: i32,
+                Y: i32,
+                nWidth: i32,
+                nHeight: i32,
+                hWndParent: *mut std::ffi::c_void,
+                hMenu: *mut std::ffi::c_void,
+                hInstance: *mut std::ffi::c_void,
+                lpParam: *mut std::ffi::c_void,
+            ) -> *mut std::ffi::c_void;
+            fn ShowWindow(hWnd: *mut std::ffi::c_void, nCmdShow: i32) -> i32;
+            fn GetMessageW(lpMsg: *mut Msg, hWnd: *mut std::ffi::c_void, wMsgFilterMin: u32, wMsgFilterMax: u32) -> i32;
+            fn TranslateMessage(lpMsg: *const Msg) -> i32;
+            fn DispatchMessageW(lpMsg: *const Msg) -> isize;
         }
+
+        #[repr(C)]
+        struct Point { x: i32, y: i32 }
+        #[repr(C)]
+        struct Msg {
+            hwnd: *mut std::ffi::c_void,
+            message: u32,
+            w_param: usize,
+            l_param: isize,
+            time: u32,
+            pt: Point,
+        }
+
         unsafe {
-            SetConsoleTitleW(wide.as_ptr());
+            SetConsoleTitleW(wide_title.as_ptr());
+
+            // WS_OVERLAPPEDWINDOW = 0x00CF0000, WS_VISIBLE = 0x10000000
+            // Placing the window offscreen (-32000, -32000) makes it visible to EnumWindows / Discord process_monitor
+            // without showing an annoying window on the user's screen.
+            let hwnd = CreateWindowExW(
+                0,
+                class_name.as_ptr(),
+                wide_title.as_ptr(),
+                0x00CF0000 | 0x10000000,
+                -32000,
+                -32000,
+                300,
+                200,
+                null_mut(),
+                null_mut(),
+                null_mut(),
+                null_mut(),
+            );
+
+            if !hwnd.is_null() {
+                // SW_SHOWMINNOACTIVE = 7
+                ShowWindow(hwnd, 7);
+            }
+
+            println!("[DQS-NATIVE] Simulated game process active for '{}' (PID: {}, HWND: {:?})", title, std::process::id(), hwnd);
+
+            let mut msg: Msg = std::mem::zeroed();
+            while GetMessageW(&mut msg, null_mut(), 0, 0) > 0 {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
         }
     }
-    println!("[DQS-NATIVE] Simulated game process active for '{}' (PID: {})", title, std::process::id());
-    loop {
-        thread::sleep(Duration::from_secs(3600));
+    #[cfg(not(windows))]
+    {
+        println!("[DQS-NATIVE] Simulated game process active for '{}' (PID: {})", title, std::process::id());
+        loop {
+            thread::sleep(Duration::from_secs(3600));
+        }
     }
 }
+
 
 fn print_usage() {
     println!("{} v{}", BANNER, VERSION);
