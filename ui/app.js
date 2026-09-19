@@ -300,12 +300,12 @@ const DQS = {
 
         const stages = [
             { pct: 15, title: 'INITIALISIERE 4D TESSERACT-SYSTEME...', sub: '[4D HYPERCUBE ACTIVE] • [RUST NATIVE ENGINE]' },
-            { pct: 34, title: 'LADE DISCORD QUEST ENGINE (V6.3.410)...', sub: '[KERNEL HOOK] • [RPC STEALTH CLOAK ENGAGED]' },
+            { pct: 34, title: 'LADE DISCORD QUEST ENGINE (V6.3.411)...', sub: '[KERNEL HOOK] • [RPC STEALTH CLOAK ENGAGED]' },
             { pct: 54, title: 'SYNCHRONISIERE 24.323 DETECTABLE GAMES...', sub: '[CACHE SYNC] • [STEAM & DISCORD ASSETS READY]' },
             { pct: 72, title: 'KALIBRIERUNG DISCORD HEARTBEATS & RPC...', sub: '[IPC HANDSHAKE] • [LATENCY: 0.12ms]' },
             { pct: 88, title: 'VERIFIZIERE TOKEN-SCHUTZ & INTEGRITÄT...', sub: '[SECURITY] • [ZERO-LEAK RUNTIME VERIFIED]' },
             { pct: 98, title: 'FINALE ATMOSPHÄRISCHE HARMONIE...', sub: '[CROSSFADE READY] • [DISPENSING TO VIEWPORT]' },
-            { pct: 100, title: 'WILLKOMMEN BEI DQS V6.3.410 - READY...', sub: '[ULTIMATE EDITION ACTIVE]' }
+            { pct: 100, title: 'WILLKOMMEN BEI DQS V6.3.411 - READY...', sub: '[ULTIMATE EDITION ACTIVE]' }
         ];
 
         const timer = setInterval(() => {
@@ -323,7 +323,7 @@ const DQS = {
             if (elapsed >= totalDuration) {
                 clearInterval(timer);
                 if (bar) bar.style.width = '100%';
-                if (status) status.innerText = 'WILLKOMMEN BEI DQS V6.3.410 - POPPING UP...';
+                if (status) status.innerText = 'WILLKOMMEN BEI DQS V6.3.411 - POPPING UP...';
                 if (subTelemetry) subTelemetry.innerText = '[ULTIMATE EDITION ACTIVE]';
 
                 setTimeout(() => {
@@ -347,7 +347,7 @@ const DQS = {
         const brandTrigger = document.getElementById('app-logo-trigger');
         const profilePing = document.getElementById('profile-changelog-ping-dot');
         const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
-        const currentVersion = '6.3.410';
+        const currentVersion = '6.3.411';
 
         // 1. First-Launch Yellow Ping Dot on Top-Left App Icon (ALWAYS after install / first launch)
         const hasSeenFirstLaunch = localStorage.getItem('dqs_first_launch_seen');
@@ -381,7 +381,7 @@ const DQS = {
         const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
         if (profilePing) profilePing.classList.add('hidden');
         if (btnChangelogPing) btnChangelogPing.classList.add('hidden');
-        localStorage.setItem('dqs_read_changelog_ver', '6.3.410');
+        localStorage.setItem('dqs_read_changelog_ver', '6.3.411');
 
         [profilePing, btnChangelogPing].forEach(el => {
             if (el) {
@@ -414,6 +414,8 @@ const DQS = {
 
         setHtml('ico-hdr-quests', I.quest);
         setHtml('ico-disclaimer-shield', I.shield);
+        setHtml('ico-autonomy-robot', I.robot);
+        setHtml('ico-feedback-github', I.github);
         setHtml('ico-btn-refresh', I.refresh);
         setHtml('ico-btn-enroll', I.quest);
         setHtml('ico-btn-autofarm', I.autofarm);
@@ -1367,10 +1369,39 @@ const DQS = {
         const hasNitro = Boolean(q.has_nitro || this.currentUser?.has_nitro);
         let orbBadgeHtml = '';
         if (orbCount > 0) {
+            const nitroIconB64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAATCAYAAACdkl3yAAAAvElEQVR4nGNgGAUkgf///1v+Jx7MJWQYqcAXpI8Ri0HrGRgYtKBcNSx2PWdgYJBEE1MkxXXGaHLnkeSOYNOs/v///97///+fQFKYD5Wz/f//fx82i7AZpI0lHOzQNO6GBQNMgAndIEZGxqtYfMmFxv8Lpb8QCpui////n0RywWqouOf///97kNTdwuk1NAORQS2aXC2S3AlCBl35jwmeYhEjGP3K/4lMkESB////t/z///8xmgHziDZgaAMAX9aKqB5IGqkAAAAASUVORK5CYII=';
+
             if (hasNitro) {
-                orbBadgeHtml = `<span class="badge-tag orbs nitro-orbs" title="Discord Nitro Bonus aktiv! Du erhältst 840 Orbs (+140 Bonus) statt 700."><img src="${orbImgSrc}" class="discord-orb-icon" alt="Orbs"> <span>840 ORBS</span> <strong class="nitro-pill">+140 NITRO</strong></span>`;
+                orbBadgeHtml = `
+                    <span class="badge-tag orbs nitro-orbs-card" title="700 Basis + 140 Nitro-Bonus">
+                        <img src="${orbImgSrc}" class="discord-orb-icon" alt="Orbs">
+                        <span class="orb-amount-text">700 ORBS</span>
+                        <div class="nitro-mult-pill" tabindex="0" role="button" aria-label="140 Nitro Bonus Orbs">
+                            <img src="${nitroIconB64}" class="nitro-mult-icon" alt="Nitro">
+                            <span class="nitro-mult-text">+140</span>
+                            <div class="nitro-hover-tooltip">
+                                <div class="nitro-tooltip-glow"></div>
+                                <div class="nitro-tooltip-header">
+                                    <img src="${nitroIconB64}" class="nitro-tt-icon" alt="Nitro">
+                                    <span class="nitro-tt-badge">DISCORD NITRO AKTIV</span>
+                                </div>
+                                <div class="nitro-tt-title">Weil du Discord Nitro besitzt:</div>
+                                <div class="nitro-tt-body">
+                                    Du erhältst <strong>+140 Bonus-Orbs</strong> (1,2x Multiplikator) auf diese Quest!
+                                </div>
+                                <div class="nitro-tt-calc">
+                                    <span class="tt-calc-base">700 Basis</span>
+                                    <span class="tt-calc-plus">+</span>
+                                    <span class="tt-calc-bonus">140 Nitro</span>
+                                    <span class="tt-calc-eq">=</span>
+                                    <span class="tt-calc-total">840 ORBS GESAMT</span>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                `.trim();
             } else {
-                orbBadgeHtml = `<span class="badge-tag orbs" title="700 Orbs Basis-Belohnung (mit Nitro: 840 Orbs)"><img src="${orbImgSrc}" class="discord-orb-icon" alt="Orbs"> <span>${orbCount} ORBS</span></span>`;
+                orbBadgeHtml = `<span class="badge-tag orbs" title="700 Orbs Basis-Belohnung (mit Nitro: 840 Orbs)"><img src="${orbImgSrc}" class="discord-orb-icon" alt="Orbs"> <span>700 ORBS</span></span>`;
             }
         }
 
@@ -2403,7 +2434,7 @@ const DQS = {
             this._updateDownloadUrl = res.download_url;
             this._latestReleaseUrl = res.html_url || 'https://github.com/TentixTV/Discord-Quest-Spoofer/releases';
 
-            if (statCur) statCur.innerText = res.current_version || 'V6.3.410';
+            if (statCur) statCur.innerText = res.current_version || 'V6.3.411';
             if (statLatest) statLatest.innerText = res.latest_version || res.current_version;
             if (tagLatestSource) tagLatestSource.innerText = 'GitHub Live API';
 
@@ -3125,7 +3156,7 @@ const DQS = {
                 card.classList.remove('activity-active');
                 card.classList.add('activity-idle');
             }
-            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.3.410)';
+            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.3.411)';
             popState.innerText = 'Bereit für Quest-Simulation';
             popTimer.innerText = 'Status: Standby • Discord RPC & Rust Core aktiv';
         }

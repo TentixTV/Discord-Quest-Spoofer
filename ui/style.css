@@ -6252,25 +6252,200 @@ body {
 }
 
 /* Nitro Bonus Badge on Quest Cards */
-.badge-tag.orbs.nitro-orbs {
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(139, 92, 246, 0.25));
-    border: 1px solid rgba(236, 72, 153, 0.6);
-    color: #f472b6;
-    box-shadow: 0 0 14px rgba(236, 72, 153, 0.35);
+.badge-tag.orbs.nitro-orbs,
+.badge-tag.orbs.nitro-orbs-card {
+    background: linear-gradient(135deg, rgba(88, 35, 117, 0.4), rgba(40, 18, 54, 0.5));
+    border: 1px solid rgba(244, 127, 255, 0.4);
+    color: #f1f5f9;
+    padding: 2px 6px 2px 8px;
+    position: relative;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.25);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.nitro-pill {
+.orb-amount-text {
+    font-weight: 800;
+    font-size: 11px;
+    color: #f8fafc;
+    letter-spacing: 0.3px;
+}
+
+/* Discord Nitro Exact 1,2x / +140 Multiplier Pill (matching official Discord UI) */
+.nitro-mult-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #421450;
+    border: 1px solid rgba(244, 127, 255, 0.4);
+    border-radius: 9999px;
+    padding: 2px 8px;
+    margin-left: 5px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.nitro-mult-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
     display: inline-block;
+}
+
+.nitro-mult-text {
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Hover: Animated Nitro Gradient Flow + Glow */
+.nitro-mult-pill:hover {
+    background: linear-gradient(135deg, #f47fff 0%, #a855f7 32%, #5865f2 68%, #ec4899 100%);
+    background-size: 260% 260%;
+    animation: nitroGradientShimmer 2.4s ease infinite alternate;
+    border-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 14px rgba(244, 127, 255, 0.8), 0 0 24px rgba(168, 85, 247, 0.5);
+    transform: translateY(-1px) scale(1.06);
+}
+
+@keyframes nitroGradientShimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Card & Header Row unclip on pill hover so tooltip is never cut off */
+.quest-card:has(.nitro-mult-pill:hover),
+.quest-header-row:has(.nitro-mult-pill:hover) {
+    overflow: visible !important;
+    z-index: 999 !important;
+}
+
+/* Elegant Nitro Hover Popover Tooltip */
+.nitro-hover-tooltip {
+    position: absolute;
+    top: calc(100% + 9px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    width: 250px;
+    background: rgba(18, 20, 32, 0.98);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(244, 127, 255, 0.55);
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.65), 0 0 24px rgba(236, 72, 153, 0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 99999;
+    text-align: left;
+}
+
+.nitro-hover-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid rgba(244, 127, 255, 0.7);
+}
+
+.nitro-mult-pill:hover .nitro-hover-tooltip {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+}
+
+.nitro-tooltip-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #f47fff, #a855f7, #5865f2);
+    border-radius: 12px 12px 0 0;
+}
+
+.nitro-tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.nitro-tt-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+}
+
+.nitro-tt-badge {
     background: linear-gradient(135deg, #ec4899, #8b5cf6);
     color: #ffffff;
     font-size: 8.5px;
     font-weight: 800;
     padding: 1px 6px;
     border-radius: 4px;
-    margin-left: 4px;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-    box-shadow: 0 0 8px rgba(236, 72, 153, 0.5);
+}
+
+.nitro-tt-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #f472b6;
+    margin-bottom: 4px;
+    letter-spacing: 0.2px;
+}
+
+.nitro-tt-body {
+    font-size: 10.5px;
+    color: #cbd5e1;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.nitro-tt-body strong {
+    color: #38bdf8;
+}
+
+.nitro-tt-calc {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10, 12, 20, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 9.5px;
+    font-weight: 700;
+}
+
+.tt-calc-base {
+    color: #94a3b8;
+}
+
+.tt-calc-plus, .tt-calc-eq {
+    color: #64748b;
+}
+
+.tt-calc-bonus {
+    color: #f472b6;
+}
+
+.tt-calc-total {
+    color: #34d399;
+    font-weight: 800;
 }
 
 /* Quest Autonomy & GitHub Feedback Banner */
@@ -6301,27 +6476,56 @@ body {
 
 .autonomy-icon-wrap {
     position: relative;
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    background: rgba(168, 85, 247, 0.12);
-    border: 1px solid rgba(168, 85, 247, 0.3);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(99, 102, 241, 0.15));
+    border: 1px solid rgba(168, 85, 247, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.25);
 }
 
 .autonomy-robot-icon {
-    font-size: 22px;
-    filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.6));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #c084fc;
+    filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.85));
+    animation: robotFloatGlow 3s ease-in-out infinite alternate;
+}
+
+.autonomy-robot-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+#ico-feedback-github svg {
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    margin-right: 6px;
+    display: inline-block;
+}
+
+@keyframes robotFloatGlow {
+    0% {
+        transform: translateY(0px) scale(1);
+        filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.7));
+    }
+    100% {
+        transform: translateY(-2px) scale(1.05);
+        filter: drop-shadow(0 0 12px rgba(244, 127, 255, 0.95));
+    }
 }
 
 .autonomy-pulse-ring {
     position: absolute;
     width: 100%;
     height: 100%;
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid #a855f7;
     animation: ringPulse 2.5s infinite;
     pointer-events: none;
