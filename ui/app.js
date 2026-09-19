@@ -205,8 +205,8 @@ const DQS = {
 
             const masterGain = ctx.createGain();
             masterGain.gain.setValueAtTime(0.0001, now);
-            masterGain.gain.exponentialRampToValueAtTime(0.04, now + 1.2);
-            masterGain.gain.setValueAtTime(0.04, now + Math.max(0.5, duration - 1.2));
+            masterGain.gain.exponentialRampToValueAtTime(0.02, now + 1.2);
+            masterGain.gain.setValueAtTime(0.02, now + Math.max(0.5, duration - 1.2));
             masterGain.connect(filter);
             this._ambientGain = masterGain;
 
@@ -290,8 +290,8 @@ const DQS = {
         const root = document.getElementById('app-root');
         if (!splash || !bar || !status) return;
 
-        // Duration between 4200ms and 9500ms
-        const totalDuration = Math.floor(Math.random() * (9500 - 4200 + 1)) + 4200;
+        // Duration snappy and smooth: 2800ms
+        const totalDuration = 2800;
         let elapsed = 0;
         const intervalMs = 50;
 
@@ -300,12 +300,12 @@ const DQS = {
 
         const stages = [
             { pct: 15, title: 'INITIALISIERE 4D TESSERACT-SYSTEME...', sub: '[4D HYPERCUBE ACTIVE] • [RUST NATIVE ENGINE]' },
-            { pct: 34, title: 'LADE DISCORD QUEST ENGINE (V6.3.1)...', sub: '[KERNEL HOOK] • [RPC STEALTH CLOAK ENGAGED]' },
+            { pct: 34, title: 'LADE DISCORD QUEST ENGINE (V6.3.410)...', sub: '[KERNEL HOOK] • [RPC STEALTH CLOAK ENGAGED]' },
             { pct: 54, title: 'SYNCHRONISIERE 24.323 DETECTABLE GAMES...', sub: '[CACHE SYNC] • [STEAM & DISCORD ASSETS READY]' },
             { pct: 72, title: 'KALIBRIERUNG DISCORD HEARTBEATS & RPC...', sub: '[IPC HANDSHAKE] • [LATENCY: 0.12ms]' },
             { pct: 88, title: 'VERIFIZIERE TOKEN-SCHUTZ & INTEGRITÄT...', sub: '[SECURITY] • [ZERO-LEAK RUNTIME VERIFIED]' },
             { pct: 98, title: 'FINALE ATMOSPHÄRISCHE HARMONIE...', sub: '[CROSSFADE READY] • [DISPENSING TO VIEWPORT]' },
-            { pct: 100, title: 'WILLKOMMEN BEI DQS V6.3.1 - READY...', sub: '[ULTIMATE EDITION ACTIVE]' }
+            { pct: 100, title: 'WILLKOMMEN BEI DQS V6.3.410 - READY...', sub: '[ULTIMATE EDITION ACTIVE]' }
         ];
 
         const timer = setInterval(() => {
@@ -323,7 +323,7 @@ const DQS = {
             if (elapsed >= totalDuration) {
                 clearInterval(timer);
                 if (bar) bar.style.width = '100%';
-                if (status) status.innerText = 'WILLKOMMEN BEI DQS V6.3.1 - POPPING UP...';
+                if (status) status.innerText = 'WILLKOMMEN BEI DQS V6.3.410 - POPPING UP...';
                 if (subTelemetry) subTelemetry.innerText = '[ULTIMATE EDITION ACTIVE]';
 
                 setTimeout(() => {
@@ -347,7 +347,7 @@ const DQS = {
         const brandTrigger = document.getElementById('app-logo-trigger');
         const profilePing = document.getElementById('profile-changelog-ping-dot');
         const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
-        const currentVersion = '6.3.1';
+        const currentVersion = '6.3.410';
 
         // 1. First-Launch Yellow Ping Dot on Top-Left App Icon (ALWAYS after install / first launch)
         const hasSeenFirstLaunch = localStorage.getItem('dqs_first_launch_seen');
@@ -360,17 +360,14 @@ const DQS = {
         if (brandTrigger) {
             brandTrigger.addEventListener('click', () => {
                 localStorage.setItem('dqs_first_launch_seen', 'true');
-                if (brandPing) {
-                    brandPing.style.transition = 'opacity 0.3s ease';
-                    brandPing.style.opacity = '0';
-                    setTimeout(() => brandPing.classList.add('hidden'), 300);
-                }
+                if (brandPing) brandPing.classList.add('hidden');
+                this.openLicenseModal();
             });
         }
 
-        // 2. Unread Changelog Yellow Ping Dot (Top-Right Profile Corner + Changelog Button)
+        // 2. Changelog Ping on Settings Gear & Profile Popout Button
         const lastReadVer = localStorage.getItem('dqs_read_changelog_ver');
-        if (lastReadVer !== currentVersion) {
+        if (!lastReadVer || lastReadVer !== currentVersion) {
             if (profilePing) profilePing.classList.remove('hidden');
             if (btnChangelogPing) btnChangelogPing.classList.remove('hidden');
         } else {
@@ -382,7 +379,9 @@ const DQS = {
     markChangelogAsRead() {
         const profilePing = document.getElementById('profile-changelog-ping-dot');
         const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
-        localStorage.setItem('dqs_read_changelog_ver', '6.3.1');
+        if (profilePing) profilePing.classList.add('hidden');
+        if (btnChangelogPing) btnChangelogPing.classList.add('hidden');
+        localStorage.setItem('dqs_read_changelog_ver', '6.3.410');
 
         [profilePing, btnChangelogPing].forEach(el => {
             if (el) {
@@ -848,6 +847,20 @@ const DQS = {
 
         // 7. Badges
         this.renderBadges(user.badges);
+
+        // 7b. Nitro Status Banner in Popout
+        const nitroWrap = document.getElementById('popout-nitro-wrap');
+        const nitroTitle = document.getElementById('popout-nitro-title');
+        const nitroSub = document.getElementById('popout-nitro-sub');
+        if (nitroWrap) {
+            if (user.has_nitro) {
+                nitroWrap.style.display = 'block';
+                if (nitroTitle) nitroTitle.innerText = `${(user.nitro_name || 'DISCORD NITRO').toUpperCase()} AKTIV`;
+                if (nitroSub) nitroSub.innerText = '840 Orbs (+140 Bonus) pro Quest aktiv';
+            } else {
+                nitroWrap.style.display = 'none';
+            }
+        }
 
         // 8. Bio ("ÜBER MICH")
         const bioBox = document.getElementById('popout-bio');
@@ -1341,6 +1354,26 @@ const DQS = {
             rewardBadgeHtml = `<span class="badge-tag ingame-item">${I.gift} ITEM/SKIN: <strong>${rewardName}</strong></span>`;
         }
 
+        const taskCat = q.task_category || (isVideo ? 'VIDEO' : (taskType === 'PLAY_ACTIVITY' ? 'ACTIVITY' : 'GAME'));
+        let catBadgeHtml = '';
+        if (taskCat === 'VIDEO') {
+            catBadgeHtml = `<span class="badge-tag task-category video">${I.video} ${isMobile ? 'MOBIL-QUEST' : 'VIDEO-QUEST'}</span>`;
+        } else if (taskCat === 'ACTIVITY') {
+            catBadgeHtml = `<span class="badge-tag task-category activity">${I.quest} DISCORD ACTIVITY</span>`;
+        } else {
+            catBadgeHtml = `<span class="badge-tag task-category game">${I.gamepad} SPIEL-QUEST</span>`;
+        }
+
+        const hasNitro = Boolean(q.has_nitro || this.currentUser?.has_nitro);
+        let orbBadgeHtml = '';
+        if (orbCount > 0) {
+            if (hasNitro) {
+                orbBadgeHtml = `<span class="badge-tag orbs nitro-orbs" title="Discord Nitro Bonus aktiv! Du erhältst 840 Orbs (+140 Bonus) statt 700."><img src="${orbImgSrc}" class="discord-orb-icon" alt="Orbs"> <span>840 ORBS</span> <strong class="nitro-pill">+140 NITRO</strong></span>`;
+            } else {
+                orbBadgeHtml = `<span class="badge-tag orbs" title="700 Orbs Basis-Belohnung (mit Nitro: 840 Orbs)"><img src="${orbImgSrc}" class="discord-orb-icon" alt="Orbs"> <span>${orbCount} ORBS</span></span>`;
+            }
+        }
+
         card.innerHTML = `
             <div class="quest-tile-wrap">
                 <img src="${tileSrc}" alt="${gameTitle}" class="quest-tile-img" id="tile-img-${qid}">
@@ -1348,6 +1381,7 @@ const DQS = {
             <div class="quest-info-wrap">
                 <div class="quest-header-row">
                     <span class="quest-game-title">${gameTitle}</span>
+                    ${catBadgeHtml}
                     ${completed || claimed ? `<span class="badge-tag completed-badge">${I.check} ERFÜLLT</span>` : ''}
                     <span class="badge-tag task">${taskIcon} ${taskLabel}</span>
                     ${rewardBadgeHtml}
@@ -1356,7 +1390,7 @@ const DQS = {
                     <span class="badge-tag required-game">${I.gamepad} BENÖTIGT: <strong class="req-game-name">${q.required_game_name || gameTitle}</strong></span>
                     ${!isVideo && q.required_exe ? `<span class="badge-tag process-exe">PROZESS: <code class="req-exe-name">${q.required_exe}</code></span>` : ''}
                     <span class="badge-tag duration">${I.clock} DAUER: <strong>${q.duration_text || (isVideo ? '(ca. 30 Sek.)' : '(ca. 15 Min.)')}</strong></span>
-                    ${orbCount > 0 ? `<span class="badge-tag orbs"><img src="${orbImgSrc}" class="discord-orb-icon" alt="Orbs"> <span>${orbCount} ORBS</span></span>` : ''}
+                    ${orbBadgeHtml}
                 </div>
                 <div class="quest-name-sub">${questName}</div>
                 ${multiGameHtml}
@@ -2369,7 +2403,7 @@ const DQS = {
             this._updateDownloadUrl = res.download_url;
             this._latestReleaseUrl = res.html_url || 'https://github.com/TentixTV/Discord-Quest-Spoofer/releases';
 
-            if (statCur) statCur.innerText = res.current_version || 'V6.3.1';
+            if (statCur) statCur.innerText = res.current_version || 'V6.3.410';
             if (statLatest) statLatest.innerText = res.latest_version || res.current_version;
             if (tagLatestSource) tagLatestSource.innerText = 'GitHub Live API';
 
@@ -3091,7 +3125,7 @@ const DQS = {
                 card.classList.remove('activity-active');
                 card.classList.add('activity-idle');
             }
-            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.3.1)';
+            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.3.410)';
             popState.innerText = 'Bereit für Quest-Simulation';
             popTimer.innerText = 'Status: Standby • Discord RPC & Rust Core aktiv';
         }
@@ -3118,10 +3152,52 @@ const DQS = {
 
         // Top Toolbar Buttons
         document.getElementById('btn-refresh-quests').onclick = () => this.refreshQuests();
-        document.getElementById('btn-enroll-all').onclick = async () => {
-            await window.pywebview?.api?.enroll_all_quests();
-            this.refreshQuests();
-        };
+        
+        const btnEnrollAll = document.getElementById('btn-enroll-all');
+        if (btnEnrollAll) {
+            btnEnrollAll.onclick = async () => {
+                btnEnrollAll.disabled = true;
+                const origHtml = btnEnrollAll.innerHTML;
+                btnEnrollAll.innerHTML = `${I.check} ALLE ANGENOMMEN!`;
+                btnEnrollAll.classList.add('btn-emerald');
+
+                // Optimistically mark all open quests as enrolled in memory & re-render cards immediately
+                if (this.cachedQuests && Array.isArray(this.cachedQuests)) {
+                    this.cachedQuests.forEach(q => {
+                        if (!q.completed && !q.claimed) {
+                            q.enrolled = true;
+                        }
+                    });
+                    this.renderQuestsList();
+                }
+
+                try {
+                    await window.pywebview?.api?.enroll_all_quests();
+                } catch (e) {
+                    console.error("Enroll all error:", e);
+                }
+
+                setTimeout(() => {
+                    btnEnrollAll.disabled = false;
+                    btnEnrollAll.innerHTML = origHtml;
+                    btnEnrollAll.classList.remove('btn-emerald');
+                    this.refreshQuests(true);
+                }, 1800);
+            };
+        }
+
+        // Community Feedback / Bug Report Button in Autonomy Banner
+        const btnFeedback = document.getElementById('btn-feedback-issues');
+        if (btnFeedback) {
+            btnFeedback.onclick = () => {
+                const issuesUrl = "https://github.com/TentixTV/Discord-Quest-Spoofer/issues";
+                if (window.pywebview?.api?.open_external_url) {
+                    window.pywebview.api.open_external_url(issuesUrl);
+                } else {
+                    window.open(issuesUrl, '_blank');
+                }
+            };
+        }
 
         const btnAutoFarm = document.getElementById('btn-toggle-autofarm');
         if (btnAutoFarm) btnAutoFarm.onclick = () => this.toggleAutoFarm();
@@ -3220,7 +3296,23 @@ window.onAutoQuestProgress = function(pInfo) {
     if (curQuest) {
         const pVal = typeof pInfo.progress_percent === 'number' ? pInfo.progress_percent : 0;
         const displayPct = pVal >= 10 ? Math.round(pVal) : (pVal > 0 ? pVal.toFixed(1) : 0);
-        curQuest.innerText = `Aktuell: [${pInfo.current_index}/${pInfo.total_count}] ${pInfo.game_title} (${displayPct}%)`;
+        curQuest.innerText = `Aktuell: [${pInfo.current_index}/${pInfo.total_count}] ${pInfo.quest_name || pInfo.game_title} (${displayPct}%)`;
+    }
+
+    const taskBadge = document.getElementById('live-quest-task-badge');
+    if (taskBadge) {
+        const cat = pInfo.task_category || (pInfo.target_seconds <= 30 ? 'VIDEO' : 'SPIEL');
+        taskBadge.innerText = `${cat}-QUEST`;
+        taskBadge.className = `live-quest-task-badge ${cat.toLowerCase()}`;
+    }
+
+    const switchHint = document.getElementById('auto-switch-hint');
+    if (switchHint) {
+        if (pInfo.current_index < pInfo.total_count) {
+            switchHint.innerText = `✓ Automatische Weiterschaltung: Nach dieser Quest folgt Quest [${pInfo.current_index + 1}/${pInfo.total_count}]`;
+        } else {
+            switchHint.innerText = `✓ Letzte offene Quest in Bearbeitung • Schließt danach vollständig ab`;
+        }
     }
 
     const liveRem = document.getElementById('live-rem-val');

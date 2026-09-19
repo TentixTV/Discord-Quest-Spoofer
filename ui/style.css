@@ -6213,6 +6213,233 @@ body {
     border: 1px solid rgba(168, 85, 247, 0.4);
 }
 
+/* ==========================================================================
+   DQS V6.3.410 ADVANCED AUTONOMY, CATEGORIES & NITRO STYLING
+   ========================================================================== */
+
+/* Task Category Badges */
+.badge-tag.task-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-tag.task-category.game {
+    background: rgba(16, 185, 129, 0.18);
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    color: #34d399;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+}
+
+.badge-tag.task-category.video {
+    background: rgba(14, 165, 233, 0.18);
+    border: 1px solid rgba(14, 165, 233, 0.5);
+    color: #38bdf8;
+    box-shadow: 0 0 12px rgba(14, 165, 233, 0.25);
+}
+
+.badge-tag.task-category.activity {
+    background: rgba(168, 85, 247, 0.18);
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    color: #c084fc;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.25);
+}
+
+/* Nitro Bonus Badge on Quest Cards */
+.badge-tag.orbs.nitro-orbs {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(139, 92, 246, 0.25));
+    border: 1px solid rgba(236, 72, 153, 0.6);
+    color: #f472b6;
+    box-shadow: 0 0 14px rgba(236, 72, 153, 0.35);
+}
+
+.nitro-pill {
+    display: inline-block;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    color: #ffffff;
+    font-size: 8.5px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 8px rgba(236, 72, 153, 0.5);
+}
+
+/* Quest Autonomy & GitHub Feedback Banner */
+.quest-autonomy-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: linear-gradient(135deg, rgba(20, 24, 42, 0.95), rgba(15, 18, 32, 0.98));
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 20px rgba(168, 85, 247, 0.12);
+    position: relative;
+    overflow: hidden;
+}
+
+.quest-autonomy-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #a855f7, #6366f1);
+}
+
+.autonomy-icon-wrap {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: rgba(168, 85, 247, 0.12);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.autonomy-robot-icon {
+    font-size: 22px;
+    filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.6));
+}
+
+.autonomy-pulse-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    border: 1px solid #a855f7;
+    animation: ringPulse 2.5s infinite;
+    pointer-events: none;
+}
+
+.autonomy-text-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.autonomy-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.autonomy-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f1f5f9;
+    letter-spacing: 0.5px;
+}
+
+.autonomy-badge {
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+
+.autonomy-desc {
+    font-size: 11.5px;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.autonomy-actions {
+    flex-shrink: 0;
+}
+
+/* Discord Nitro Card in Profile Popout */
+.popout-nitro-card {
+    margin: 8px 0 12px 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(139, 92, 246, 0.18));
+    border: 1px solid rgba(236, 72, 153, 0.4);
+    box-shadow: 0 0 16px rgba(236, 72, 153, 0.15);
+}
+
+.nitro-card-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nitro-rocket-icon {
+    font-size: 20px;
+    filter: drop-shadow(0 0 8px #ec4899);
+}
+
+.nitro-info-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.nitro-status-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #f472b6;
+    letter-spacing: 0.4px;
+}
+
+.nitro-status-sub {
+    font-size: 10px;
+    color: #cbd5e1;
+}
+
+/* Live Auto-Farm Tracker Styling */
+.live-tracker-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.live-quest-task-badge {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #34d399;
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.live-tracker-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 10.5px;
+    color: #94a3b8;
+}
+
+.auto-switch-hint {
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-style: italic;
+}
+
 
 
 
