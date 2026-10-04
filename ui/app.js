@@ -4,106 +4,291 @@
  * 100% Emoji-free, Ultra-crisp High-DPI SVGs, Animated Discord Orbs
  */
 
-// ================= 1. HIGH-END 3D COSMIC PARTICLE CANVAS =================
-(function init3DParticleCanvas() {
+// ================= 1. NEXT-GEN FLUID QUANTUM AURORA & CYBER-MESH HORIZON ENGINE (v7.0.000) =================
+(function initQuantumAuroraEngine() {
     const canvas = document.getElementById('bg-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    let w = canvas.width = window.innerWidth;
-    let h = canvas.height = window.innerHeight;
+    let w = (canvas.width = window.innerWidth);
+    let h = (canvas.height = window.innerHeight);
 
     let mouseX = w / 2;
     let mouseY = h / 2;
+    let smoothMouseX = mouseX;
+    let smoothMouseY = mouseY;
+    let isVisible = true;
+    let animId = null;
 
-    window.addEventListener('resize', () => {
+    function resize() {
         w = canvas.width = window.innerWidth;
         h = canvas.height = window.innerHeight;
-    });
+    }
+    window.addEventListener('resize', resize, { passive: true });
 
     window.addEventListener('mousemove', (e) => {
         mouseX = e.clientX;
         mouseY = e.clientY;
+    }, { passive: true });
+
+    document.addEventListener('visibilitychange', () => {
+        isVisible = !document.hidden;
+        if (isVisible && !animId) {
+            lastTime = performance.now();
+            animId = requestAnimationFrame(render);
+        }
     });
 
-    const nodeCount = 55;
+    // --- Quantum 3D Nodes ---
+    const nodeCount = 48;
     const nodes = [];
-    const colors = [
-        'rgba(255, 255, 255, ', // Diamond White
-        'rgba(241, 245, 249, ', // Crisp White
-        'rgba(203, 213, 225, ', // Titanium Silver
-        'rgba(148, 163, 184, ', // Slate Grey
-        'rgba(100, 116, 139, '  // Deep Charcoal
+    const nodeColors = [
+        'rgba(0, 240, 255, ',     // Cyber Cyan
+        'rgba(88, 101, 242, ',    // Discord Blurple
+        'rgba(168, 85, 247, ',    // Quantum Violet
+        'rgba(255, 255, 255, ',    // Diamond White
+        'rgba(0, 230, 118, '      // Emerald Pulse
     ];
 
     for (let i = 0; i < nodeCount; i++) {
         nodes.push({
             x: Math.random() * w,
             y: Math.random() * h,
-            z: Math.random() * 450 + 80, // 3D depth
-            radius: Math.random() * 2.2 + 0.8,
-            color: colors[Math.floor(Math.random() * colors.length)],
-            vx: (Math.random() - 0.5) * 0.45,
-            vy: (Math.random() - 0.5) * 0.45,
-            pulse: Math.random() * Math.PI
+            z: Math.random() * 400 + 60,
+            baseRadius: Math.random() * 1.8 + 0.7,
+            color: nodeColors[Math.floor(Math.random() * nodeColors.length)],
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.35,
+            phase: Math.random() * Math.PI * 2,
+            isDiamond: (i % 7 === 0)
         });
     }
 
-    function render() {
+    // --- Aurora Wave Configurations ---
+    let time = 0;
+    let lastTime = performance.now();
+
+    function drawAuroraWave(baseY, amp, freq, speed, color1, color2, crestColor, crestWidth) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+
+        const step = Math.max(16, Math.floor(w / 40));
+        let prevX = 0;
+        let prevY = h;
+
+        for (let x = 0; x <= w + step; x += step) {
+            // Interactive mouse repulsion/gravitational wave bending
+            const distToMouse = Math.hypot(x - smoothMouseX, baseY - smoothMouseY);
+            const mouseFactor = Math.max(0, 1 - distToMouse / 380);
+            const mouseLift = Math.sin(distToMouse * 0.015 - time * 2) * (mouseFactor * 45);
+
+            // Harmonic multi-sine wave calculation
+            const wave1 = Math.sin(x * freq + time * speed) * amp;
+            const wave2 = Math.cos(x * freq * 0.55 - time * speed * 0.7) * (amp * 0.45);
+            const wave3 = Math.sin((x + time * 30) * freq * 1.8) * (amp * 0.2);
+            const y = baseY + wave1 + wave2 + wave3 - mouseLift;
+
+            if (x === 0) {
+                ctx.lineTo(x, y);
+            } else {
+                const cx = (prevX + x) / 2;
+                const cy = (prevY + y) / 2;
+                ctx.quadraticCurveTo(prevX, prevY, cx, cy);
+            }
+            prevX = x;
+            prevY = y;
+        }
+
+        ctx.lineTo(w, h);
+        ctx.closePath();
+
+        // Dual-color atmospheric gradient fill
+        const grad = ctx.createLinearGradient(0, baseY - amp * 1.5, 0, h);
+        grad.addColorStop(0, color1);
+        grad.addColorStop(0.65, color2);
+        grad.addColorStop(1, 'rgba(5, 6, 8, 0)');
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Illuminated razor crest line
+        ctx.beginPath();
+        prevX = 0;
+        prevY = h;
+        for (let x = 0; x <= w + step; x += step) {
+            const distToMouse = Math.hypot(x - smoothMouseX, baseY - smoothMouseY);
+            const mouseFactor = Math.max(0, 1 - distToMouse / 380);
+            const mouseLift = Math.sin(distToMouse * 0.015 - time * 2) * (mouseFactor * 45);
+
+            const wave1 = Math.sin(x * freq + time * speed) * amp;
+            const wave2 = Math.cos(x * freq * 0.55 - time * speed * 0.7) * (amp * 0.45);
+            const wave3 = Math.sin((x + time * 30) * freq * 1.8) * (amp * 0.2);
+            const y = baseY + wave1 + wave2 + wave3 - mouseLift;
+
+            if (x === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                const cx = (prevX + x) / 2;
+                const cy = (prevY + y) / 2;
+                ctx.quadraticCurveTo(prevX, prevY, cx, cy);
+            }
+            prevX = x;
+            prevY = y;
+        }
+        ctx.strokeStyle = crestColor;
+        ctx.lineWidth = crestWidth;
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    function render(now) {
+        if (!isVisible) {
+            animId = null;
+            return;
+        }
+
+        const dt = Math.min((now - lastTime) / 1000, 0.1);
+        lastTime = now;
+        time += dt;
+
+        // Smooth mouse lerp
+        smoothMouseX += (mouseX - smoothMouseX) * 0.065;
+        smoothMouseY += (mouseY - smoothMouseY) * 0.065;
+
+        // Clear canvas
         ctx.clearRect(0, 0, w, h);
-        const fov = 380;
+
+        // --- 1. Ambient Dynamic Gravitational Lens Glow ---
+        const radialGlow = ctx.createRadialGradient(
+            smoothMouseX, smoothMouseY, 10,
+            smoothMouseX, smoothMouseY, Math.max(280, w * 0.45)
+        );
+        radialGlow.addColorStop(0, 'rgba(88, 101, 242, 0.08)');
+        radialGlow.addColorStop(0.5, 'rgba(0, 240, 255, 0.03)');
+        radialGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = radialGlow;
+        ctx.fillRect(0, 0, w, h);
+
+        // --- 2. Multi-Layered Fluid Quantum Aurora Ribbons ---
+        ctx.globalCompositeOperation = 'screen';
+
+        // Wave 1: Deep Oceanic Discord Blurple Swell
+        drawAuroraWave(
+            h * 0.68, 65, 0.0022, 0.42,
+            'rgba(88, 101, 242, 0.18)', 'rgba(40, 48, 120, 0.04)',
+            'rgba(129, 140, 248, 0.55)', 1.4
+        );
+
+        // Wave 2: Ultraviolet Quantum Warp
+        drawAuroraWave(
+            h * 0.76, 52, 0.0031, -0.38,
+            'rgba(168, 85, 247, 0.15)', 'rgba(80, 30, 140, 0.02)',
+            'rgba(192, 132, 252, 0.65)', 1.2
+        );
+
+        // Wave 3: Neon Cyber Cyan Energetic Crest
+        drawAuroraWave(
+            h * 0.84, 40, 0.0042, 0.55,
+            'rgba(0, 240, 255, 0.16)', 'rgba(0, 120, 150, 0.02)',
+            'rgba(0, 240, 255, 0.85)', 1.8
+        );
+
+        ctx.globalCompositeOperation = 'source-over';
+
+        // --- 3. Quantum 3D Nodes & Constellation Filaments ---
+        const fov = 360;
+        const projectedNodes = [];
 
         for (let i = 0; i < nodeCount; i++) {
             const n = nodes[i];
             n.x += n.vx;
             n.y += n.vy;
-            n.pulse += 0.025;
+            n.phase += 0.03;
 
-            const dx = (mouseX - w / 2) * 0.025;
-            const dy = (mouseY - h / 2) * 0.025;
-
+            // Screen wrap
             if (n.x < 0) n.x = w;
             if (n.x > w) n.x = 0;
             if (n.y < 0) n.y = h;
             if (n.y > h) n.y = 0;
 
+            // Parallax mouse depth shift
+            const pDx = (smoothMouseX - w / 2) * 0.022;
+            const pDy = (smoothMouseY - h / 2) * 0.022;
+
             const scale = fov / (fov + n.z);
-            const projX = (n.x - w / 2 + dx) * scale + w / 2;
-            const projY = (n.y - h / 2 + dy) * scale + h / 2;
-            const pulseScale = 1 + Math.sin(n.pulse) * 0.25;
-            const projRadius = Math.max(0.6, n.radius * scale * pulseScale);
+            const projX = (n.x - w / 2 + pDx) * scale + w / 2;
+            const projY = (n.y - h / 2 + pDy) * scale + h / 2;
+            const pulse = 1 + Math.sin(n.phase) * 0.28;
+            const radius = Math.max(0.6, n.baseRadius * scale * pulse);
 
+            projectedNodes.push({ x: projX, y: projY, scale, radius, color: n.color, isDiamond: n.isDiamond });
+
+            // Draw Node
             ctx.beginPath();
-            ctx.arc(projX, projY, projRadius, 0, Math.PI * 2);
-            ctx.fillStyle = n.color + '0.75)';
-            ctx.shadowBlur = 10 * scale;
-            ctx.shadowColor = n.color + '0.9)';
+            if (n.isDiamond) {
+                // Micro Cyber Diamond
+                const s = radius * 1.6;
+                ctx.moveTo(projX, projY - s);
+                ctx.lineTo(projX + s, projY);
+                ctx.lineTo(projX, projY + s);
+                ctx.lineTo(projX - s, projY);
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            } else {
+                ctx.arc(projX, projY, radius, 0, Math.PI * 2);
+                ctx.fillStyle = n.color + '0.78)';
+            }
+            ctx.shadowBlur = 8 * scale;
+            ctx.shadowColor = n.color + '0.85)';
             ctx.fill();
+            ctx.shadowBlur = 0;
+        }
 
-            // Connect nearest nodes
-            for (let j = i + 1; j < nodeCount; j++) {
-                const n2 = nodes[j];
-                const dist = Math.hypot(n.x - n2.x, n.y - n2.y);
-                if (dist < 125) {
-                    const scale2 = fov / (fov + n2.z);
-                    const projX2 = (n2.x - w / 2 + dx) * scale2 + w / 2;
-                    const projY2 = (n2.y - h / 2 + dy) * scale2 + h / 2;
-
-                    const alpha = (1 - dist / 125) * 0.28;
+        // Draw Inter-Node Constellation Connections
+        ctx.lineWidth = 0.75;
+        for (let i = 0; i < projectedNodes.length; i++) {
+            const p1 = projectedNodes[i];
+            for (let j = i + 1; j < projectedNodes.length; j++) {
+                const p2 = projectedNodes[j];
+                const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                if (dist < 115) {
+                    const alpha = (1 - dist / 115) * 0.22 * Math.min(p1.scale, p2.scale);
                     ctx.beginPath();
-                    ctx.moveTo(projX, projY);
-                    ctx.lineTo(projX2, projY2);
-                    ctx.strokeStyle = `rgba(226, 232, 240, ${alpha * 0.75})`;
-                    ctx.lineWidth = 0.8 * scale;
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.strokeStyle = `rgba(0, 240, 255, ${alpha})`;
                     ctx.stroke();
                 }
             }
+
+            // Connection to mouse
+            const distMouse = Math.hypot(p1.x - smoothMouseX, p1.y - smoothMouseY);
+            if (distMouse < 135) {
+                const alpha = (1 - distMouse / 135) * 0.3 * p1.scale;
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(smoothMouseX, smoothMouseY);
+                ctx.strokeStyle = `rgba(88, 101, 242, ${alpha})`;
+                ctx.stroke();
+            }
         }
 
-        requestAnimationFrame(render);
+        // --- 4. Deep Atmospheric Perimeter Vignette ---
+        const vignette = ctx.createRadialGradient(
+            w / 2, h / 2, Math.min(w, h) * 0.42,
+            w / 2, h / 2, Math.max(w, h) * 0.75
+        );
+        vignette.addColorStop(0, 'rgba(5, 6, 8, 0)');
+        vignette.addColorStop(0.7, 'rgba(5, 6, 8, 0.45)');
+        vignette.addColorStop(1, 'rgba(2, 3, 5, 0.88)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, w, h);
+
+        animId = requestAnimationFrame(render);
     }
 
-    render();
+    animId = requestAnimationFrame(render);
 })();
 
 // ================= 2. DQS APPLICATION CORE =================
@@ -290,22 +475,21 @@ const DQS = {
         const root = document.getElementById('app-root');
         if (!splash || !bar || !status) return;
 
-        // Duration snappy and smooth: 2800ms
-        const totalDuration = 2800;
+        // Snappy, silky-smooth 2.2s cinematic boot
+        const totalDuration = 2200;
         let elapsed = 0;
-        const intervalMs = 50;
+        const intervalMs = 40;
 
         // Play cinema-grade atmospheric ambient
         this.playStartupAmbient(totalDuration / 1000);
 
         const stages = [
-            { pct: 15, title: 'INITIALISIERE 4D TESSERACT-SYSTEME...', sub: '[4D HYPERCUBE ACTIVE] • [RUST NATIVE ENGINE]' },
-            { pct: 34, title: 'LADE DISCORD QUEST ENGINE (V6.3.413)...', sub: '[KERNEL HOOK] • [RPC STEALTH CLOAK ENGAGED]' },
-            { pct: 54, title: 'SYNCHRONISIERE 24.323 DETECTABLE GAMES...', sub: '[CACHE SYNC] • [STEAM & DISCORD ASSETS READY]' },
-            { pct: 72, title: 'KALIBRIERUNG DISCORD HEARTBEATS & RPC...', sub: '[IPC HANDSHAKE] • [LATENCY: 0.12ms]' },
-            { pct: 88, title: 'VERIFIZIERE TOKEN-SCHUTZ & INTEGRITÄT...', sub: '[SECURITY] • [ZERO-LEAK RUNTIME VERIFIED]' },
-            { pct: 98, title: 'FINALE ATMOSPHÄRISCHE HARMONIE...', sub: '[CROSSFADE READY] • [DISPENSING TO VIEWPORT]' },
-            { pct: 100, title: 'WILLKOMMEN BEI DQS V6.3.413 - READY...', sub: '[ULTIMATE EDITION ACTIVE]' }
+            { pct: 15, title: 'INITIALISIERE QUANTUM ENGINE v7.0.000...', sub: '[NATIVE RUST CORE] • [WIN32 STEALTH CLOAK]' },
+            { pct: 36, title: 'SYNCHRONISIERE DISCORD V9/V10 EMULATION...', sub: '[ANDROID 14 EMULATOR] • [DISCORD KERNEL]' },
+            { pct: 58, title: 'LADE 24.323 DETECTABLE GAMES & COVER...', sub: '[SUB-MS CACHE SYNC] • [STEAM & DISCORD ASSETS]' },
+            { pct: 78, title: 'AKTIVIERE NATIVE IPC RUST PIPES...', sub: '[NAMED-PIPE HANDSHAKE] • [LATENCY: 0.08ms]' },
+            { pct: 92, title: 'VERIFIZIERE TOKEN-SCHUTZ & INTEGRITÄT...', sub: '[SECURITY] • [ZERO-LEAK RUNTIME VERIFIED]' },
+            { pct: 100, title: 'WILLKOMMEN BEI DQS v7.0.000 — BEREIT!', sub: '[QUANTUM CORE ACTIVE]' }
         ];
 
         const timer = setInterval(() => {
@@ -323,8 +507,8 @@ const DQS = {
             if (elapsed >= totalDuration) {
                 clearInterval(timer);
                 if (bar) bar.style.width = '100%';
-                if (status) status.innerText = 'WILLKOMMEN BEI DQS V6.3.413 - POPPING UP...';
-                if (subTelemetry) subTelemetry.innerText = '[ULTIMATE EDITION ACTIVE]';
+                if (status) status.innerText = 'WILLKOMMEN BEI DQS v7.0.000 — BEREIT!';
+                if (subTelemetry) subTelemetry.innerText = '[QUANTUM CORE ACTIVE]';
 
                 setTimeout(() => {
                     // Trigger harmonic cinema crescendo with smooth crossfade
@@ -347,7 +531,7 @@ const DQS = {
         const brandTrigger = document.getElementById('app-logo-trigger');
         const profilePing = document.getElementById('profile-changelog-ping-dot');
         const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
-        const currentVersion = '6.3.413';
+        const currentVersion = '7.0.000';
 
         // 1. First-Launch Yellow Ping Dot on Top-Left App Icon (ALWAYS after install / first launch)
         const hasSeenFirstLaunch = localStorage.getItem('dqs_first_launch_seen');
@@ -381,7 +565,7 @@ const DQS = {
         const btnChangelogPing = document.getElementById('btn-changelog-ping-dot');
         if (profilePing) profilePing.classList.add('hidden');
         if (btnChangelogPing) btnChangelogPing.classList.add('hidden');
-        localStorage.setItem('dqs_read_changelog_ver', '6.3.413');
+        localStorage.setItem('dqs_read_changelog_ver', '7.0.000');
 
         [profilePing, btnChangelogPing].forEach(el => {
             if (el) {
@@ -2434,7 +2618,7 @@ const DQS = {
             this._updateDownloadUrl = res.download_url;
             this._latestReleaseUrl = res.html_url || 'https://github.com/TentixTV/Discord-Quest-Spoofer/releases';
 
-            if (statCur) statCur.innerText = res.current_version || 'V6.3.413';
+            if (statCur) statCur.innerText = res.current_version || 'V7.0.000';
             if (statLatest) statLatest.innerText = res.latest_version || res.current_version;
             if (tagLatestSource) tagLatestSource.innerText = 'GitHub Live API';
 
@@ -3158,7 +3342,7 @@ const DQS = {
                 card.classList.remove('activity-active');
                 card.classList.add('activity-idle');
             }
-            popGame.innerText = 'DQS // Discord Quest Spoofer (V6.3.413)';
+            popGame.innerText = 'DQS // Discord Quest Spoofer (V7.0.000)';
             popState.innerText = 'Bereit für Quest-Simulation';
             popTimer.innerText = 'Status: Standby • Discord RPC & Rust Core aktiv';
         }
