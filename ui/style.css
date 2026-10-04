@@ -1795,6 +1795,84 @@ body {
     padding: 8px;
 }
 
+/* Cross-Platform Selector (Desktop vs Console) */
+.platform-selector-wrapper {
+    margin: 8px 0 10px 0;
+    padding: 8px 12px;
+    background: rgba(88, 101, 242, 0.08);
+    border: 1px solid rgba(88, 101, 242, 0.28);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.platform-selector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.platform-selector-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #818cf8;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.platform-selector-hint {
+    font-size: 10px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.platform-pill-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.platform-pill-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #cbd5e1;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.platform-pill-btn:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgba(30, 41, 59, 0.85);
+    color: #ffffff;
+}
+
+.platform-pill-btn.active {
+    background: linear-gradient(135deg, rgba(88, 101, 242, 0.35), rgba(99, 102, 241, 0.2));
+    border-color: #6366f1;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+}
+
+.badge-tag.platform-cross {
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    color: #a5b4fc;
+}
+
 .discord-orb-icon {
     width: 20px;
     height: 20px;

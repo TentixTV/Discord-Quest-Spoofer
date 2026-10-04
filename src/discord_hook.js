@@ -1427,11 +1427,24 @@
 
         // pull real exe metadata from Discord's app registry; falls back to synthetic paths
         async fetchGameData(appId, appName) {
+            const KNOWN_EXES = {
+                "1531874756096295054": "FC27.exe",
+                "1552168352116641822": "Hellraiser.exe",
+                "1551691007387508878": "Gravebound.exe",
+                "1470616226995765409": "htgame.exe",
+                "1314682894106497096": "deltaforceclient.exe",
+                "357607478105604096": "aces.exe",
+                "363413310474813450": "wizardgraphicalclient.exe",
+                "1437509662303059998": "wwm.exe",
+                "1461154307171811401": "endfield.exe",
+                "1205090671527071784": "bin/helldivers2.exe"
+            };
+            const known = KNOWN_EXES[String(appId)];
             try {
                 const res = await Mods.API.get({ url: `/applications/public?application_ids=${appId}` });
                 const appData = res?.body?.[0];
                 const exeEntry = appData?.executables?.find(x => x.os === "win32");
-                const rawExe = exeEntry ? exeEntry.name.replace(">", "") : `${this.sanitize(appName)}.exe`;
+                const rawExe = known || (exeEntry ? exeEntry.name.replace(">", "") : `${this.sanitize(appName)}.exe`);
                 const cleanName = this.sanitize(appData?.name || appName);
 
                 return {
@@ -1445,7 +1458,7 @@
             } catch (e) {
                 Logger.log(`[FetchGame] Fallback for ${appName}: ${e?.message ?? e}`, 'debug');
                 const cleanName = this.sanitize(appName);
-                const safeExe = `${cleanName.replace(/\s+/g, "")}.exe`;
+                const safeExe = known || `${cleanName.replace(/\s+/g, "")}.exe`;
                 return {
                     name: appName, exeName: safeExe,
                     cmdLine: `C:\\Program Files\\${cleanName}\\${safeExe}`,
@@ -1456,12 +1469,17 @@
         },
 
         async claimReward(questId) {
+            for (const p of [0, 1, 2]) {
+                try {
+                    const res = await Mods.API.post({
+                        url: `/quests/${questId}/claim-reward`,
+                        body: { platform: p, location: 11, is_targeted: false, metadata_sealed: null, traffic_metadata_sealed: sealedFor(questId) }
+                    });
+                    if (res?.status >= 200 && res?.status < 300) return res;
+                } catch (_) {}
+            }
             return await Mods.API.post({
                 url: `/quests/${questId}/claim-reward`,
-                // Shaped after Discord's own claim action, which sends platform, location,
-                // is_targeted and the two sealed fields, and nothing else. Orion used to add
-                // metadata_raw and traffic_metadata_raw, which Discord never sends, while
-                // nulling the sealed value that is sitting on the quest record.
                 body: { platform: 0, location: 11, is_targeted: false, metadata_sealed: null, traffic_metadata_sealed: sealedFor(questId) }
             });
         },
@@ -2622,6 +2640,15 @@
                                     return Tasks.failTask(q, tInfo, `Enrollment failed`);
                                 }
                             }
+
+                            // Auto-select Desktop platform in Discord client store for cross-platform quests
+                            try {
+                                Mods.Dispatcher?.dispatch({
+                                    type: "QUESTS_SELECT_TASK_PLATFORM",
+                                    questId: q.id,
+                                    platform: "desktop"
+                                });
+                            } catch (_) {}
 
                             if (type === "WATCH_VIDEO") return Tasks.VIDEO(q, tInfo, q.userStatus);
                             if (type === "ACHIEVEMENT") return Tasks.ACHIEVEMENT(q, tInfo);

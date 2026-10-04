@@ -1443,6 +1443,8 @@ const DQS = {
         const rewardType = q.primary_reward_type || 'ITEM';
         const rewardName = q.primary_reward_name || q.rewards_text || '';
         const isMultiGame = Boolean(q.is_multi_game && q.supported_applications && q.supported_applications.length > 1);
+        const isCrossPlatform = Boolean(q.is_cross_platform || (q.supported_platforms && q.supported_platforms.length > 1));
+        const selectedPlatform = q._user_selected_platform || 'DESKTOP';
 
         // Universal Multi-CDN Artwork Fallback Chain
         const b64Tile = window.DQS_EMBEDDED_ASSETS?.tiles?.[qid];
@@ -1473,6 +1475,30 @@ const DQS = {
         const tgtMin = Math.round(targetSeconds / 60);
         let progressTxt = `${curMin}/${tgtMin} MIN. (${percent}%)`;
         if (completed || claimed) progressTxt += ' - QUEST ERFÜLLT!';
+
+        // Platform Selector (Desktop vs Console)
+        let platformHtml = '';
+        if (isCrossPlatform && !isVideo) {
+            const hasXbox = q.supported_platforms ? q.supported_platforms.includes('XBOX') : true;
+            const hasPS = q.supported_platforms ? q.supported_platforms.includes('PLAYSTATION') : true;
+            const consoleName = (hasXbox && hasPS) ? 'Konsole (Xbox / PS)' : (hasXbox ? 'Konsole (Xbox)' : (hasPS ? 'Konsole (PlayStation)' : 'Konsole'));
+            platformHtml = `
+                <div class="platform-selector-wrapper">
+                    <div class="platform-selector-header">
+                        <span class="platform-selector-title">${I.gamepad} PLATTFORM-AUSWAHL:</span>
+                        <span class="platform-selector-hint">Wähle, worüber die Quest abgeschlossen werden soll</span>
+                    </div>
+                    <div class="platform-pill-row">
+                        <button type="button" class="platform-pill-btn ${selectedPlatform === 'DESKTOP' ? 'active' : ''}" id="plat-desk-${qid}">
+                            💻 Desktop (PC-Simulation)
+                        </button>
+                        <button type="button" class="platform-pill-btn ${selectedPlatform === 'CONSOLE' ? 'active' : ''}" id="plat-cons-${qid}">
+                            🎮 ${consoleName}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
 
         // Multi-Game Selector HTML
         let multiGameHtml = '';
@@ -1531,6 +1557,11 @@ const DQS = {
                     <span class="progress-text ${completed || claimed ? 'completed' : ''}" id="val-quest-${qid}">${progressTxt}</span>
                 </div>
             `;
+        }
+
+        let platformBadgeHtml = '';
+        if (isCrossPlatform) {
+            platformBadgeHtml = `<span class="badge-tag platform-cross">${I.gamepad} CROSS-PLAY (PC & KONSOLE)</span>`;
         }
 
         let rewardBadgeHtml = '';
@@ -1597,6 +1628,7 @@ const DQS = {
                 <div class="quest-header-row">
                     <span class="quest-game-title">${gameTitle}</span>
                     ${catBadgeHtml}
+                    ${platformBadgeHtml}
                     ${completed || claimed ? `<span class="badge-tag completed-badge">${I.check} ERFÜLLT</span>` : ''}
                     <span class="badge-tag task">${taskIcon} ${taskLabel}</span>
                     ${rewardBadgeHtml}
@@ -1608,6 +1640,7 @@ const DQS = {
                     ${orbBadgeHtml}
                 </div>
                 <div class="quest-name-sub">${questName}</div>
+                ${platformHtml}
                 ${multiGameHtml}
                 ${progressHtml}
             </div>
@@ -1655,28 +1688,37 @@ const DQS = {
 
         const actBox = card.querySelector(`#act-box-${qid}`);
 
-        if (claimed) {
-            actBox.innerHTML = `<button class="btn btn-claimed" disabled>${I.check} EINGELÖST</button>`;
-        } else if (completed) {
-            const btnClaim = document.createElement('button');
-            btnClaim.className = 'btn btn-emerald';
-            btnClaim.innerHTML = `${I.gift} BELOHNUNG ABHOLEN`;
-            btnClaim.onclick = async () => {
-                btnClaim.innerHTML = `Löst ein...`;
-                const res = await window.pywebview.api.claim_quest(qid);
-                if (res && res.code) {
-                    try {
-                        await navigator.clipboard.writeText(res.code);
-                    } catch (err) {}
-                    alert(`In-Game Belohnung freigeschaltet!\n\nFreischalt-Code: ${res.code}\n(Code wurde automatisch in die Zwischenablage kopiert!)`);
-                } else if (rewardType === 'AVATAR_DECO') {
-                    alert(`Avatar-Dekoration "${rewardName}" erfolgreich und dauerhaft in deinem Discord-Inventar freigeschaltet!`);
-                }
-                this.refreshQuests();
-            };
-            actBox.appendChild(btnClaim);
-        } else {
-            // 1. If it's a real video task
+        const renderCardActions = () => {
+            if (!actBox) return;
+            actBox.innerHTML = '';
+            const curPlatform = q._user_selected_platform || 'DESKTOP';
+
+            if (claimed) {
+                actBox.innerHTML = `<button class="btn btn-claimed" disabled>${I.check} EINGELÖST</button>`;
+                return;
+            }
+            if (completed) {
+                const btnClaim = document.createElement('button');
+                btnClaim.className = 'btn btn-emerald';
+                btnClaim.innerHTML = `${I.gift} BELOHNUNG ABHOLEN`;
+                btnClaim.onclick = async () => {
+                    btnClaim.innerHTML = `Löst ein...`;
+                    const res = await window.pywebview.api.claim_quest(qid);
+                    if (res && res.code) {
+                        try {
+                            await navigator.clipboard.writeText(res.code);
+                        } catch (err) {}
+                        alert(`In-Game Belohnung freigeschaltet!\n\nFreischalt-Code: ${res.code}\n(Code wurde automatisch in die Zwischenablage kopiert!)`);
+                    } else if (rewardType === 'AVATAR_DECO') {
+                        alert(`Avatar-Dekoration "${rewardName}" erfolgreich und dauerhaft in deinem Discord-Inventar freigeschaltet!`);
+                    }
+                    this.refreshQuests();
+                };
+                actBox.appendChild(btnClaim);
+                return;
+            }
+
+            // Uncompleted quest actions:
             if (isVideo) {
                 const btnExp = document.createElement('button');
                 btnExp.id = `btn-exp-${qid}`;
@@ -1696,11 +1738,46 @@ const DQS = {
                     };
                     actBox.appendChild(btnVid);
                 }
+            } else if (isCrossPlatform && curPlatform === 'CONSOLE') {
+                // Dedicated Console Tracking Button
+                const btnCons = document.createElement('button');
+                btnCons.className = 'btn btn-purple-glow';
+                btnCons.id = `btn-cons-track-${qid}`;
+                btnCons.innerHTML = `${I.gamepad} KONSOLE-TRACKING STARTEN`;
+                btnCons.onclick = async () => {
+                    btnCons.innerHTML = `Verbinde Konsole...`;
+                    btnCons.disabled = true;
+                    const res = await window.pywebview.api.start_console_quest(qid);
+                    if (res && res.success) {
+                        btnCons.className = 'btn btn-emerald';
+                        btnCons.innerHTML = `${I.check} KONSOLE VERBUNDEN`;
+                        alert(`Konsole-Tracking aktiviert!\n\nDiscord trackt deinen Spielfortschritt jetzt automatisch über dein verknüpftes Konsolenkonto (Xbox / PlayStation).`);
+                    } else {
+                        btnCons.disabled = false;
+                        btnCons.innerHTML = `${I.gamepad} KONSOLE-TRACKING ERNEUT VERSUCHEN`;
+                        alert(`Hinweis zum Konsole-Tracking:\n${res?.error || 'Stelle sicher, dass dein Xbox- oder PlayStation-Konto in Discord unter Benutzereinstellungen -> Verknüpfungen verbunden ist.'}`);
+                    }
+                };
+                actBox.appendChild(btnCons);
+
+                // Quick button to switch back to PC simulation
+                const btnSimFallback = document.createElement('button');
+                btnSimFallback.className = 'btn btn-secondary';
+                btnSimFallback.innerHTML = `💻 Lieber am PC simulieren`;
+                btnSimFallback.onclick = () => {
+                    q._user_selected_platform = 'DESKTOP';
+                    const deskPill = card.querySelector(`#plat-desk-${qid}`);
+                    const consPill = card.querySelector(`#plat-cons-${qid}`);
+                    if (deskPill) deskPill.classList.add('active');
+                    if (consPill) consPill.classList.remove('active');
+                    renderCardActions();
+                };
+                actBox.appendChild(btnSimFallback);
             } else {
                 // Desktop Game Simulation
                 const btnSim = document.createElement('button');
                 btnSim.className = 'btn btn-emerald';
-                btnSim.innerHTML = `${I.play} SIMULIEREN`;
+                btnSim.innerHTML = `${I.play} ${isCrossPlatform ? 'PC SIMULIEREN' : 'SIMULIEREN'}`;
                 btnSim.onclick = () => {
                     const targetAppId = q.selected_app?.id || q.required_app_id || appId;
                     const targetTitle = q.selected_app?.name || q.required_game_name || q.sim_game_title || gameTitle;
@@ -1709,7 +1786,6 @@ const DQS = {
                 };
                 actBox.appendChild(btnSim);
 
-                // Trailer preview button if game has promotional video
                 if (hasTrailer && q.trailer_url) {
                     const btnTrailer = document.createElement('button');
                     btnTrailer.className = 'btn btn-trailer-watch';
@@ -1732,6 +1808,27 @@ const DQS = {
                     this.refreshQuests();
                 };
                 actBox.appendChild(btnEnroll);
+            }
+        };
+
+        renderCardActions();
+
+        if (isCrossPlatform && !isVideo) {
+            const btnDesk = card.querySelector(`#plat-desk-${qid}`);
+            const btnCons = card.querySelector(`#plat-cons-${qid}`);
+            if (btnDesk && btnCons) {
+                btnDesk.onclick = () => {
+                    q._user_selected_platform = 'DESKTOP';
+                    btnDesk.classList.add('active');
+                    btnCons.classList.remove('active');
+                    renderCardActions();
+                };
+                btnCons.onclick = () => {
+                    q._user_selected_platform = 'CONSOLE';
+                    btnCons.classList.add('active');
+                    btnDesk.classList.remove('active');
+                    renderCardActions();
+                };
             }
         }
 
